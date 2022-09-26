@@ -17,16 +17,9 @@
 # The output files you need will be copied to the 'output_xxxxx' directory. xxx will be the name of your board.
 
 # Supported Boards
-# MACHINE=hihope-rzg2m	# HiHope RZ/G2M
-# MACHINE=hihope-rzg2n	# HiHope RZ/G2N
-# MACHINE=hihope-rzg2h	# HiHope RZ/G2H
-# MACHINE=ek874		# Silicon Linux RZ/G2E
-# MACHINE=smarc-rzg2l	# Renesas RZ/G2L EVK
-#   BOARD_VERSION: DISCRETE, PMIC, WS1
 # MACHINE=smarc-rzg2lc	# Renesas RZ/G2LC EVK
-# MACHINE=smarc-rzg2ul	# Renesas RZ/G2UL EVK
-# MACHINE=smarc-rzv2l	# Renesas RZ/V2L EVK
-#   BOARD_VERSION: DISCRETE, PMIC
+# MACHINE=rzg2lc-solidrun	# solidrun RZ/G2LC platform
+
 
 
 #----------------------------------------------
@@ -52,22 +45,18 @@ fi
 if [ "$1" == "toolchain_select" ] ; then
 
     SELECT=$(whiptail --title "Toolchain setup" --menu "You may use ESC+ESC to cancel.\nEnter the command line you want to run before build.\n" 0 0 0 \
-	"1  SDK Toolchain (Rocko/Poky 2.4.3)" "  /opt/poky/2.4.3/environment-setup-aarch64-poky-linux" \
-	"2  Linaro gcc-linaro-7.5.0-2019.12" "  /opt/linaro/gcc-linaro-7.5.0-2019.12-x86_64_aarch64-linux-gnu" \
-	"3  ARM gcc-arm-10.2-2020.11" "  /opt/arm/gcc-arm-10.2-2020.11-x86_64-aarch64-none-elf" \
-	"0  (none)" "  No setup" \
+    "1  ARM gcc-arm-11.2-2022.02" "  /opt/arm/gcc-arm-11.2-2022.02-x86_64-aarch64-none-elf" \
+  	"0  (none)" "  default -> ROOTDIR/build/toolchain/gcc-arm*" \
 	3>&1 1>&2 2>&3)
   RET=$?
   if [ $RET -eq 0 ] ; then
     case "$SELECT" in
       1\ *)
-      		x_TOOLCHAIN_SETUP_NAME="SDK Toolchain (Poky 2.4.3)" ; x_TOOLCHAIN_SETUP="source /opt/poky/2.4.3/environment-setup-aarch64-poky-linux" ;;
-      2\ *)
-      		x_TOOLCHAIN_SETUP_NAME="Linaro gcc-linaro-7.5.0-2019.12" ; x_TOOLCHAIN_SETUP="PATH=/opt/linaro/gcc-linaro-7.5.0-2019.12-x86_64_aarch64-linux-gnu/bin:\$PATH ; export CROSS_COMPILE=aarch64-linux-gnu-" ;;
-      3\ *)
-      		x_TOOLCHAIN_SETUP_NAME="ARM gcc-arm-10.2-2020.11" ; x_TOOLCHAIN_SETUP="PATH=/opt/arm/gcc-arm-10.2-2020.11-x86_64-aarch64-none-elf/bin:\$PATH ; export CROSS_COMPILE=aarch64-none-elf-" ;;
+          x_TOOLCHAIN_SETUP_NAME="ARM gcc-arm-10.3-2021.1"
+          x_TOOLCHAIN_SETUP="PATH=/opt/arm/gcc-arm-none-eabi-10.3-2021.1/bin:\$PATH ; export CROSS_COMPILE=aarch64-none-elf-" ;;
       0\ *)
-		x_TOOLCHAIN_SETUP_NAME="(none)" ; x_TOOLCHAIN_SETUP= ;;
+          x_TOOLCHAIN_SETUP_NAME="(none)"
+          x_TOOLCHAIN_SETUP= ;;
       *) whiptail --msgbox "Programmer error: unrecognized option" 20 60 1 ;;
     esac || whiptail --msgbox "There was an error running option $SELECT" 20 60 1
   fi
@@ -198,45 +187,15 @@ if [ "$1" == "s" ] ; then
   check_packages
 
   SELECT=$(whiptail --title "Board Selection" --menu "You may use ESC+ESC to cancel." 0 0 0 \
-	"1  hihope-rzg2m" "HiHope RZ/G2M" \
-	"2  hihope-rzg2n" "HiHope RZ/G2N" \
-	"3  hihope-rzg2h" "HiHope RZ/G2H" \
-	"4  ek874" "Silicon Linux RZ/G2E" \
-	"5  smarc-rzg2l" "Renesas SMARC RZ/G2L" \
-	"6  smarc-rzg2lc" "Renesas SMARC RZ/G2LC" \
-	"7  smarc-rzg2ul" "Renesas SMARC RZ/G2UL" \
-	"8  smarc-rzv2l" "Renesas SMARC RZ/V2L" \
+  "1  rzg2lc-solidrun" "Solidrun RZ/G2LC" \
+	"2  smarc-rzg2lc" "Renesas SMARC RZ/G2LC" \
 	3>&1 1>&2 2>&3)
   RET=$?
   if [ $RET -eq 0 ] ; then
     BOARD_VERSION=""  # Clear out BOARD_VERSION in case there is not one
     case "$SELECT" in
-      1\ *) FW_BOARD=HIHOPE ; MACHINE=hihope-rzg2m ;;
-      2\ *) FW_BOARD=HIHOPE ; MACHINE=hihope-rzg2n ;;
-      3\ *) FW_BOARD=HIHOPE ; MACHINE=hihope-rzg2h ;;
-      4\ *) FW_BOARD=EK874 ; MACHINE=ek874 ;;
-      5\ *) FW_BOARD=RZG2L_SMARC ; MACHINE=smarc-rzg2l
-	whiptail --yesno --yes-button PMIC_Power --no-button Discrete_Power "Board Version:\n\nIs the board 'PMIC Power' version or the 'Discrete Power' version?\n\nThe PMIC version has \"Reneas\" printed in the middle of the SOM board.\nThe Discrete version has \"Renesas\" printed at the edge of the SOM baord.   " 0 0 0
-	if [ "$?" == "0" ] ; then
-		BOARD_VERSION="PMIC"
-		FW_BOARD=RZG2L_SMARC_PMIC
-	else
-		BOARD_VERSION="DISCRETE"
-		FW_BOARD=RZG2L_SMARC
-	fi
-      ;;
-      6\ *) FW_BOARD=RZG2LC_SMARC ; MACHINE=smarc-rzg2lc ;;
-      7\ *) FW_BOARD=RZG2UL_SMARC ; MACHINE=smarc-rzg2ul ;;
-      8\ *) FW_BOARD=RZV2L_SMARC ; MACHINE=smarc-rzv2l
-	whiptail --yesno --yes-button PMIC_Power --no-button Discrete_Power "Board Version:\n\nIs the board 'PMIC Power' version or the 'Discrete Power' version?\n\nThe PMIC version has \"Reneas\" printed in the middle of the SOM board.\nThe Discrete version has \"Renesas\" printed at the edge of the SOM baord.   " 0 0 0
-	if [ "$?" == "0" ] ; then
-		BOARD_VERSION="PMIC"
-		FW_BOARD=RZV2L_SMARC_PMIC
-	else
-		BOARD_VERSION="DISCRETE"
-		FW_BOARD=RZV2L_SMARC
-	fi
-      ;;
+      1\ *) FW_BOARD=RZG2LC_SOLIDRUN ; MACHINE=rzg2lc-solidrun ;;
+      2\ *) FW_BOARD=RZG2LC_SMARC ; MACHINE=smarc-rzg2lc ;;
       *) whiptail --msgbox "Programmer error: unrecognized option" 20 60 1 ;;
     esac || whiptail --msgbox "There was an error running option $SELECT" 20 60 1
   else
@@ -268,7 +227,7 @@ if [ "$1" == "s" ] ; then
   save_setting FW_BOARD $FW_BOARD
 
   # Set defaults for Flash Writer script
-  if [ "$MACHINE" == "smarc-rzg2l" ] || [ "$MACHINE" == "smarc-rzg2lc" ] || [ "$MACHINE" == "smarc-rzv2l" ] || [ "$MACHINE" == "smarc-rzg2ul" ]; then
+  if  [ "$MACHINE" == "smarc-rzg2lc" ] || [ "$MACHINE" == "rzg2lc-solidrun" ]; then
     save_setting TFA_FIP 1
   else
     save_setting TFA_FIP 0

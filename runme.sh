@@ -6,8 +6,9 @@ set -e
 ###############################################################################
 BUILDROOT_VERSION=2020.02.1
 
-mkdir -p build images
 ROOTDIR=`pwd`
+#\rm -rf $ROOTDIR/images/tmp
+mkdir -p build images/tmp/boot
 PARALLEL=$(getconf _NPROCESSORS_ONLN) # Amount of parallel jobs for the builds
 TOOLS="tar git make 7z dd mkfs.ext4 parted mkdosfs mcopy dtc iasl mkimage e2cp truncate qemu-system-aarch64 cpio rsync bc bison flex python unzip pandoc meson ninja depmod"
 TOOLS_PACKAGES="build-essential git dosfstools e2fsprogs parted sudo mtools p7zip p7zip-full device-tree-compiler acpica-tools u-boot-tools e2tools qemu-system-arm libssl-dev cpio rsync bc bison flex python unzip pandoc meson ninja-build kmod"
@@ -90,3 +91,16 @@ cd $ROOTDIR/build/$BOOT_LOADER_DDIR
 ./build.sh u
 # build ATF
 ./build.sh t
+# copy bin files
+cp -i output_rzg2lc*/* $ROOTDIR/images/tmp/
+
+
+
+# make the SD-Image
+: '
+cd output_smarc-rzg2l/
+sudo dd if=bootparams-smarc-rzg2l.bin of=/dev/sda seek=1 count=1
+sudo dd if=bl2-smarc-rzg2l.bin of=/dev/sda seek=8
+sudo dd if=fip-smarc-rzg2l.bin of=/dev/sda seek=128
+sync
+'

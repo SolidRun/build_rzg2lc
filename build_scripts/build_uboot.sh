@@ -5,14 +5,8 @@
 #---------------------------------------------------------------------------
 
 # PLEASE CHOOSE YOU BOARD
-#MACHINE=hihope-rzg2m	# HiHope RZ/G2M
-#MACHINE=hihope-rzg2n	# HiHope RZ/G2N
-#MACHINE=hihope-rzg2h	# HiHope RZ/G2H
-#MACHINE=ek874		# Silicon Linux RZ/G2E
-#MACHINE=smarc-rzg2l    # Renesas SMARC RZ/G2L
 #MACHINE=smarc-rzg2lc   # Renesas SMARC RZ/G2LC
-#MACHINE=smarc-rzv2l    # Renesas SMARC RZ/V2L
-#MACHINE=smarc-rzg2ul   # Renesas SMARC RZ/G2UL
+#MACHINE=rzg2lc-solidrun   # solidrun RZ/G2LC platform
 
 # Read in functions from build_common.sh
 if [ ! -e build_common.sh ] ; then
@@ -26,14 +20,8 @@ fi
 read_setting
 
 # Define the defconfigs for Renesas boards
-if [ "$MACHINE" == "hihope-rzg2m" ] ; then DEFCONFIG=r8a774a1_hihope-rzg2m_defconfig ; fi
-if [ "$MACHINE" == "hihope-rzg2n" ] ; then DEFCONFIG=r8a774b1_hihope-rzg2n_defconfig ; fi
-if [ "$MACHINE" == "hihope-rzg2h" ] ; then DEFCONFIG=r8a774e1_hihope-rzg2h_defconfig ; fi
-if [ "$MACHINE" == "ek874" ] ; then DEFCONFIG=r8a774c0_ek874_defconfig ; fi
-if [ "$MACHINE" == "smarc-rzg2l" ] ; then DEFCONFIG=smarc-rzg2l_defconfig ; fi
+if [ "$MACHINE" == "rzg2lc-solidrun" ] ; then DEFCONFIG=rzg2lc-solidrun_defconfig ; fi
 if [ "$MACHINE" == "smarc-rzg2lc" ] ; then DEFCONFIG=smarc-rzg2lc_defconfig ; fi
-if [ "$MACHINE" == "smarc-rzg2ul" ] ; then DEFCONFIG=smarc-rzg2ul_defconfig ; fi
-if [ "$MACHINE" == "smarc-rzv2l" ] ; then DEFCONFIG=smarc-rzv2l_defconfig ; fi
 
 # Set the output directory (because I like all my build files separate from the source code)
 OUT=.out

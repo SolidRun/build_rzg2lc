@@ -13,10 +13,11 @@
 # $2 = env variable to save TOOLCHAIN_SETUP
 select_toolchain() {
 
-    SELECT=$(whiptail --title "Toolchain setup" --menu "You may use ESC+ESC to cancel.\nEnter the command line you want to run before build.\n" 0 0 0 \
+  SELECT=$(whiptail --title "Toolchain setup" --menu "You may use ESC+ESC to cancel.\nEnter the command line you want to run before build.\n" 0 0 0 \
 	"1  ARM gcc-arm-11.2-2022.02" "  /opt/arm/gcc-arm-11.2-2022.02-x86_64-aarch64-none-elf" \
 	"0  (none)" "  default -> ROOTDIR/build/toolchain/gcc-arm*" \
 	3>&1 1>&2 2>&3)
+
   RET=$?
   if [ $RET -eq 0 ] ; then
     case "$SELECT" in
@@ -24,8 +25,8 @@ select_toolchain() {
       		x_TOOLCHAIN_SETUP_NAME="ARM gcc-arm-10.3-2021.1"
       		x_TOOLCHAIN_SETUP="PATH=/opt/arm/gcc-arm-none-eabi-10.3-2021.1/bin:\$PATH ; export CROSS_COMPILE=aarch64-none-elf-" ;;
       0\ *)
-		x_TOOLCHAIN_SETUP_NAME="(none)"
-		x_TOOLCHAIN_SETUP= ;;
+          x_TOOLCHAIN_SETUP_NAME="(none)"
+          x_TOOLCHAIN_SETUP= ;;
       *) whiptail --msgbox "Programmer error: unrecognized option" 20 60 1 ;;
     esac || whiptail --msgbox "There was an error running option $SELECT" 20 60 1
   fi

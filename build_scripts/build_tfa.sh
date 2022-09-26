@@ -4,16 +4,8 @@
 # Please read the README.md file first for proper setup
 #---------------------------------------------------------------------------
 
-# MACHINE=hihope-rzg2m
-# MACHINE=hihope-rzg2n
-# MACHINE=hihope-rzg2h
-# MACHINE=ek874
-# MACHINE=smarc-rzg2l
-#   BOARD_VERSION: DISCRETE, PMIC, WS1
+# MACHINE=rzg2lc-solidrun
 # MACHINE=smarc-rzg2lc
-# MACHINE=smarc-rzg2ul
-# MACHINE=smarc-rzgvl
-#   BOARD_VERSION: DISCRETE, PMIC
 
 #TFA_BOOT: 0=SPI Flash, 1=eMMC
 #TFA_ECC_FULL: 0=no ECC, 1=ECC dual channel, 2=ECC single channel
@@ -52,7 +44,7 @@ if [ "$TFA_DEBUG" == "" ] ; then
 fi
 if [ "$TFA_FIP" == "" ] ; then
 
-  if [ "$MACHINE" == "smarc-rzg2l" ] || [ "$MACHINE" == "smarc-rzg2lc" ] || [ "$MACHINE" == "smarc-rzv2l" ] || [ "$MACHINE" == "smarc-rzg2ul" ]; then
+  if [ "$MACHINE" == "smarc-rzg2lc" ] || [ "$MACHINE" == "rzg2lc-solidrun" ] ; then
     TFA_FIP=1
   else
     TFA_FIP=0
@@ -221,12 +213,7 @@ create_fip_and_copy() {
   EXTRA=""
 
   # RZ/G2L PMIC board have _pmic at the end of the filename
-  if [ "$MACHINE" == "smarc-rzg2l" ] && [ "$BOARD_VERSION" == "PMIC" ] ; then
-    EXTRA="_pmic"
-  fi
-
-  # RZ/V2L PMIC board have _pmic at the end of the filename
-  if [ "$MACHINE" == "smarc-rzv2l" ] && [ "$BOARD_VERSION" == "PMIC" ] ; then
+  if [ "$MACHINE" == "rzg2l-som" ] && [ "$BOARD_VERSION" == "PMIC" ] ; then
     EXTRA="_pmic"
   fi
 
@@ -333,117 +320,6 @@ fi
 BUILD_THREADS=$(expr $NPROC + $NPROC)
 
 
-# PLAT
-#	Set string is "rcar" (VLP v1.0.0-4) or "rzg" (VLP v1.0.5+)
-
-# LOG_LEVEL
-#	The IPL provides logging functions ERROR(), NOTICE(), WARN(), INFO() and VERBOSE().
-#	50 is all functions for output logs
-#
-#	Log level   Valid logging function
-#	-------------------------------------------------------
-#	0           No functions output logs
-#	10          ERROR()
-#	20          ERROR(), NOTICE()
-#	30          ERROR(), NOTICE(), WARN()
-#	40          ERROR(), NOTICE(), WARN(), INFO()
-#	50          ERROR(), NOTICE(), WARN(), INFO(), VERBOSE()
-
-# DEBUG
-#	Set value is 0 or 1. 0 is a release build, and 1 is a debug build
-#	If LOG_LEVEL value hasn??t been set, LOG_LEVEL is set as the DEBUG value in the following table
-#
-#	DEBUG build    LOG_LEVEL  Valid logging functions
-#	-------------------------------------------------------
-#	0     release  20         ERROR(), NOTICE()
-#	1     debug    40         ERROR(), NOTICE(), WARN(), INFO()
-
-# SPD
-#	The IPL provides configuration to load image of BL32
-#	Set string is ??none?? or ??opteed??.
-#	"none" = Does not load the image of BL32
-#	"opteed" = Load the image of BL32 from HyperFlash / QSPI Flash / eMMC
-
-# RCAR_QOS_TYPE
-#	AXI-bus has the QoS arbitration to control latency and bandwidth.
-#	0 = Enable the QoS arbitration setting (Default setting)
-#	3 = Disable the QoS arbitration setting
-
-
-# RZG_DRAM_SPLIT
-# RCAR_DRAM_SPLIT  (before BSP 1.0.7)
-#	DRAM split setting in the SDRAM setting
-#	0 = Linear (No split)
-#	1 = 4 channel split
-#	2 = 2 channel split
-#	3 = R-Car H3: 4 channel split / R-Car M3: 2 channel split / R-Car M3N:Linear / R-Car E3: Linear
-
-# PMIC_ROHM_BD9571
-#	This option represents the range of code implementation depending on the PMIC (ROHM BD9571) mounted on the
-#	evaluation board described in 3.1 hardware environment.
-
-
-# RCAR_AVS_SETTING_ENABLE
-#	PMIC initial voltage setting
-#	This option must be set to disabled in the case of R-Car E3.
-#	0 = disable
-#	1 = enable
-
-
-# LSI
-#	G2E,G2M,G2N,G2H
-
-# RZG_SA6_TYPE:
-# RCAR_SA6_TYPE:   (before BSP 1.0.7)
-#	0 = for Hyper Flash / QPSI Flash boot (Default setting)
-#	1 = for eMMC boot
-
-# RCAR_BL33_EXECUTION_EL
-#	Set the exception level of BL33
-#	0 = EL1 (Default setting)
-#	1 = EL2
-#
-
-# RCAR_SYSTEM_SUSPEND
-#	0 = No Suspend to RAM
-#	1 = Suspend to RAM
-
-# RCAR_REF_INT
-#	Select DRAM refresh interval.
-#	0 = Default setting (H3, M3, M3N 1.95us / E3 3.90us)
-#	1 = Optional setting (H3, M3, M3N 3.90us / E3 7.80us)
-
-# RCAR_REWT_TRAINING
-#	Select "periodic write DQ training" mode.
-#	0 = not available
-#	1 = available (Default setting)
-
-# RCAR_BL2_DCACHE
-#	enables MMU and D-cache (L1 data cache / L2 cache) on IPL.
-#	0 = Disable the D-cache setting (Default setting)
-#	1 = Enable the D-cache setting
-
-# RCAR_SA0_SIZE
-#	Switch the IPL size of dummy certificate
-#	0 = For R-Car E3, IPL size is 80KB.
-#	1 = For R-Car H3/M3/M3N, IPL size is 170KB. (Default setting)
-
-# RCAR_DRAM_DDR3L_MEMCONF
-#	Select DRAM memory size.
-#	0 = 1G Byte
-#	1 = 2G Byte (Default setting)
-
-# RCAR_DRAM_DDR3L_MEMDUAL
-#	Select the SoC output (the number of connected SDRAM on board)
-#	0 = CS0, ODT0 enable and CS1, ODT1 disable (SDRAM 2pieces)
-#	1 = CS0, ODT0, CS1, ODT1 enable (SDRAM 4pieces) (Default setting)
-
-# RCAR_DRAM_LPDDR4_MEMCONF
-#	(RZ/G2H only)
-#	The LPDDR4 settings code included in the IPL release supports 2 types of memory configurations for R-Car H3
-#	0 = 1G Byte x 4 channel : 4GB
-#	1 = 2G Byte x4 channel : 8GB (Default setting)
-
 echo "cd $TFA_DIR"
 cd $TFA_DIR
 
@@ -470,6 +346,21 @@ fi
 
 # Board Settings
 case "$MACHINE" in
+
+  "rzg2lc-solidrun"|"rzg2lc-som"|"rzg2lc-hummingboard")
+      PLATFORM=g2l
+      TFA_OPT="BOARD=smarc_1"
+
+      TOOL=
+      ;;
+
+  "smarc-rzg2lc")
+    PLATFORM=g2l
+    TFA_OPT="BOARD=smarc_1"
+
+    TOOL=
+    ;;
+
   "smarc-rzg2l")
 
     # Old directory structure
@@ -510,66 +401,6 @@ case "$MACHINE" in
     TOOL=
     ;;
 
-  "smarc-rzg2lc")
-    PLATFORM=g2l
-    TFA_OPT="BOARD=smarc_1"
-
-    TOOL=
-    ;;
-
-  "smarc-rzg2ul")
-    PLATFORM=g2ul
-    TFA_OPT="BOARD=g2ul_smarc SOC_TYPE=1 SPI_FLASH=AT25QL128A"
-
-    TOOL=
-    ;;
-
-  "smarc-rzv2l")
-   PLATFORM=v2l
-   if [ "$BOARD_VERSION" == "PMIC" ] ; then
-     TFA_OPT="BOARD=smarc_pmic_2"
-   else
-     TFA_OPT="BOARD=smarc_4"
-   fi
-
-    # Internal Renesas Boards
-    #TFA_OPT="BOARD=dev15_4" #rzv2l-dev
-
-    TOOL=
-    ;;
-
-  "ek874")
-    TFA_OPT="LSI=G2E RCAR_DRAM_DDR3L_MEMCONF=1 RCAR_DRAM_DDR3L_MEMDUAL=1 SPD="none" $G2E_ECC $G2E_LOSSY"
-
-    # Common Settings for RZ/G2E
-    TFA_OPT="$TFA_OPT RCAR_SA0_SIZE=0 RCAR_RPC_HYPERFLASH_LOCKED=0"
-    PLATFORM=rzg
-    TOOL=rzg
-    ;;
-  "hihope-rzg2m")
-    TFA_OPT="LSI=G2M RZG_DRAM_SPLIT=2 SPD="none" $G2M_ECC $G2M_LOSSY"
-
-    # Common Settings for RZ/G2M
-    TFA_OPT="$TFA_OPT RCAR_RPC_HYPERFLASH_LOCKED=0"
-    PLATFORM=rzg
-    TOOL=rzg
-    ;;
-  "hihope-rzg2n")
-    TFA_OPT="LSI=G2N SPD="none" $G2N_ECC $G2N_LOSSY"
-
-    # Common Settings for RZ/G2N
-    TFA_OPT="$TFA_OPT RCAR_RPC_HYPERFLASH_LOCKED=0"
-    PLATFORM=rzg
-    TOOL=rzg
-    ;;
-  "hihope-rzg2h")
-    TFA_OPT="LSI=G2H RZG_DRAM_SPLIT=2 RZG_DRAM_LPDDR4_MEMCONF=1 RCAR_DRAM_CHANNEL=5 SPD="none" $G2H_ECC $G2H_LOSSY"
-
-    # Common Settings for RZ/G2H
-    TFA_OPT="$TFA_OPT RCAR_RPC_HYPERFLASH_LOCKED=0"
-    PLATFORM=rzg
-    TOOL=rzg
-    ;;
 esac
 
 # For eMMC boot, you need to set RCAR_SA6_TYPE=1
@@ -732,4 +563,3 @@ if [ -e build/${PLATFORM}/release/bl2.bin ] && [ "$OUT_DIR" != "" ] ; then
   #cp -v $OUT/u-boot.bin ../$OUT_DIR/u-boot-${MACHINE}.bin
   #cp -v $OUT/u-boot.srec ../$OUT_DIR//u-boot-${MACHINE}.srec
 fi
-
