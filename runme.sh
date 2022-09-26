@@ -4,7 +4,8 @@ set -e
 ###############################################################################
 # General configurations
 ###############################################################################
-BUILDROOT_VERSION=2020.02.1
+BUILDROOT_VERSION=2022.02.4
+: ${SHALLOW:=false}
 
 ROOTDIR=`pwd`
 #\rm -rf $ROOTDIR/images/tmp
@@ -52,50 +53,66 @@ cd $ROOTDIR
 ###############################################################################
 # Source code clonig
 ###############################################################################
-BOOT_LOADER_DDIR='./sd_boot'
-if ! [[ -d build/$BOOT_LOADER_DDIR ]]; then
-  echo "Source code clonig..."
-  # ================ Clone Sources =========== #
 
-  # ================ Clone ATF =========== #
-  mkdir -p build/$BOOT_LOADER_DDIR
-  cd build/$BOOT_LOADER_DDIR
-  git clone -b v2.6/rz https://github.com/renesas-rz/rzg_trusted-firmware-a
-  cd rzg_trusted-firmware-a
-  wget https://raw.githubusercontent.com/seebe/rzg_stuff/master/tfa_patches/0001-SD-boot-support.patch
-  patch -p1 < 0001-SD-boot-support.patch
-  cd ..
+QORIQ_COMPONENTS="renesas-u-boot-cip rzg_trusted-firmware-a rz_linux-cip buildroot"
+UBOOT_REPO='https://github.com/renesas-rz/renesas-u-boot-cip -b v2021.10/rz'
+ATF_REPO='https://github.com/renesas-rz/rzg_trusted-firmware-a -b v2.6/rz'
+LINUX_REPO='https://github.com/renesas-rz/rz_linux-cip -b rzg2l-cip54'
+BUILDROOT_REPO="https://github.com/buildroot/buildroot.git -b $BUILDROOT_VERSION"
 
-  # ================ Clone U-Boot =========== #
-  git clone -b v2021.10/rz https://github.com/renesas-rz/renesas-u-boot-cip
-
-  # ================ Install help scripts ====== #
-  cp $ROOTDIR/build_scripts/*.sh $ROOTDIR/build/$BOOT_LOADER_DDIR
-  chmod +x $ROOTDIR/build/${BOOT_LOADER_DDIR}/*.sh
-
+if [ "x$SHALLOW" == "xtrue" ]; then
+	SHALLOW_FLAG="--depth 1000"
 fi
 
-### For debug
-cp $ROOTDIR/build_scripts/*.sh $ROOTDIR/build/$BOOT_LOADER_DDIR
-chmod +x $ROOTDIR/build/${BOOT_LOADER_DDIR}/*.sh
-####
+for i in $QORIQ_COMPONENTS; do
+	if [[ ! -d $ROOTDIR/build/$i ]]; then
+		echo "$i source code clonig ..."
+		cd $ROOTDIR/build
+    # ================ Clone U-Boot =========== #
+		if [ "x$i" == "xrenesas-u-boot-cip" ]; then
+			git clone $SHALLOW_FLAG $UBOOT_REPO
+		fi
+    # ================ Clone ATF ============= #
+    if [ "x$i" == "xrzg_trusted-firmware-a" ]; then
+      git clone $SHALLOW_FLAG $ATF_REPO
+    fi
+    # ================ Clone Linux =========== #
+    if [ "x$i" == "xrz_linux-cip" ]; then
+      git clone $SHALLOW_FLAG $LINUX_REPO
+    fi
+    # Clone Buildroot
+    if [ "x$i" == "xbuildroot" ]; then
+      git clone $SHALLOW_FLAG $BUILDROOT_REPO
+    fi
+
+    # Applay patches...
+		cd $i
+    if [ -f $ROOTDIR/patches/${i}/*.patch ]; then
+		     git am $ROOTDIR/patches/${i}/*.patch
+    fi
+	fi
+done
+
 
 ###############################################################################
 # Building boot loader
 ###############################################################################
 echo "Building boot loader..."
-cd $ROOTDIR/build/$BOOT_LOADER_DDIR
+cd $ROOTDIR/build/
+# ================ Install build scripts ====== #
+cp $ROOTDIR/build_scripts/*.sh $ROOTDIR/build/
+chmod +x $ROOTDIR/build/*.sh
+\rm -rf output_*
 # Select toolchain that you have:
 ./build.sh s
 # build u-boot:
 ./build.sh u
 # build ATF
 ./build.sh t
-# copy bin files
-cp -i output_rzg2lc*/* $ROOTDIR/images/tmp/
+# copy output files
+\cp -r output_*/* $ROOTDIR/images/tmp/
 
-
-
+exit 0
 # make the SD-Image
 : '
 cd output_smarc-rzg2l/
@@ -104,3 +121,30 @@ sudo dd if=bl2-smarc-rzg2l.bin of=/dev/sda seek=8
 sudo dd if=fip-smarc-rzg2l.bin of=/dev/sda seek=128
 sync
 '
+
+###############################################################################
+# Building Linux
+###############################################################################
+
+
+
+###############################################################################
+# Building FS Builroot
+###############################################################################
+
+
+
+###############################################################################
+# Assembling Boot Image
+###############################################################################
+echo "Assembling Boot Image"
+cd $ROOTDIR/
+IMG=rzg2lc_solidrun-sd-${REPO_PREFIX}.img
+rm -rf $ROOTDIR/images/${IMG}
+
+# Boot loader
+dd if=$ROOTDIR/images/tmp/bootparams-smarc-rzg2l.bin of=$IMG seek=1 count=1
+dd if=$ROOTDIR/images/tmp/bl2-smarc-rzg2l.bin of=$IMG seek=8
+dd if=$ROOTDIR/images/tmp/fip-smarc-rzg2l.bin of=$IMG seek=128
+echo "$ROOTDIR/images/${IMG} ready...!"
+sync
