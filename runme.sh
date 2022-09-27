@@ -61,6 +61,15 @@ ATF_REPO='https://github.com/renesas-rz/rzg_trusted-firmware-a -b v2.6/rz'
 LINUX_REPO='https://github.com/renesas-rz/rz_linux-cip -b rz-5.10-cip1'
 BUILDROOT_REPO="https://github.com/buildroot/buildroot.git -b $BUILDROOT_VERSION"
 
+#├── build_dir
+#│   ├── renesas-u-boot-cip/        <<<<<<
+#│   ├── rzg_trusted-firmware-a/    <<<<<<
+#│   ├── rz_linux-cip/              <<<<<<
+#│   ├── buildroot/                 <<<<<<
+#│   ├── build.sh
+#│   ├── build_xxxx.sh
+#│   ├── build_xxxx.sh
+
 if [ "x$SHALLOW" == "xtrue" ]; then
 	SHALLOW_FLAG="--depth 1000"
 fi
@@ -120,10 +129,16 @@ rm -rf $ROOTDIR/images/${BOOT_IMG}
 dd if=/dev/zero of=${BOOT_IMG} bs=1M count=1
 
 # Boot loader
-dd if=$ROOTDIR/images/tmp/bootparams-smarc-rzg2lc.bin of=$BOOT_IMG bs=512 seek=1 count=1 conv=notrunc
-dd if=$ROOTDIR/images/tmp/bl2-smarc-rzg2lc.bin of=$BOOT_IMG bs=512 seek=8 conv=notrunc
-dd if=$ROOTDIR/images/tmp/fip-smarc-rzg2lc.bin of=$BOOT_IMG bs=512 seek=128 conv=notrunc
-
+if [ -f tmp/bootparams-rzg2lc-solidrun.bin ] && [ -f tmp/bl2-rzg2lc-solidrun.bin ] && [ -f tmp/fip-rzg2lc-solidrun.bin ]; then
+  echo "Find Solidrun boot files..."; sleep 1
+  dd if=$ROOTDIR/images/tmp/bootparams-rzg2lc-solidrun.bin of=$BOOT_IMG bs=512 seek=1 count=1 conv=notrunc
+  dd if=$ROOTDIR/images/tmp/bl2-rzg2lc-solidrun.bin of=$BOOT_IMG bs=512 seek=8 conv=notrunc
+  dd if=$ROOTDIR/images/tmp/fip-rzg2lc-solidrun.bin of=$BOOT_IMG bs=512 seek=128 conv=notrunc
+else
+  dd if=$ROOTDIR/images/tmp/bootparams-smarc-rzg2lc.bin of=$BOOT_IMG bs=512 seek=1 count=1 conv=notrunc
+  dd if=$ROOTDIR/images/tmp/bl2-smarc-rzg2lc.bin of=$BOOT_IMG bs=512 seek=8 conv=notrunc
+  dd if=$ROOTDIR/images/tmp/fip-smarc-rzg2lc.bin of=$BOOT_IMG bs=512 seek=128 conv=notrunc
+fi
 echo "SD booloader image ready -> images/$BOOT_IMG"
 
 #exit 0
@@ -136,13 +151,13 @@ make defconfig
 ./scripts/kconfig/merge_config.sh .config $ROOTDIR/configs/linux/kernel.extra
 make -j$PARALLEL Image dtbs
 cp $ROOTDIR/build/rz_linux-cip/arch/arm64/boot/Image $ROOTDIR/images/tmp/
+cp $ROOTDIR/build/rz_linux-cip/arch/arm64/boot/dts/renesas/*smarc.dtb $ROOTDIR/images/tmp/
 # ref -> r9a07g044c2-smarc.dtb-> (r9a07g044c2.dtsi -> r9a07g044.dtsi) &
 # (rzg2lc-smarc.dtsi ->
 # <dt-bindings/gpio/gpio.h>
 # <dt-bindings/pinctrl/rzg2l-pinctrl.h>#include "rzg2lc-smarc-som.dtsi"
 # "rzg2lc-smarc-pinfunction.dtsi"
 # "rz-smarc-common.dtsi")
-cp $ROOTDIR/build/rz_linux-cip/arch/arm64/boot/dts/renesas/*smarc.dtb $ROOTDIR/images/tmp/
 
 ###############################################################################
 # Building FS Builroot
@@ -170,14 +185,20 @@ env PATH="$PATH:/sbin:/usr/sbin" mkdosfs tmp/part1.fat32
 mcopy -i tmp/part1.fat32 $ROOTDIR/images/tmp/Image ::/Image
 mcopy -s -i tmp/part1.fat32 $ROOTDIR/images/tmp/*.dtb ::/
 
-# Boot loader
-dd if=$ROOTDIR/images/tmp/bootparams-smarc-rzg2lc.bin of=$IMG bs=512 seek=1 count=1 conv=notrunc
-dd if=$ROOTDIR/images/tmp/bl2-smarc-rzg2lc.bin of=$IMG bs=512 seek=8 conv=notrunc
-dd if=$ROOTDIR/images/tmp/fip-smarc-rzg2lc.bin of=$IMG bs=512 seek=128 conv=notrunc
-
 # EXT partion
 env PATH="$PATH:/sbin:/usr/sbin" parted --script ${IMG} mklabel msdos mkpart primary 2MiB 150MiB mkpart primary 150MiB 400MiB
 dd if=tmp/part1.fat32 of=${IMG} bs=1M seek=2 conv=notrunc
-dd if=$ROOTDIR/build/buildroot/output/images/rootfs.ext4 of=${IMG} bs=1M seek=150 conv=notrunc
+dd if=$ROOTDIR/build/buildroot/output/images/rootfs.ext2 of=${IMG} bs=1M seek=150 conv=notrunc
+# Boot loader
+if [ -f tmp/bootparams-rzg2lc-solidrun.bin ] && [ -f tmp/bl2-rzg2lc-solidrun.bin ] && [ -f tmp/fip-rzg2lc-solidrun.bin ]; then
+  echo "Find Solidrun boot files..."; sleep 1
+  dd if=$ROOTDIR/images/tmp/bootparams-rzg2lc-solidrun.bin of=$IMG bs=512 seek=1 count=1 conv=notrunc
+  dd if=$ROOTDIR/images/tmp/bl2-rzg2lc-solidrun.bin of=$IMG bs=512 seek=8 conv=notrunc
+  dd if=$ROOTDIR/images/tmp/fip-rzg2lc-solidrun.bin of=$IMG bs=512 seek=128 conv=notrunc
+else
+  dd if=$ROOTDIR/images/tmp/bootparams-smarc-rzg2lc.bin of=$IMG bs=512 seek=1 count=1 conv=notrunc
+  dd if=$ROOTDIR/images/tmp/bl2-smarc-rzg2lc.bin of=$IMG bs=512 seek=8 conv=notrunc
+  dd if=$ROOTDIR/images/tmp/fip-smarc-rzg2lc.bin of=$IMG bs=512 seek=128 conv=notrunc
+fi
 echo -e "\n\n*** Image is ready - images/${IMG}"
 sync
