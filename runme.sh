@@ -6,6 +6,7 @@ set -e
 ###############################################################################
 BUILDROOT_VERSION=2022.02.4
 : ${SHALLOW:=false}
+REPO_PREFIX=`git log -1 --pretty=format:%h`
 
 ROOTDIR=`pwd`
 #\rm -rf $ROOTDIR/images/tmp
@@ -57,7 +58,7 @@ cd $ROOTDIR
 QORIQ_COMPONENTS="renesas-u-boot-cip rzg_trusted-firmware-a rz_linux-cip buildroot"
 UBOOT_REPO='https://github.com/renesas-rz/renesas-u-boot-cip -b v2021.10/rz'
 ATF_REPO='https://github.com/renesas-rz/rzg_trusted-firmware-a -b v2.6/rz'
-LINUX_REPO='https://github.com/renesas-rz/rz_linux-cip -b rzg2l-cip54'
+LINUX_REPO='https://github.com/renesas-rz/rz_linux-cip -b rz-5.10-cip1'
 BUILDROOT_REPO="https://github.com/buildroot/buildroot.git -b $BUILDROOT_VERSION"
 
 if [ "x$SHALLOW" == "xtrue" ]; then
@@ -112,39 +113,66 @@ chmod +x $ROOTDIR/build/*.sh
 # copy output files
 \cp -r output_*/* $ROOTDIR/images/tmp/
 
-exit 0
 # make the SD-Image
-: '
-cd output_smarc-rzg2l/
-sudo dd if=bootparams-smarc-rzg2l.bin of=/dev/sda seek=1 count=1
-sudo dd if=bl2-smarc-rzg2l.bin of=/dev/sda seek=8
-sudo dd if=fip-smarc-rzg2l.bin of=/dev/sda seek=128
-sync
-'
+cd $ROOTDIR/images/
+BOOT_IMG=rzg2lc_solidrun-sd-bootloader-${REPO_PREFIX}.img
+rm -rf $ROOTDIR/images/${BOOT_IMG}
+dd if=/dev/zero of=${BOOT_IMG} bs=1M count=1
 
+# Boot loader
+dd if=$ROOTDIR/images/tmp/bootparams-smarc-rzg2lc.bin of=$BOOT_IMG bs=512 seek=1 count=1 conv=notrunc
+dd if=$ROOTDIR/images/tmp/bl2-smarc-rzg2lc.bin of=$BOOT_IMG bs=512 seek=8 conv=notrunc
+dd if=$ROOTDIR/images/tmp/fip-smarc-rzg2lc.bin of=$BOOT_IMG bs=512 seek=128 conv=notrunc
+
+echo "SD booloader image ready -> images/$BOOT_IMG"
+
+#exit 0
 ###############################################################################
 # Building Linux
 ###############################################################################
-
-
+echo "*** Building Linux kernel"
+cd $ROOTDIR/build/rz_linux-cip
+make defconfig
+./scripts/kconfig/merge_config.sh .config $ROOTDIR/configs/linux/kernel.extra
+make -j$PARALLEL Image dtbs
+cp $ROOTDIR/build/rz_linux-cip/arch/arm64/boot/Image $ROOTDIR/images/tmp/
+cp $ROOTDIR/build/rz_linux-cip/arch/arm64/boot/dts/renesas/*rzg2l*.dtb $ROOTDIR/images/tmp/
+cp $ROOTDIR/build/rz_linux-cip/arch/arm64/boot/dts/renesas/*smar*.dtb $ROOTDIR/images/tmp/
 
 ###############################################################################
 # Building FS Builroot
 ###############################################################################
-
-
+echo "*** Building Buildroot FS"
+cd $ROOTDIR/build/buildroot
+cp $ROOTDIR/configs/buildroot/rzg2lc-solidrun_defconfig $ROOTDIR/build/buildroot/configs
+make rzg2lc-solidrun_defconfig
+make -j$PARALLEL
+cp $ROOTDIR/build/buildroot/output/images/rootfs* $ROOTDIR/images/tmp/
 
 ###############################################################################
 # Assembling Boot Image
 ###############################################################################
 echo "Assembling Boot Image"
-cd $ROOTDIR/
+cd $ROOTDIR/images/
 IMG=rzg2lc_solidrun-sd-${REPO_PREFIX}.img
 rm -rf $ROOTDIR/images/${IMG}
+dd if=/dev/zero of=${IMG} bs=1M count=401
+
+# FAT Partion
+dd if=/dev/zero of=tmp/part1.fat32 bs=1M count=148
+env PATH="$PATH:/sbin:/usr/sbin" mkdosfs tmp/part1.fat32
+# mmd -i tmp/part1.fat32 ::/boot
+mcopy -i tmp/part1.fat32 $ROOTDIR/images/tmp/Image ::/Image
+mcopy -s -i tmp/part1.fat32 $ROOTDIR/images/tmp/*.dtb ::/
 
 # Boot loader
-dd if=$ROOTDIR/images/tmp/bootparams-smarc-rzg2l.bin of=$IMG seek=1 count=1
-dd if=$ROOTDIR/images/tmp/bl2-smarc-rzg2l.bin of=$IMG seek=8
-dd if=$ROOTDIR/images/tmp/fip-smarc-rzg2l.bin of=$IMG seek=128
-echo "$ROOTDIR/images/${IMG} ready...!"
+dd if=$ROOTDIR/images/tmp/bootparams-smarc-rzg2lc.bin of=$IMG bs=512 seek=1 count=1 conv=notrunc
+dd if=$ROOTDIR/images/tmp/bl2-smarc-rzg2lc.bin of=$IMG bs=512 seek=8 conv=notrunc
+dd if=$ROOTDIR/images/tmp/fip-smarc-rzg2lc.bin of=$IMG bs=512 seek=128 conv=notrunc
+
+# EXT partion
+env PATH="$PATH:/sbin:/usr/sbin" parted --script ${IMG} mklabel msdos mkpart primary 2MiB 150MiB mkpart primary 150MiB 400MiB
+dd if=tmp/part1.fat32 of=${IMG} bs=1M seek=2 conv=notrunc
+dd if=$ROOTDIR/build/buildroot/output/images/rootfs.ext2 of=${IMG} bs=1M seek=150 conv=notrunc
+echo -e "\n\n*** Image is ready - images/${IMG}"
 sync
