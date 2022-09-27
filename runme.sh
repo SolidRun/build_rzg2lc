@@ -136,8 +136,13 @@ make defconfig
 ./scripts/kconfig/merge_config.sh .config $ROOTDIR/configs/linux/kernel.extra
 make -j$PARALLEL Image dtbs
 cp $ROOTDIR/build/rz_linux-cip/arch/arm64/boot/Image $ROOTDIR/images/tmp/
-cp $ROOTDIR/build/rz_linux-cip/arch/arm64/boot/dts/renesas/*rzg2l*.dtb $ROOTDIR/images/tmp/
-cp $ROOTDIR/build/rz_linux-cip/arch/arm64/boot/dts/renesas/*smar*.dtb $ROOTDIR/images/tmp/
+# ref -> r9a07g044c2-smarc.dtb-> (r9a07g044c2.dtsi -> r9a07g044.dtsi) &
+# (rzg2lc-smarc.dtsi ->
+# <dt-bindings/gpio/gpio.h>
+# <dt-bindings/pinctrl/rzg2l-pinctrl.h>#include "rzg2lc-smarc-som.dtsi"
+# "rzg2lc-smarc-pinfunction.dtsi"
+# "rz-smarc-common.dtsi")
+cp $ROOTDIR/build/rz_linux-cip/arch/arm64/boot/dts/renesas/*smarc.dtb $ROOTDIR/images/tmp/
 
 ###############################################################################
 # Building FS Builroot
@@ -173,6 +178,6 @@ dd if=$ROOTDIR/images/tmp/fip-smarc-rzg2lc.bin of=$IMG bs=512 seek=128 conv=notr
 # EXT partion
 env PATH="$PATH:/sbin:/usr/sbin" parted --script ${IMG} mklabel msdos mkpart primary 2MiB 150MiB mkpart primary 150MiB 400MiB
 dd if=tmp/part1.fat32 of=${IMG} bs=1M seek=2 conv=notrunc
-dd if=$ROOTDIR/build/buildroot/output/images/rootfs.ext2 of=${IMG} bs=1M seek=150 conv=notrunc
+dd if=$ROOTDIR/build/buildroot/output/images/rootfs.ext4 of=${IMG} bs=1M seek=150 conv=notrunc
 echo -e "\n\n*** Image is ready - images/${IMG}"
 sync
