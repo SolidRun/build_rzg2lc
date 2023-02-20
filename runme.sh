@@ -5,6 +5,7 @@ set -e
 # General configurations
 ###############################################################################
 BUILDROOT_VERSION=2022.02.4
+UBOOT_COMMIT_HASH=83b2ea37f4b2dd52accce8491af86cbb280f6774
 : ${SHALLOW:=false}
 REPO_PREFIX=`git log -1 --pretty=format:%h`
 
@@ -81,6 +82,8 @@ for i in $QORIQ_COMPONENTS; do
     # ================ Clone U-Boot =========== #
 		if [ "x$i" == "xrenesas-u-boot-cip" ]; then
 			git clone $SHALLOW_FLAG $UBOOT_REPO
+			cd $ROOTDIR/build/renesas-u-boot-cip && git checkout $UBOOT_COMMIT_HASH
+			cd $ROOTDIR/build/
 		fi
     # ================ Clone ATF ============= #
     if [ "x$i" == "xrzg_trusted-firmware-a" ]; then
