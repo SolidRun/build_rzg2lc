@@ -1,0 +1,41 @@
+From 23c0cd48fb84bc6ded5148b800b02b2813932ad7 Mon Sep 17 00:00:00 2001
+From: Yazan Shhady <yazan.shhady@solid-run.com>
+Date: Wed, 28 Sep 2022 00:06:33 +0300
+Subject: [PATCH 6/9] update rzg2lc-solidrun defconfig
+
+---
+ configs/rzg2lc-solidrun_defconfig | 6 ++++--
+ 1 file changed, 4 insertions(+), 2 deletions(-)
+
+diff --git a/configs/rzg2lc-solidrun_defconfig b/configs/rzg2lc-solidrun_defconfig
+index 75be1c4a70..83e7f58f78 100644
+--- a/configs/rzg2lc-solidrun_defconfig
++++ b/configs/rzg2lc-solidrun_defconfig
+@@ -13,7 +13,7 @@ CONFIG_SMBIOS_PRODUCT_NAME=""
+ CONFIG_SPL=n
+ CONFIG_FIT=y
+ CONFIG_USE_BOOTARGS=y
+-CONFIG_BOOTARGS="root=/dev/nfs rw nfsroot=192.168.0.1:/export/rfs ip=192.168.0.20"
++CONFIG_BOOTARGS="rw rootwait earlycon root=/dev/mmcblk0p1"
+ CONFIG_SUPPORT_RAW_INITRD=y
+ CONFIG_DEFAULT_FDT_FILE="rzg2lc-solidrun.dtb"
+ CONFIG_VERSION_VARIABLE=y
+@@ -33,7 +33,6 @@ CONFIG_CMD_EXT4_WRITE=y
+ CONFIG_CMD_FAT=y
+ CONFIG_CMD_FS_GENERIC=y
+ CONFIG_OF_CONTROL=y
+-CONFIG_OF_PLATDATA=y
+ CONFIG_OF_LIST="rzg2lc-solidrun"
+ CONFIG_MULTI_DTB_FIT_LZO=y
+ CONFIG_MULTI_DTB_FIT_USER_DEFINED_AREA=y
+@@ -73,4 +72,7 @@ CONFIG_USB_STORAGE=y
+ CONFIG_OF_LIBFDT_OVERLAY=y
+ CONFIG_SMBIOS_MANUFACTURER=""
+ CONFIG_ENV_IS_IN_MMC=y
++CONFIG_SYS_RELOC_GD_ENV_ADDR=y
++CONFIG_SYS_MMC_ENV_DEV=0
++CONFIG_SYS_MMC_ENV_PART=2
+ CONFIG_SYS_I2C_RZG2L_RIIC=y
+-- 
+2.25.1
+

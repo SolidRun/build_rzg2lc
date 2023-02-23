@@ -1,0 +1,25 @@
+From e99fff0b804d489203c96ef37fd6160248ccba7e Mon Sep 17 00:00:00 2001
+From: Yazan Shhady <yazan.shhady@solid-run.com>
+Date: Wed, 28 Sep 2022 15:07:40 +0300
+Subject: [PATCH 9/9] change the bootcmd env
+
+---
+ include/configs/rzg2lc-solidrun.h | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/include/configs/rzg2lc-solidrun.h b/include/configs/rzg2lc-solidrun.h
+index 53a39cf19f..fc5b702630 100644
+--- a/include/configs/rzg2lc-solidrun.h
++++ b/include/configs/rzg2lc-solidrun.h
+@@ -70,7 +70,7 @@
+ 	"bootcmd_check=if mmc dev 1; then run sd1load; else run emmcload; fi \0"
+ 
+ #define CONFIG_BOOTCOMMAND	"env default -a;run bootcmd_check;run bootimage;echo test;" \
+-"setenv bootargs 'root=/dev/mmcblk0p2 rootwait' ;echo 'rzg2lc-solidrun';" \
++"setenv bootargs 'root=/dev/sda2 rootwait' ;echo 'rzg2lc-solidrun';" \
+ "mmc dev 0;fatload mmc 0:1 0x48080000 Image; fatload mmc 0:1 0x48000000 r9a07g044c2-smarc.dtb;" \
+ "booti 0x48080000 - 0x48000000"
+ 
+-- 
+2.25.1
+

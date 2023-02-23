@@ -1,0 +1,440 @@
+From 5768e090b6f5c2d5d0d36bac9f9ff0c6ae655193 Mon Sep 17 00:00:00 2001
+From: Yazan Shhady <yazan.shhady@solid-run.com>
+Date: Tue, 27 Sep 2022 23:21:45 +0300
+Subject: [PATCH 5/9] change board name to rzg2lc-solidrun
+
+---
+ arch/arm/mach-rmobile/Kconfig.64              |   6 +
+ board/solidrun/rzg-common/common.h            |  26 ++
+ board/solidrun/rzg-common/update_fdt.c        | 245 ++++++++++++++++++
+ board/solidrun/rzg2lc/Kconfig                 |   6 +-
+ board/solidrun/rzg2lc/Makefile                |   2 +-
+ ...zg2lc-hummingboard.c => rzg2lc-solidrun.c} |   2 +-
+ configs/rzg2lc-solidrun_defconfig             |  10 +-
+ ...zg2lc-hummingboard.h => rzg2lc-solidrun.h} |   9 +-
+ 8 files changed, 292 insertions(+), 14 deletions(-)
+ create mode 100644 board/solidrun/rzg-common/common.h
+ create mode 100644 board/solidrun/rzg-common/update_fdt.c
+ rename board/solidrun/rzg2lc/{rzg2lc-hummingboard.c => rzg2lc-solidrun.c} (98%)
+ rename include/configs/{rzg2lc-hummingboard.h => rzg2lc-solidrun.h} (91%)
+
+diff --git a/arch/arm/mach-rmobile/Kconfig.64 b/arch/arm/mach-rmobile/Kconfig.64
+index 6e74123014..d68115d5e4 100644
+--- a/arch/arm/mach-rmobile/Kconfig.64
++++ b/arch/arm/mach-rmobile/Kconfig.64
+@@ -202,6 +202,12 @@ config TARGET_SMARC_RZG2LC
+ 	help
+           Support for Renesas RZ/G2LC Dev Platform
+ 
++config TARGET_RZG2LC_SOLIDRUN
++	bool "RZ/G2LC SolidRun board"
++	help
++          Support for Solidrun RZ/G2LC Dev Platform
++
++
+ config TARGET_RZG2UL_TYPE1_DEV
+ 	bool "RZ/G2UL TYPE1 Dev board"
+ 	help
+diff --git a/board/solidrun/rzg-common/common.h b/board/solidrun/rzg-common/common.h
+new file mode 100644
+index 0000000000..1cea22e380
+--- /dev/null
++++ b/board/solidrun/rzg-common/common.h
+@@ -0,0 +1,26 @@
++/* SPDX-License-Identifier: GPL-2.0+ */
++#ifndef __RZG_COMMON_H__
++#define __RZG_COMMON_H__
++
++#ifndef ARRAY_SIZE
++#define ARRAY_SIZE(x)	(sizeof(x) / sizeof((x)[0]))
++#endif
++
++/* This SiP service command must be gotten from IPL document.*/
++#define RZG_SIP_SVC_GET_ECC_MODE	(0x8200000F)
++
++/*
++ * The parameters must be defined with below requirement.
++ * * The size must is multiply of 3.
++ * * The list of char array with size is multiply of 3.
++ *   Each 3 properties are present for:
++ *       "FDT full path of Node", "Property", "Value of Property"
++ * * If none of define "Property", "Node" will be deleted
++ * * "Value of Property" will be:
++ *   "<xxx yyy>":
++ *       xxx, yyy: have '&' prefix, they are as phandle reference
++ *       xxx, yyy: are number, otherwise won't be process
++ *   "xxx yyy": They are processed as string
++ */
++int update_fdt(void *fdt, const char **list_dt_change, int size);
++#endif //__RZG_COMMON_H__
+diff --git a/board/solidrun/rzg-common/update_fdt.c b/board/solidrun/rzg-common/update_fdt.c
+new file mode 100644
+index 0000000000..ecd4fca20c
+--- /dev/null
++++ b/board/solidrun/rzg-common/update_fdt.c
+@@ -0,0 +1,245 @@
++// SPDX-License-Identifier: GPL-2.0+
++#ifndef __RZG_UPDATE_FDT__
++#define __RZG_UPDATE_FDT__
++
++#include <common.h>
++#include <malloc.h>
++#include <fdt_support.h>
++#include <linux/ctype.h>
++#include "common.h"
++
++int add_new_node(void *fdt, char *node);
++
++int add_new_node(void *fdt, char *node)
++{
++	char *parent, *name;
++	int len, nodeoffset;
++
++	name = strrchr(node, '/');
++	if (!strcmp(node, "/") || !name)
++		return 0;
++
++	len = strlen(node) - strlen(name) + 1;
++	parent = malloc(sizeof(char) * len);
++	strncpy(parent, node, len);
++	parent[len] = '\0';
++	nodeoffset = fdt_path_offset(fdt, parent);
++	if (nodeoffset < 0) {
++		/* Remove the last '/' in the path*/
++		parent[len - 1] = '\0';
++		nodeoffset = add_new_node(fdt, parent);
++		if (nodeoffset == 0)
++			nodeoffset = fdt_path_offset(fdt, "/");
++	}
++	nodeoffset = fdt_add_subnode(fdt, nodeoffset, name + 1);
++	free(parent);
++	return nodeoffset;
++}
++
++int fdt_parse_prop(void *fdt, char **newval, char *data, int *len)
++{
++	char *cp;               /* temporary char pointer */
++	char *newp;             /* temporary newval char pointer */
++	unsigned long tmp;      /* holds converted values */
++
++	*len = 0;
++	newp = newval[0];
++
++	/* An array of cells */
++	if (*newp == '<') {
++		newp++;
++		while ((*newp != '>')) {
++			/*
++			 * Keep searching until we find that last ">"
++			 * That way users don't have to escape the spaces
++			 */
++			if (*newp == '\0')
++				break;
++
++			cp = newp;
++
++			if (strchr(cp, '&')) {
++				char *handler, *next;
++				int size, nodeoffset;
++				u32 phandle;
++
++				cp = strchr(cp, '&');
++				next = strchr(cp + 1, '&');
++				if (!next)
++					size = strlen(cp) - 1;
++				else
++					size = next - cp - 1;
++
++				/* Trim the space or tab*/
++				while (cp[size] == ' ' || cp[size] == '\t')
++					size--;
++
++				handler = malloc(sizeof(char) * size);
++				/* We increase data pointer and decrease size
++				 * to 1 value to remove '&' character
++				 */
++				strncpy(handler, cp + 1, size - 1);
++				handler[size - 1] = '\0';
++				nodeoffset = fdt_path_offset(fdt, handler);
++				if (nodeoffset > 0) {
++					phandle = fdt_get_phandle(fdt,
++								  nodeoffset);
++					if (phandle == 0) {
++						phandle =
++							fdt_alloc_phandle(fdt);
++						fdt_set_phandle(fdt, nodeoffset,
++								phandle);
++					}
++					*(fdt32_t *)data =
++							cpu_to_fdt32(phandle);
++				}
++				free(handler);
++				/* Move to the next */
++				newp = cp + size;
++			} else  {
++				tmp = simple_strtoul(cp, &newp, 0);
++				if (*cp != '?')
++					*(fdt32_t *)data = cpu_to_fdt32(tmp);
++				else
++					newp++;
++			}
++			data  += 4;
++			*len += 4;
++
++			/* If the ptr didn't advance,
++			 * something went wrong
++			 */
++			if ((newp - cp) <= 0) {
++				printf("Sorry, I could not convert ");
++				printf("\"%s\"\n", cp);
++				return 1;
++			}
++			while (*newp == ' ')
++				newp++;
++		}
++
++		if (*newp != '>') {
++			printf("Unexpected character '%c'\n", *newp);
++			return 1;
++		}
++	} else if (*newp == '[') {
++		/*
++		 * Byte stream.  Convert the values.
++		 */
++		newp++;
++		while (*newp != ']') {
++			while (*newp == ' ')
++				newp++;
++			if (*newp == '\0')
++				break;
++			if (!isxdigit(*newp))
++				break;
++			tmp = simple_strtoul(newp, &newp, 16);
++			*data++ = tmp & 0xFF;
++			*len    = *len + 1;
++		}
++		if (*newp != ']') {
++			printf("Unexpected character '%c'\n", *newp);
++			return 1;
++		}
++	} else {
++		/*
++		 * Assume it is one or more strings.  Copy it into our
++		 * data area for convenience (including the
++		 * terminating '\0's).
++		 */
++		size_t length = strlen(newp) + 1;
++
++		strcpy(data, newp);
++		data += length;
++		*len += length;
++	}
++	return 0;
++}
++
++int process_node_data(void *fdt, char *node, char *prop, char *val)
++{
++	static char data[1024] __aligned(4);
++	const void *ptmp;
++	int len, ret, nodeoffset;
++
++	nodeoffset = fdt_path_offset(fdt, node);
++	if (!val) {
++		len = 0;
++	} else {
++		ptmp = fdt_getprop(working_fdt, nodeoffset, prop, &len);
++		if (len > 1024) {
++			printf("prop (%d) doesn't fit in scratchpad!\n", len);
++			return 1;
++		}
++		if (ptmp)
++			memcpy(data, ptmp, len);
++
++		ret = fdt_parse_prop(fdt, &val, data, &len);
++		if (ret != 0)
++			return ret;
++	}
++
++	/* After parsing value for property, nodeoffset may be changed*/
++	nodeoffset = fdt_path_offset(fdt, node);
++
++	return fdt_setprop(fdt, nodeoffset, prop, data, len);
++}
++
++int update_fdt(void *fdt, const char **list_dt_change, int size)
++{
++	int i, ret;
++
++	if (!list_dt_change)
++		return 1;
++
++	if ((size > 0) && ((size % 3) == 0)) {
++		printf("Changing the current FDT in %lx.\n", (uintptr_t)fdt);
++	} else {
++		pr_debug("Wrong define FDT change structure. No change FDT.\n");
++		return 1;
++	}
++
++	for (i = 0 ; i < size; i += 3) {
++		int nodeoffset;
++		char *node, *prop, *val;
++
++		node = (char *)list_dt_change[i];
++		prop = (char *)list_dt_change[i + 1];
++		val = (char *)list_dt_change[i + 2];
++		nodeoffset = fdt_path_offset(fdt, node);
++
++		if (!node)
++			continue;
++
++		if (!prop) {
++			if (nodeoffset < 0) {
++				pr_debug("\tUnavailable node %s\n", node);
++				continue;
++			}
++			printf("   Remove Node %s\n", node);
++			ret = fdt_del_node(fdt, nodeoffset);
++			if (ret < 0) {
++				printf("\tCan't remove. ERR %d\n", ret);
++			} else {
++				printf("\tRemoved.\n");
++			}
++		} else {
++			printf("   Config Node %s\n", node);
++			if (nodeoffset < 0) {
++				pr_debug("\tUnavailable node\n");
++				printf("\tCreate node.\n");
++				nodeoffset = add_new_node(fdt, node);
++			}
++			printf("\tSet property %s : %s\n", prop, val);
++			ret = process_node_data(fdt, node, prop, val);
++			if (ret < 0) {
++				printf("\t\tCan't set property. ERR %d\n", ret);
++			}
++		}
++	}
++	/* We fit the FDT size in order not to consume the memory*/
++	fdt_shrink_to_minimum(fdt, 0x0);
++	return 1;
++}
++#endif // __RZG_UPDATE_FDT__
+diff --git a/board/solidrun/rzg2lc/Kconfig b/board/solidrun/rzg2lc/Kconfig
+index 43f6fa305f..f48ef2023a 100644
+--- a/board/solidrun/rzg2lc/Kconfig
++++ b/board/solidrun/rzg2lc/Kconfig
+@@ -1,15 +1,15 @@
+-if TARGET_RZG2LC_HUMMINGBOARD
++if TARGET_RZG2LC_SOLIDRUN
+ 
+ config SYS_SOC
+ 	default "rmobile"
+ 
+ config SYS_BOARD
+-	default "rzg2lc-hummingboard"
++	default "rzg2lc-solidrun"
+ 
+ config SYS_VENDOR
+ 	default "solidrun"
+ 
+ config SYS_CONFIG_NAME
+-	default "rzg2lc-hummingboard"
++	default "rzg2lc-solidrun"
+ 
+ endif
+diff --git a/board/solidrun/rzg2lc/Makefile b/board/solidrun/rzg2lc/Makefile
+index add536bd7e..effa51e31e 100644
+--- a/board/solidrun/rzg2lc/Makefile
++++ b/board/solidrun/rzg2lc/Makefile
+@@ -9,5 +9,5 @@
+ ifdef CONFIG_SPL_BUILD
+ obj-y	:= ../rcar-common/gen3-spl.o
+ else
+-obj-y	:= rzg2lc-dev.o ../rcar-common/common.o
++obj-y	:= rzg2lc-solidrun.o ../rcar-common/common.o
+ endif
+diff --git a/board/solidrun/rzg2lc/rzg2lc-hummingboard.c b/board/solidrun/rzg2lc/rzg2lc-solidrun.c
+similarity index 98%
+rename from board/solidrun/rzg2lc/rzg2lc-hummingboard.c
+rename to board/solidrun/rzg2lc/rzg2lc-solidrun.c
+index 0894eef2e4..224b666a8d 100644
+--- a/board/solidrun/rzg2lc/rzg2lc-hummingboard.c
++++ b/board/solidrun/rzg2lc/rzg2lc-solidrun.c
+@@ -50,7 +50,7 @@ void s_init(void)
+ 	/* SD1 power control: P39_1 = 0; P39_2 = 1; */
+ 	*(volatile u32 *)(PFC_PMC37) &= 0xFFFFFFF9; /* Port func mode 0b00 */
+ 	*(volatile u32 *)(PFC_PM37) = (*(volatile u32 *)(PFC_PM37) & 0xFFFFFFC3) | 0x28; /* Port output mode 0b1010 */
+-#if CONFIG_TARGET_SMARC_RZG2LC
++#if CONFIG_TARGET_RZG2LC_SOLIDRUN
+ 	*(volatile u32 *)(PFC_P37) = (*(volatile u32 *)(PFC_P37) & 0xFFFFFFF9) | 0x6;	/* Port 39[2:1] output value 0b11*/
+ #else
+ 	*(volatile u32 *)(PFC_P37) = (*(volatile u32 *)(PFC_P37) & 0xFFFFFFF9) | 0x4;	/* Port 39[2:1] output value 0b10*/
+diff --git a/configs/rzg2lc-solidrun_defconfig b/configs/rzg2lc-solidrun_defconfig
+index ccbd358a37..75be1c4a70 100644
+--- a/configs/rzg2lc-solidrun_defconfig
++++ b/configs/rzg2lc-solidrun_defconfig
+@@ -2,13 +2,13 @@ CONFIG_ARM=y
+ CONFIG_ARCH_CPU_INIT=y
+ CONFIG_ARCH_RMOBILE=y
+ CONFIG_SYS_TEXT_BASE=0x50000000
+-CONFIG_ENV_SIZE=0x10000
+-CONFIG_ENV_OFFSET=0xF0000
++CONFIG_ENV_SIZE=0x20000
++CONFIG_ENV_OFFSET=0xFFFE0000
+ CONFIG_DM_GPIO=y
+ CONFIG_RCAR_GEN3=y
+ CONFIG_R9A07G044C=y
+-CONFIG_TARGET_RZG2LC_HUMMINGBOARD=y
+-CONFIG_DEFAULT_DEVICE_TREE="rzg2lc-hummingboard"
++CONFIG_TARGET_RZG2LC_SOLIDRUN=y
++CONFIG_DEFAULT_DEVICE_TREE="rzg2lc-solidrun"
+ CONFIG_SMBIOS_PRODUCT_NAME=""
+ CONFIG_SPL=n
+ CONFIG_FIT=y
+@@ -34,7 +34,7 @@ CONFIG_CMD_FAT=y
+ CONFIG_CMD_FS_GENERIC=y
+ CONFIG_OF_CONTROL=y
+ CONFIG_OF_PLATDATA=y
+-CONFIG_OF_LIST="rzg2lc-hummingboard"
++CONFIG_OF_LIST="rzg2lc-solidrun"
+ CONFIG_MULTI_DTB_FIT_LZO=y
+ CONFIG_MULTI_DTB_FIT_USER_DEFINED_AREA=y
+ CONFIG_ENV_OVERWRITE=y
+diff --git a/include/configs/rzg2lc-hummingboard.h b/include/configs/rzg2lc-solidrun.h
+similarity index 91%
+rename from include/configs/rzg2lc-hummingboard.h
+rename to include/configs/rzg2lc-solidrun.h
+index ee1d674850..53a39cf19f 100644
+--- a/include/configs/rzg2lc-hummingboard.h
++++ b/include/configs/rzg2lc-solidrun.h
+@@ -3,8 +3,8 @@
+  * Copyright (C) 2015 Renesas Electronics Corporation
+  */
+ 
+-#ifndef __SMARC_RZG2L_H
+-#define __SMARC_RZG2L_H
++#ifndef __RZG2LC_SOLIDRUN_H
++#define __RZG2LC_SOLIDRUN_H
+ 
+ #include <asm/arch/rmobile.h>
+ 
+@@ -66,9 +66,10 @@
+ 	"bootimage=unzip 0x4A080000 0x48080000; booti 0x48080000 - 0x48000000 \0" \
+ 	"emmcload=ext4load mmc 0:1 0x4A080000 boot/Image.gz;ext4load mmc 0:1 0x48000000 boot/r9a07g044l-smarc-rzg2l.dtb;run prodemmcbootargs \0" \
+ 	"sd1load=ext4load mmc 1:1 0x4A080000 boot/Image.gz;ext4load mmc 1:1 0x48000000 boot/r9a07g044l-smarc-rzg2l.dtb;run prodsdbootargs \0" \
++	"sd_boot=mmc dev 0;fatload mmc 0:1 0x48080000 Image; fatload mmc 0:1 0x48000000 r9a07g044c2-smarc.dtb;booti 0x48080000 - 0x48000000" \
+ 	"bootcmd_check=if mmc dev 1; then run sd1load; else run emmcload; fi \0"
+ 
+-#define CONFIG_BOOTCOMMAND	"env default -a;run bootcmd_check;run bootimage;" \
++#define CONFIG_BOOTCOMMAND	"env default -a;run bootcmd_check;run bootimage;echo test;" \
+ "setenv bootargs 'root=/dev/mmcblk0p2 rootwait' ;echo 'rzg2lc-solidrun';" \
+ "mmc dev 0;fatload mmc 0:1 0x48080000 Image; fatload mmc 0:1 0x48000000 r9a07g044c2-smarc.dtb;" \
+ "booti 0x48080000 - 0x48000000"
+@@ -77,4 +78,4 @@
+ /* Ethernet RAVB */
+ #define CONFIG_BITBANGMII_MULTI
+ 
+-#endif /* __SMARC_RZG2L_H */
++#endif /* __RZG2LC_SOLIDRUN_H */
+-- 
+2.25.1
+

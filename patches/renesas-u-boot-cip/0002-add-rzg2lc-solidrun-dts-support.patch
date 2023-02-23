@@ -1,7 +1,7 @@
-From 2ff3b65a3785edd4bfd01d208cac3851cdb7905d Mon Sep 17 00:00:00 2001
+From fe83d7085a7fa930d5a2d8c56c5562864efd738b Mon Sep 17 00:00:00 2001
 From: Yazan Shhady <yazan.shhady@solid-run.com>
 Date: Tue, 27 Sep 2022 04:28:12 +0300
-Subject: [PATCH 2/2] add rzg2lc-solidrun dts support
+Subject: [PATCH 2/9] add rzg2lc-solidrun dts support
 
 ---
  arch/arm/dts/Makefile            |   3 +-

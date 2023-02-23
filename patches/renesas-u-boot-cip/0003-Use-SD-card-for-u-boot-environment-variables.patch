@@ -1,7 +1,7 @@
-From a2fe7b609e9c7e2de500ca429f322099eb438434 Mon Sep 17 00:00:00 2001
+From eab2204f2fcb3ef33caa48ec9c6dc90d8ad3b550 Mon Sep 17 00:00:00 2001
 From: Yazan Shhady <yazan.shhady@solid-run.com>
 Date: Tue, 27 Sep 2022 04:45:14 +0300
-Subject: [PATCH 3/3] Use SD card for u-boot environment variables
+Subject: [PATCH 3/9] Use SD card for u-boot environment variables
 
 ---
  configs/rzg2lc-solidrun_defconfig | 4 ++--

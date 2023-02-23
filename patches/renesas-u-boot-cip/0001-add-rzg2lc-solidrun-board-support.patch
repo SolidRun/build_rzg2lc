@@ -1,7 +1,7 @@
-From 6ebcd1be395492b0bdde65b0ecd3b68479b1efbc Mon Sep 17 00:00:00 2001
+From 41d603f078a83ef34761a51ed2ab59ed8dd12124 Mon Sep 17 00:00:00 2001
 From: Yazan Shhady <yazan.shhady@solid-run.com>
 Date: Tue, 27 Sep 2022 04:27:55 +0300
-Subject: [PATCH 1/2] add rzg2lc-solidrun board support
+Subject: [PATCH 1/9] add rzg2lc-solidrun board support
 
 ---
  board/solidrun/rcar-common/common.c         | 160 ++++++++++++++++++++

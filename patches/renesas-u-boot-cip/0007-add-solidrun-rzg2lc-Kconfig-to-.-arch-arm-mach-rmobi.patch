@@ -1,0 +1,25 @@
+From 5e76c0655d9144ff202367ab45a2043173617f30 Mon Sep 17 00:00:00 2001
+From: Yazan Shhady <yazan.shhady@solid-run.com>
+Date: Wed, 28 Sep 2022 00:31:20 +0300
+Subject: [PATCH 7/9] add solidrun/rzg2lc/Kconfig to
+ ./arch/arm/mach-rmobile/Kconfig
+
+---
+ arch/arm/mach-rmobile/Kconfig.64 | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/arch/arm/mach-rmobile/Kconfig.64 b/arch/arm/mach-rmobile/Kconfig.64
+index d68115d5e4..69d8b7e13b 100644
+--- a/arch/arm/mach-rmobile/Kconfig.64
++++ b/arch/arm/mach-rmobile/Kconfig.64
+@@ -247,6 +247,7 @@ source "board/renesas/rzg2l-dev/Kconfig"
+ source "board/renesas/rzv2l-dev/Kconfig"
+ source "board/renesas/rzg2lc-dev/Kconfig"
+ source "board/renesas/rzg2ul-dev/Kconfig"
++source "board/solidrun/rzg2lc/Kconfig"
+ 
+ config MULTI_DTB_FIT_UNCOMPRESS_SZ
+ 	default 0x80000 if TARGET_HIHOPE_RZG2
+-- 
+2.25.1
+
