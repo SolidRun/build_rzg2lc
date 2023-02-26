@@ -58,6 +58,7 @@ cd $ROOTDIR
 
 QORIQ_COMPONENTS="renesas-u-boot-cip rzg_trusted-firmware-a rz_linux-cip buildroot"
 UBOOT_REPO='https://github.com/renesas-rz/renesas-u-boot-cip -b v2021.10/rz'
+#ATF_REPO='https://github.com/renesas-rz/rzg_trusted-firmware-a -b v2.7/rz'
 ATF_REPO='https://github.com/renesas-rz/rzg_trusted-firmware-a -b v2.6/rz'
 LINUX_REPO='https://github.com/renesas-rz/rz_linux-cip -b rz-5.10-cip22-rt9'
 BUILDROOT_REPO="https://github.com/buildroot/buildroot.git -b $BUILDROOT_VERSION"
@@ -117,6 +118,7 @@ cp $ROOTDIR/build_scripts/*.sh $ROOTDIR/build/
 chmod +x $ROOTDIR/build/*.sh
 \rm -rf output_*
 # Clean U-Boot Code
+# cd $ROOTDIR/build/renesas-u-boot-cip && make mrproper && make -j$(nproc) O=.out && cd -
 cd $ROOTDIR/build/*u-boot* && make mrproper && cd -
 # Select toolchain that you have:
 ./build.sh s
@@ -208,3 +210,58 @@ else
 fi
 echo -e "\n\n*** Image is ready - images/${IMG}"
 sync
+
+exit -1
+
+### Building U-Boot & ATF
+'''
+# U-Boot https://renesas.info/wiki/RZ-G/RZ-G2_BSP_Porting_uboot
+cd $ROOTDIR/build/renesas-u-boot-cip && make mrproper && make -j$(nproc) O=.out && cd -
+# ATF https://renesas.info/wiki/RZ-G/RZ-G2_BSP_Porting_ATF#Building_and_Debugging
+cd $ROOTDIR/build/rzg_trusted*
+# make -j$(nproc) PLAT=g2l BOARD=custom all
+make -j$(nproc) PLAT=g2l BOARD=smarc_2 all
+# Binaries (bl2.bin and bl31.bin) are located in the build/g2l/release|debug folder.
+
+# We have to combine bl2.bin with boot parameters, we can use this simple bash script to do that:
+		#!/bin/bash
+		echo -e "\n[Creating bootparams.bin]"
+		SIZE=$(stat -L --printf="%s" bl2.bin)
+		SIZE_ALIGNED=$(expr $SIZE + 3)
+		SIZE_ALIGNED2=$((SIZE_ALIGNED & 0xFFFFFFFC))
+		SIZE_HEX=$(printf '%08x\n' $SIZE_ALIGNED2)
+		echo "  bl2.bin size=$SIZE, Aligned size=$SIZE_ALIGNED2 (0x${SIZE_HEX})"
+		STRING=$(echo \\x${SIZE_HEX:6:2}\\x${SIZE_HEX:4:2}\\x${SIZE_HEX:2:2}\\x${SIZE_HEX:0:2})
+		printf "$STRING" > bootparams.bin
+		for i in `seq 1 506`e ; do printf '\xff' >> bootparams.bin ; done
+		printf '\x55\xaa' >> bootparams.bin
+		# Combine bootparams.bin and bl2.bin into single binary
+		# Only if a new version of bl2.bin is created
+		if [ "bl2.bin" -nt "bl2_bp.bin" ] || [p! -e "bl2_bp.bin" ] ; then
+			echo -e "\n[Adding bootparams.bin to bl2.bin]"
+			cat bootparams.bin bl2.bin > bl2_bp.bin
+		fi
+
+# Make the fip creation tool:
+cd tools/fiptool && make -j$(nproc) plat=g2l && cd -
+
+# create the fip file by combining the bl31.bin and u-boot.bin (copy the u-boot.bin in the ATF root folder)
+cp $ROOTDIR/build/*u-boot*/u-boot.bin $ROOTDIR/build/rzg_trusted*/
+tools/fiptool/fiptool create --align 16 --soc-fw build/g2l/release/bl31.bin --nt-fw u-boot.bin fip.bin
+
+## Outputs -> fip.bin & bl2_bp.bin & bootparams.bin
+DEVICE=/dev/sda
+sudo dd if=bootparams.bin of=$DEVICE bs=512 seek=1 count=1 conv=notrunc
+sudo dd if=bl2_bp.bin of=$DEVICE bs=512 seek=8 conv=notrunc
+sudo dd if=fip.bin of=$DEVICE bs=512 seek=128 conv=notrunc
+
+# bl2_bp.bin and fip.bin are the files that have to be programmed using Flash Writer.
+# Actually .srec may be more handy, they can be converted by using the following commands:
+${CROSS_COMPILE}objcopy -I binary -O srec --adjust-vma=0x00011E00 --srec-forceS3 bl2_bp.bin bl2_bp.srec
+${CROSS_COMPILE}objcopy -I binary -O srec --adjust-vma=0x00000000 --srec-forceS3 fip.bin fip.srec
+
+# Notes
+# BL2: required to be located in eMMC boot partition 1
+# FIP: stored in eMMC boot partition 1 along with BL2
+# By default on Renesas evaluation boards, u-boot is set up to use boot partition 2
+'''

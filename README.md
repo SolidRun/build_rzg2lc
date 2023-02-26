@@ -65,9 +65,7 @@ docker images | grep rzg2lc
 
 * Run the build script:
 ```
-docker run --rm -it -v "$PWD":/build_rzg2lc/build_rzg2lc rzg2lc:latest /bin/bash
-# Run the build script
-cd /build_rzg2lc/build_rzg2lc && ./runme.sh
+docker run --rm -it -v "$PWD":/rzg_build/ rzg2lc:latest ./runme.sh
 ```
 **Note:** run the above commands from build_rzg2lc directory
 
