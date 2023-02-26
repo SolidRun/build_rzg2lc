@@ -31,15 +31,19 @@ umount /media/<relevant directory>
 sudo dd if=images/rzg2lc*-<hash>.img of=/dev/sdX
 ```
 
+## Login
+username: root
+password: root
+
 ---
 **NOTE - Boot from SD and flash eMMC**
 If you use **HummingBoard** Carrier board:
-- set the dip switch to boot from SD 
+- set the dip switch to boot from SD (In order to configure the boot media, please refer to [HummingBoard RZ/G2LC Boot Select]( https://solidrun.atlassian.net/wiki/spaces/developer/pages/411861143).)
 - install same above image on USB-DISK (for mounting the Root-FS)
 - connect the USB-DISJ t the lower USB interface
 - stop it in U-Boot and run the commands below:
 ```
-setenv bootcmd "setenv bootargs 'root=/dev/sda2 rootwait'; mmc dev 0; fatload mmc 0:1 0x48080000 Image; fatload mmc 0:1 0x48000000 rzg2lc-hummingbaord.dtb; booti 0x48080000 - 0x48000000"
+setenv bootcmd "setenv bootargs 'root=/dev/sda2 rootwait'; mmc dev 0; fatload mmc 0:1 0x48080000 Image; fatload mmc 0:1 0x48000000 rzg2lc-hummingboard.dtb; booti 0x48080000 - 0x48000000"
 saveenv; boot
 ```
 
