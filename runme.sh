@@ -116,6 +116,8 @@ cd $ROOTDIR/build/
 cp $ROOTDIR/build_scripts/*.sh $ROOTDIR/build/
 chmod +x $ROOTDIR/build/*.sh
 \rm -rf output_*
+# Clean U-Boot Code
+cd $ROOTDIR/build/*u-boot* && make mrproper && cd -
 # Select toolchain that you have:
 ./build.sh s
 # build u-boot:
@@ -155,6 +157,7 @@ make defconfig
 make -j$PARALLEL Image dtbs
 cp $ROOTDIR/build/rz_linux-cip/arch/arm64/boot/Image $ROOTDIR/images/tmp/
 cp $ROOTDIR/build/rz_linux-cip/arch/arm64/boot/dts/renesas/*smarc.dtb $ROOTDIR/images/tmp/
+cp $ROOTDIR/build/rz_linux-cip/arch/arm64/boot/dts/renesas/rzg2l*.dtb $ROOTDIR/images/tmp/
 # ref -> r9a07g044c2-smarc.dtb-> (r9a07g044c2.dtsi -> r9a07g044.dtsi) &
 # (rzg2lc-smarc.dtsi ->
 # <dt-bindings/gpio/gpio.h>
