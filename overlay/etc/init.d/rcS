@@ -36,3 +36,6 @@ i2cset -y -f 2 0x6f 0x07 0x11
 i2cset -y -f 2 0x12 0x8c 0x29
 # Set the Freq of MPIO2 = 32KHz
 i2cset -y -f 2 0x12 0x77 0x00
+
+# Rebind WiFi BRCMFMAC Kernel Driver
+echo 'mmc1:0001:2' > /sys/bus/sdio/drivers/brcmfmac/bind

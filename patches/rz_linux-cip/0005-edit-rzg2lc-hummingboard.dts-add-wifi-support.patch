@@ -1,0 +1,98 @@
+From db7a527aba0e9ef4dc6cf5c357a4d5be032343e6 Mon Sep 17 00:00:00 2001
+From: Yazan Shhady <yazan.shhady@solid-run.com>
+Date: Mon, 27 Feb 2023 14:13:46 +0200
+Subject: [PATCH] edit rzg2lc-hummingboard.dts - add wifi support
+
+---
+ .../boot/dts/renesas/rzg2lc-hummingboard.dts  |  4 ---
+ .../arm64/boot/dts/renesas/rzg2lc-sr-som.dtsi | 35 +++++++++----------
+ 2 files changed, 17 insertions(+), 22 deletions(-)
+
+diff --git a/arch/arm64/boot/dts/renesas/rzg2lc-hummingboard.dts b/arch/arm64/boot/dts/renesas/rzg2lc-hummingboard.dts
+index 9096049b1450..a15d795ef232 100644
+--- a/arch/arm64/boot/dts/renesas/rzg2lc-hummingboard.dts
++++ b/arch/arm64/boot/dts/renesas/rzg2lc-hummingboard.dts
+@@ -179,7 +179,3 @@ &spi1 {
+ 	status = "disabled";
+ };
+ #endif
+-
+-&vccq_sdhi1 {
+-	gpios = <&pinctrl RZG2L_GPIO(39, 1) GPIO_ACTIVE_HIGH>;
+-};
+diff --git a/arch/arm64/boot/dts/renesas/rzg2lc-sr-som.dtsi b/arch/arm64/boot/dts/renesas/rzg2lc-sr-som.dtsi
+index fa0b82073f91..ac25f0899783 100644
+--- a/arch/arm64/boot/dts/renesas/rzg2lc-sr-som.dtsi
++++ b/arch/arm64/boot/dts/renesas/rzg2lc-sr-som.dtsi
+@@ -248,13 +248,6 @@ gpio-sd1-bt_reg_on {
+     line-name = "gpio_sd1_bt_reg_on";
+   };
+ 
+-  gpio-sd1-wl_reg_on {
+-    gpio-hog;
+-    gpios = <RZG2L_GPIO(23, 0) GPIO_ACTIVE_HIGH>;
+-    output-high;
+-    line-name = "gpio_sd1_wl_reg_on";
+-  };
+-
+ 	sdhi0_emmc_pins: sd0emmc {
+ 		sd0_emmc_data {
+ 			pins = "SD0_DATA0", "SD0_DATA1", "SD0_DATA2", "SD0_DATA3",
+@@ -507,37 +500,43 @@ &scif1 {
+ 
+   bluetooth {
+     pinctrl-names = "default";
+-    //compatible = "brcm,bcm43439-bt";
+-    compatible = "brcm,bcm43430a0-bt";
++    compatible = "brcm,bcm43439-bt";
+     //host-wakeup-gpios = <&gpio1 28 0>;
+     max-speed = <4000000>;
+   };
+ };
+ 
+-/* WiFi */
++/* WiFi - CYW43439 */
+ &sdhi1 {
++  #address-cells = <1>;
++  #size-cells = <0>;
+ 	pinctrl-0 = <&sdhi1_pins>;
+ 	pinctrl-1 = <&sdhi1_pins_uhs>;
+ 	pinctrl-names = "default", "state_uhs";
+   status = "okay";
+ 
++  /*
++  cap-power-off-card;
++  pm-ignore-notify;
++  keep-power-in-suspend;
++  */
++  non-removable;
+ 	vmmc-supply = <&reg_3p3v>;
+ 	vqmmc-supply = <&vccq_sdhi1>;
+ 	bus-width = <4>;
+-	sd-uhs-sdr50;
+-	sd-uhs-sdr104;
+-
+-  //no-sd;
+   max-frequency = <50000000>;
+   fsl,delay-line = <12>;
+   keep-power-in-suspend;
+ 
+-  /*
+-  brcmf: bcrmf@1 {
++  brcmf: wifi@1 {
+           reg = <1>;
+-          //compatible = "brcm,bcm4334-fmac", "brcm,bcm4329-fmac";
++          compatible = "brcm,bcm4329-fmac";
+   };
+-  */
++};
++
++&vccq_sdhi1 {
++  /* WL_REG_ON (P23_0) */
++  gpios = <&pinctrl RZG2L_GPIO(23, 0) GPIO_ACTIVE_HIGH>;
+ };
+ 
+ #if (!MTU3_PWM_SUPPORT)
+-- 
+2.25.1
+
