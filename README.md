@@ -1,8 +1,8 @@
 # build_rzg2lc
-# SolidRun's RZ/G2L based build scripts
+# SolidRun's RZ/G2LC based build scripts
 
 ## Introduction
-Main intention of this repository is to build a buildroot based build environment for RZ/G2L based products.
+Main intention of this repository is to build a buildroot based build environment for RZ/G2LC based products.
 
 The build script provides ready to use images that can be deployed on a micro SD|eMMC card.
 
@@ -32,21 +32,24 @@ sudo dd if=images/rzg2lc*-<hash>.img of=/dev/sdX
 ```
 
 ## Login
-username: root
-password: root
+**username:** root
+**password:** root
 
 ---
-**NOTE - Boot from SD and flash eMMC**
+## Boot from SD and flash eMMC
 If you use **HummingBoard** Carrier board:
 - set the dip switch to boot from SD (In order to configure the boot media, please refer to [HummingBoard RZ/G2LC Boot Select]( https://solidrun.atlassian.net/wiki/spaces/developer/pages/411861143).)
 - install same above image on USB-DISK (for mounting the Root-FS)
 - connect the USB-DISJ t the lower USB interface
 - stop it in U-Boot and run the commands below:
 ```
-setenv bootcmd "setenv bootargs 'root=/dev/sda2 rootwait'; mmc dev 0; fatload mmc 0:1 0x48080000 Image; fatload mmc 0:1 0x48000000 rzg2lc-hummingboard.dtb; booti 0x48080000 - 0x48000000"
-saveenv; boot
+setenv bootargs 'root=/dev/sda2 rootwait'; mmc dev 0; fatload mmc 0:1 0x48080000 Image; fatload mmc 0:1 0x48000000 rzg2lc-hummingboard.dtb;
 ```
-
+- set the dip switch S3 to enable the eMMC -> **S3** = {1-5:N/C, **6:off**}
+- run the U-Boot command below to boot
+```
+booti 0x48080000 - 0x48000000
+```
 ---
 
 ### Docker build (TBD)
