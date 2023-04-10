@@ -1,0 +1,24 @@
+From d5ef4fd65f74ee6def4b44e6aa284709d805ac9e Mon Sep 17 00:00:00 2001
+From: Yazan Shhady <yazan.shhady@solid-run.com>
+Date: Mon, 10 Apr 2023 17:12:28 +0300
+Subject: [PATCH 2/2] add rzg2lc-compact.dtb to the renesas DTBs list
+
+---
+ arch/arm64/boot/dts/renesas/Makefile | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/arch/arm64/boot/dts/renesas/Makefile b/arch/arm64/boot/dts/renesas/Makefile
+index ef3e29e08034..be240573eb7e 100644
+--- a/arch/arm64/boot/dts/renesas/Makefile
++++ b/arch/arm64/boot/dts/renesas/Makefile
+@@ -89,6 +89,7 @@ dtb-$(CONFIG_ARCH_R9A07G043) += r9a07g043u11-dev.dtb
+ 
+ dtb-$(CONFIG_ARCH_R9A07G044) += r9a07g044c2-smarc.dtb
+ dtb-$(CONFIG_ARCH_R9A07G044) += rzg2lc-hummingboard.dtb
++dtb-$(CONFIG_ARCH_R9A07G044) += rzg2lc-compact.dtb
+ dtb-$(CONFIG_ARCH_R9A07G044) += r9a07g044c2-dev.dtb
+ dtb-$(CONFIG_ARCH_R9A07G044) += r9a07g044l2-smarc.dtb
+ dtb-$(CONFIG_ARCH_R9A07G044) += r9a07g044l2-dev.dtb
+-- 
+2.25.1
+
