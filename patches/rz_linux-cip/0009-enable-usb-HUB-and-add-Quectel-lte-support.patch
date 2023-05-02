@@ -1,0 +1,92 @@
+From c2325b96786d5ee9aafa53adfc83625c74aa6dc7 Mon Sep 17 00:00:00 2001
+From: Yazan Shhady <yazan.shhady@solid-run.com>
+Date: Tue, 2 May 2023 23:07:48 +0300
+Subject: [PATCH] enable usb HUB and add Quectel lte support
+
+---
+ arch/arm64/boot/dts/renesas/rzg2lc-hummingboard.dts    |  8 ++++++++
+ arch/arm64/boot/dts/renesas/rzg2lc-sr-pinfunction.dtsi |  8 ++------
+ arch/arm64/boot/dts/renesas/rzg2lc-sr-som.dtsi         | 10 ++++++++--
+ 3 files changed, 18 insertions(+), 8 deletions(-)
+
+diff --git a/arch/arm64/boot/dts/renesas/rzg2lc-hummingboard.dts b/arch/arm64/boot/dts/renesas/rzg2lc-hummingboard.dts
+index a15d795ef232..87eedbd8c394 100644
+--- a/arch/arm64/boot/dts/renesas/rzg2lc-hummingboard.dts
++++ b/arch/arm64/boot/dts/renesas/rzg2lc-hummingboard.dts
+@@ -63,6 +63,14 @@ sound_card {
+ 		dais = <&i2s2_port0>;
+ 	};
+ #endif
++
++&pinctrl {
++  gpio-lte_on {
++    gpio-hog;
++    gpios = <RZG2L_GPIO(19, 1) GPIO_ACTIVE_HIGH>;
++    output-high;
++    line-name = "gpio_lte_on";
++  };
+ };
+ 
+ &i2c0 {
+diff --git a/arch/arm64/boot/dts/renesas/rzg2lc-sr-pinfunction.dtsi b/arch/arm64/boot/dts/renesas/rzg2lc-sr-pinfunction.dtsi
+index 1d10844c7e6f..c6350f7b2dec 100644
+--- a/arch/arm64/boot/dts/renesas/rzg2lc-sr-pinfunction.dtsi
++++ b/arch/arm64/boot/dts/renesas/rzg2lc-sr-pinfunction.dtsi
+@@ -135,14 +135,11 @@ ssi0_pins: ssi0 {
+ 	};
+ 
+ 	usb0_pins: usb0 {
+-		pinmux = <RZG2L_PORT_PINMUX(4, 0, 1)>, /* VBUS */
+-			 <RZG2L_PORT_PINMUX(5, 0, 1)>, /* OVC */
+-			 <RZG2L_PORT_PINMUX(5, 1, 1)>; /* OTG_ID */
++		pinmux = <RZG2L_PORT_PINMUX(4, 0, 1)>; /* VBUS */
+ 	};
+ 
+ 	usb1_pins: usb1 {
+-		pinmux = <RZG2L_PORT_PINMUX(42, 0, 1)>, /* VBUS */
+-			 <RZG2L_PORT_PINMUX(42, 1, 1)>; /* OVC */
++		pinmux = <RZG2L_PORT_PINMUX(5, 0, 1)>; /* VBUS */
+ 	};
+ 
+ #if (SCIF1_GPT3)
+@@ -152,4 +149,3 @@ gpt3_pins: gpt3 {
+ 	};
+ #endif
+ };
+-
+diff --git a/arch/arm64/boot/dts/renesas/rzg2lc-sr-som.dtsi b/arch/arm64/boot/dts/renesas/rzg2lc-sr-som.dtsi
+index ac25f0899783..918e8ac5663a 100644
+--- a/arch/arm64/boot/dts/renesas/rzg2lc-sr-som.dtsi
++++ b/arch/arm64/boot/dts/renesas/rzg2lc-sr-som.dtsi
+@@ -121,12 +121,18 @@ chosen {
+ 
+   usb0_vbus_otg: regulator-usb0-vbus-otg {
+     compatible = "regulator-fixed";
+-
+     regulator-name = "USB0_VBUS_OTG";
+     regulator-min-microvolt = <5000000>;
+     regulator-max-microvolt = <5000000>;
+   };
+ 
++  usb1_vbus: regulator-usb1-vbus {
++    compatible = "regulator-fixed";
++    regulator-name = "USB1_VBUS";
++    regulator-min-microvolt = <5000000>;
++    regulator-max-microvolt = <5000000>;
++  };
++
+   vccq_sdhi1: regulator-vccq-sdhi1 {
+     compatible = "regulator-gpio";
+     regulator-name = "SDHI1 VccQ";
+@@ -561,7 +567,7 @@ &usb2_phy0 {
+ &usb2_phy1 {
+ 	pinctrl-0 = <&usb1_pins>;
+ 	pinctrl-names = "default";
+-
++  vbus-supply = <&usb1_vbus>;
+ 	status = "okay";
+ };
+ 
+-- 
+2.25.1
+
