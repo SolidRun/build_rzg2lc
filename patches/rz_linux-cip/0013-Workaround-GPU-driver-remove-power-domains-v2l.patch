@@ -1,0 +1,24 @@
+From aa45da2e70ec752c92e780ce34797b52c89df789 Mon Sep 17 00:00:00 2001
+From: Yazan Shhady <yazan.shhady@solid-run.com>
+Date: Thu, 4 May 2023 01:47:07 +0300
+Subject: [PATCH 3/3] Workaround GPU driver remove power domains v2l
+
+---
+ arch/arm64/boot/dts/renesas/r9a07g054.dtsi | 1 -
+ 1 file changed, 1 deletion(-)
+
+diff --git a/arch/arm64/boot/dts/renesas/r9a07g054.dtsi b/arch/arm64/boot/dts/renesas/r9a07g054.dtsi
+index c90155ef05b0..13470f1b024e 100644
+--- a/arch/arm64/boot/dts/renesas/r9a07g054.dtsi
++++ b/arch/arm64/boot/dts/renesas/r9a07g054.dtsi
+@@ -1166,7 +1166,6 @@ gpu: gpu@11840000 {
+ 				 <&cpg CPG_MOD R9A07G054_GPU_AXI_CLK>,
+ 				 <&cpg CPG_MOD R9A07G054_GPU_ACE_CLK>;
+ 			clock-names = "gpu", "bus", "bus_ace";
+-			power-domains = <&cpg>;
+ 			resets = <&cpg R9A07G054_GPU_RESETN>,
+ 				 <&cpg R9A07G054_GPU_AXI_RESETN>,
+ 				 <&cpg R9A07G054_GPU_ACE_RESETN>;
+-- 
+2.25.1
+

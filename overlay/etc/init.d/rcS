@@ -25,6 +25,10 @@ for i in /etc/init.d/S??* ;do
     esac
 done
 
+/sbin/ifconfig eth0 down
+/sbin/ifconfig eth0 up
+sleep 1
+
 ethtool -s eth0 speed 100 duplex full autoneg off
 dhclient eth0 &
 
