@@ -1,0 +1,95 @@
+From 443d313de38836f9237960dd1e04a5767b8171db Mon Sep 17 00:00:00 2001
+From: Yazan Shhady <yazan.shhady@solid-run.com>
+Date: Thu, 4 May 2023 00:12:53 +0300
+Subject: [PATCH] add RTC|Eeprom|UART2 support to rzg2lc-hummingboard dts
+
+- fix SCIF2 signal setings for BT
+- set LTE Power Enable (RZ_P39_2)
+- add RTC abx80x support (i2c0-0x69)
+- enable som eeprom (i2c0-0x50)
+---
+ .../arm64/boot/dts/renesas/rzg2lc-hummingboard.dts | 10 +++++++++-
+ .../boot/dts/renesas/rzg2lc-sr-pinfunction.dtsi    | 14 ++++++--------
+ arch/arm64/boot/dts/renesas/rzg2lc-sr-som.dtsi     |  7 +++++++
+ 3 files changed, 22 insertions(+), 9 deletions(-)
+
+diff --git a/arch/arm64/boot/dts/renesas/rzg2lc-hummingboard.dts b/arch/arm64/boot/dts/renesas/rzg2lc-hummingboard.dts
+index 87eedbd8c394..53724561c7d4 100644
+--- a/arch/arm64/boot/dts/renesas/rzg2lc-hummingboard.dts
++++ b/arch/arm64/boot/dts/renesas/rzg2lc-hummingboard.dts
+@@ -65,7 +65,7 @@ sound_card {
+ #endif
+ 
+ &pinctrl {
+-  gpio-lte_on {
++  gpio-lte_reset {
+     gpio-hog;
+     gpios = <RZG2L_GPIO(19, 1) GPIO_ACTIVE_HIGH>;
+     output-high;
+@@ -114,6 +114,14 @@ codec_endpoint: endpoint {
+ 			};
+ 		};
+ 	};
++
++  rtc@69 {
++        compatible = "abracon,abx80x";
++        reg = <0x69>;
++        abracon,tc-diode = "schottky";
++        abracon,tc-resistor = <3>;
++};
++
+ };
+ 
+ &adv7535 {
+diff --git a/arch/arm64/boot/dts/renesas/rzg2lc-sr-pinfunction.dtsi b/arch/arm64/boot/dts/renesas/rzg2lc-sr-pinfunction.dtsi
+index c6350f7b2dec..4d6492271a49 100644
+--- a/arch/arm64/boot/dts/renesas/rzg2lc-sr-pinfunction.dtsi
++++ b/arch/arm64/boot/dts/renesas/rzg2lc-sr-pinfunction.dtsi
+@@ -65,20 +65,18 @@ scif0_pins: scif0 {
+ 			 <RZG2L_PORT_PINMUX(38, 1, 1)>;	/* RxD */
+ 	};
+ 
+-#if (!SCIF1_GPT3)
+ 	scif1_pins: scif1 {
+-		pinmux = <RZG2L_PORT_PINMUX(40, 0, 1)>, /* TxD */
+-			 <RZG2L_PORT_PINMUX(40, 1, 1)>, /* RxD */
+-			 <RZG2L_PORT_PINMUX(41, 0, 1)>, /* CTS# */
+-			 <RZG2L_PORT_PINMUX(41, 1, 1)>; /* RTS# */
++		pinmux = <RZG2L_PORT_PINMUX(42, 0, 4)>, /* TxD */
++			 <RZG2L_PORT_PINMUX(42, 1, 4)>, /* RxD */
++			 <RZG2L_PORT_PINMUX(5, 1, 2)>, /* CTS# */
++			 <RZG2L_PORT_PINMUX(5, 2, 2)>; /* RTS# */
+ 	};
+-#endif
+ 
+-	sd1-pwr-en-hog {
++	lte-pwr-en-hog {
+ 		gpio-hog;
+ 		gpios = <RZG2L_GPIO(39, 2) GPIO_ACTIVE_HIGH>;
+ 		output-high;
+-		line-name = "sd1_pwr_en";
++		line-name = "lte_pwr_en";
+ 	};
+ 
+ 	sdhi1_pins: sd1 {
+diff --git a/arch/arm64/boot/dts/renesas/rzg2lc-sr-som.dtsi b/arch/arm64/boot/dts/renesas/rzg2lc-sr-som.dtsi
+index 918e8ac5663a..f0f88ad1837f 100644
+--- a/arch/arm64/boot/dts/renesas/rzg2lc-sr-som.dtsi
++++ b/arch/arm64/boot/dts/renesas/rzg2lc-sr-som.dtsi
+@@ -471,6 +471,13 @@ &i2c0 {
+ 	pinctrl-0 = <&i2c0_pins>;
+ 	pinctrl-names = "default";
+ 	status = "okay";
++
++  /* EEPROM CAT24AA01TDI-GT3 1-kb (128 B x 8)  */
++  eeprom: eeprom@50 {
++    compatible = "atmel,24c02";
++    reg = <0x50>;
++    pagesize = <16>;
++  };
+ };
+ 
+ &i2c1 {
+-- 
+2.25.1
+
