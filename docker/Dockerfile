@@ -1,5 +1,5 @@
-# use debian base
-FROM debian:bullseye-slim
+# use ubuntu base
+FROM ubuntu:focal
 
 # retry at least 3 times to succeed on sketchy connections
 RUN printf 'Acquire::http { Proxy "%s"; };\n' $APTPROXY | tee -a /etc/apt/apt.conf.d/proxy

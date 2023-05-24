@@ -158,8 +158,9 @@ else
 	echo "================================="
 	# Generate U-Boot (u-boot.bin)
 	cd $ROOTDIR/build/${UBOOT_DIR_DEFAULT}
-	make $UBOOT_DEFCONFIG
-	make mrproper && make -j$(nproc) O=.out
+	make mrproper
+	make O=.out $UBOOT_DEFCONFIG
+	make -j$(nproc) O=.out
 	# Generate ATF (BL2 & FIP & BOOTPARMS)
 	echo "================================="
 	echo "Generating ATF...."
