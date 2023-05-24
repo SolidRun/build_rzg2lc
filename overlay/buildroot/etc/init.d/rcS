@@ -1,0 +1,45 @@
+#!/bin/sh
+
+
+# Start all init scripts in /etc/init.d
+# executing them in numerical order.
+#
+for i in /etc/init.d/S??* ;do
+
+     # Ignore dangling symlinks (if any).
+     [ ! -f "$i" ] && continue
+
+     case "$i" in
+	*.sh)
+	    # Source shell script for speed.
+	    (
+		trap - INT QUIT TSTP
+		set start
+		. $i
+	    )
+	    ;;
+	*)
+	    # No sh extension, so fork subprocess.
+	    $i start
+	    ;;
+    esac
+done
+
+/sbin/ifconfig eth0 down
+/sbin/ifconfig eth0 up
+sleep 1
+
+ethtool -s eth0 speed 100 duplex full autoneg off
+dhclient eth0 &
+
+# RTC Enable
+i2cset -y -f 2 0x12 0x6c 0x40
+# Set RTC SR Register (RTC EN bit = ‘1’, WRTC bit = ‘1’, XTOSCB bit = '0')
+i2cset -y -f 2 0x6f 0x07 0x11
+# Set the MPIO2 to support clck_32KHz clock with Open Drain NMOS Output
+i2cset -y -f 2 0x12 0x8c 0x29
+# Set the Freq of MPIO2 = 32KHz
+i2cset -y -f 2 0x12 0x77 0x00
+
+# Rebind WiFi BRCMFMAC Kernel Driver
+echo 'mmc1:0001:2' > /sys/bus/sdio/drivers/brcmfmac/bind
