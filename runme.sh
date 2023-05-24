@@ -6,8 +6,14 @@ set -e
 ###############################################################################
 BUILDROOT_VERSION=2022.02.4
 UBOOT_COMMIT_HASH=83b2ea37f4b2dd52accce8491af86cbb280f6774
+: ${BOOTLOADER_MENU:=false}
 : ${SHALLOW:=false}
+: ${MACHINE:=rzg2lc-solidrun}
 REPO_PREFIX=`git log -1 --pretty=format:%h`
+
+TFA_DIR_DEFAULT='rzg_trusted-firmware-a'
+UBOOT_DIR_DEFAULT='renesas-u-boot-cip'
+KERNEL_DIR_DEFAULT='rz_linux-cip'
 
 ROOTDIR=`pwd`
 #\rm -rf $ROOTDIR/images/tmp
@@ -56,6 +62,7 @@ cd $ROOTDIR
 # Source code clonig
 ###############################################################################
 
+#QORIQ_COMPONENTS="${TFA_DIR_DEFAULT} ${UBOOT_DIR_DEFAULT} ${KERNEL_DIR_DEFAULT} buildroot"
 QORIQ_COMPONENTS="renesas-u-boot-cip rzg_trusted-firmware-a rz_linux-cip buildroot"
 UBOOT_REPO='https://github.com/renesas-rz/renesas-u-boot-cip -b v2021.10/rz'
 #ATF_REPO='https://github.com/renesas-rz/rzg_trusted-firmware-a -b v2.7/rz'
@@ -109,25 +116,69 @@ done
 
 
 ###############################################################################
-# Building boot loader
+# Building bootloader
 ###############################################################################
-echo "Building boot loader..."
+echo "================================="
+echo "*** Generating Bootloader...."
+echo "================================="
 cd $ROOTDIR/build/
-# ================ Install build scripts ====== #
-cp $ROOTDIR/build_scripts/*.sh $ROOTDIR/build/
-chmod +x $ROOTDIR/build/*.sh
-\rm -rf output_*
-# Clean U-Boot Code
-# cd $ROOTDIR/build/renesas-u-boot-cip && make mrproper && make -j$(nproc) O=.out && cd -
-cd $ROOTDIR/build/*u-boot* && make mrproper && cd -
-# Select toolchain that you have:
-./build.sh s
-# build u-boot:
-./build.sh u
-# build ATF
-./build.sh t
-# copy output files
-\cp -r output_*/* $ROOTDIR/images/tmp/
+if [ "x$BOOTLOADER_MENU" == "xtrue" ]; then
+	# ================ Install build scripts ====== #
+	cp $ROOTDIR/build_scripts/*.sh $ROOTDIR/build/
+	chmod +x $ROOTDIR/build/*.sh
+	\rm -rf output_*
+	# Clean U-Boot Code
+	# cd $ROOTDIR/build/renesas-u-boot-cip && make mrproper && make -j$(nproc) O=.out && cd -
+	cd $ROOTDIR/build/*u-boot* && make mrproper && cd -
+	# Select toolchain that you have:
+	./build.sh s
+	# build u-boot:
+	./build.sh u
+	# build ATF
+	./build.sh t
+	# copy output files
+	\cp -r output_*/* $ROOTDIR/images/tmp/
+else
+	UBOOT_DEFCONFIG=rzg2lc-solidrun_defconfig
+	OUTPUT_BOOTLOADER_DIR=$ROOTDIR/build/output_${MACHINE}
+	\rm -rf ${OUTPUT_BOOTLOADER_DIR}
+	mkdir -p ${OUTPUT_BOOTLOADER_DIR}
+	echo "================================="
+	echo "Generating U-Boot...."
+	echo "================================="
+	# Generate U-Boot (u-boot.bin)
+	cd $ROOTDIR/build/${UBOOT_DIR_DEFAULT}
+	make $UBOOT_DEFCONFIG
+	make mrproper && make -j$(nproc) O=.out
+	# Generate ATF (BL2 & FIP & BOOTPARMS)
+	echo "================================="
+	echo "Generating ATF...."
+	echo "================================="
+	cd $ROOTDIR/build/${TFA_DIR_DEFAULT}
+	# create the fip file by combining the bl31.bin and u-boot.bin (copy the u-boot.bin in the ATF root folder)
+	# cp $ROOTDIR/build/${UBOOT_DIR_DEFAULT}/.out/u-boot.bin $ROOTDIR/build/${TFA_DIR_DEFAULT}
+	U_BOOT_BIN=$(find $ROOTDIR/build/${UBOOT_DIR_DEFAULT} -iname u-boot.bin)
+	cp $U_BOOT_BIN $ROOTDIR/build/${TFA_DIR_DEFAULT}/
+	PLATFORM=g2l
+	BOARD=sr_rzg2lc_1g
+	make -j32 bl2 bl31 PLAT=${PLATFORM} BOARD=${BOARD} RZG_DRAM_ECC_FULL=0 LOG_LEVEL=20 MBEDTLS_DIR=../mbedtls
+	# Binaries (bl2.bin and bl31.bin) are located in the build/g2l/release|debug folder.
+	cp create_bl2_with_bootparam.sh build/${PLATFORM}/release/
+	cd build/${PLATFORM}/release
+	chmod +x create_bl2_with_bootparam.sh
+	# We have to combine bl2.bin with boot parameters, we can use this simple bash script to do that:
+	./create_bl2_with_bootparam.sh
+	cd $ROOTDIR/build/${TFA_DIR_DEFAULT}
+	# Make the fip creation tool:
+	cd tools/fiptool && make -j$(nproc) plat=${PLATFORM} && cd -
+	tools/fiptool/fiptool create --align 16 --soc-fw build/${PLATFORM}/release/bl31.bin --nt-fw u-boot.bin fip.bin
+	# Copy output files BL2|FIP|BOOTPARMS to ${OUTPUT_BOOTLOADER_DIR}
+	cp fip.bin ${OUTPUT_BOOTLOADER_DIR}/fip-${MACHINE}.bin
+	cp build/${PLATFORM}/release/bl2.bin ${OUTPUT_BOOTLOADER_DIR}/bl2-${MACHINE}.bin
+	cp build/${PLATFORM}/release/bootparams.bin ${OUTPUT_BOOTLOADER_DIR}/bootparams-${MACHINE}.bin
+	echo "bootloader binaries are here ${OUTPUT_BOOTLOADER_DIR}... "
+	ls -la ${OUTPUT_BOOTLOADER_DIR}/
+fi
 
 # make the SD-Image
 cd $ROOTDIR/images/
@@ -152,7 +203,9 @@ echo "SD booloader image ready -> images/$BOOT_IMG"
 ###############################################################################
 # Building Linux
 ###############################################################################
-echo "*** Building Linux kernel"
+echo "================================="
+echo "*** Building Linux kernel..."
+echo "================================="
 cd $ROOTDIR/build/rz_linux-cip
 make defconfig
 ./scripts/kconfig/merge_config.sh .config $ROOTDIR/configs/linux/kernel.extra
@@ -170,7 +223,9 @@ cp $ROOTDIR/build/rz_linux-cip/arch/arm64/boot/dts/renesas/rzg2l*.dtb $ROOTDIR/i
 ###############################################################################
 # Building FS Builroot
 ###############################################################################
-echo "*** Building Buildroot FS"
+echo "================================="
+echo "*** Building Buildroot FS..."
+echo "================================="
 cd $ROOTDIR/build/buildroot
 cp $ROOTDIR/configs/buildroot/rzg2lc-solidrun_defconfig $ROOTDIR/build/buildroot/configs
 make rzg2lc-solidrun_defconfig
@@ -211,48 +266,66 @@ fi
 echo -e "\n\n*** Image is ready - images/${IMG}"
 sync
 
-exit -1
+exit 0
 
 ### Building U-Boot & ATF
+# Output files -> bootparams*.bin ; bl2-*.bin ; fip*.bin
 '''
 # U-Boot https://renesas.info/wiki/RZ-G/RZ-G2_BSP_Porting_uboot
 cd $ROOTDIR/build/renesas-u-boot-cip && make mrproper && make -j$(nproc) O=.out && cd -
+cp ./.out/u-boot.bin $ROOTDIR/build/rzg_trusted*
+
 # ATF https://renesas.info/wiki/RZ-G/RZ-G2_BSP_Porting_ATF#Building_and_Debugging
 cd $ROOTDIR/build/rzg_trusted*
 # make -j$(nproc) PLAT=g2l BOARD=custom all
-make -j$(nproc) PLAT=g2l BOARD=smarc_2 all
-# Binaries (bl2.bin and bl31.bin) are located in the build/g2l/release|debug folder.
+#make -j$(nproc) PLAT=g2l BOARD=smarc_2 all
 
+make -j32 bl2 bl31 PLAT=g2l BOARD=sr_rzg2lc_1g RZG_DRAM_ECC_FULL=0 LOG_LEVEL=20 MBEDTLS_DIR=../mbedtls
+
+## => Output bl2.bin
+# Binaries (bl2.bin and bl31.bin) are located in the build/g2l/release|debug folder.
+PLATFORM=g2l
+cd build/${PLATFORM}/release
 # We have to combine bl2.bin with boot parameters, we can use this simple bash script to do that:
-		#!/bin/bash
-		echo -e "\n[Creating bootparams.bin]"
-		SIZE=$(stat -L --printf="%s" bl2.bin)
-		SIZE_ALIGNED=$(expr $SIZE + 3)
-		SIZE_ALIGNED2=$((SIZE_ALIGNED & 0xFFFFFFFC))
-		SIZE_HEX=$(printf '%08x\n' $SIZE_ALIGNED2)
-		echo "  bl2.bin size=$SIZE, Aligned size=$SIZE_ALIGNED2 (0x${SIZE_HEX})"
-		STRING=$(echo \\x${SIZE_HEX:6:2}\\x${SIZE_HEX:4:2}\\x${SIZE_HEX:2:2}\\x${SIZE_HEX:0:2})
-		printf "$STRING" > bootparams.bin
-		for i in `seq 1 506`e ; do printf '\xff' >> bootparams.bin ; done
-		printf '\x55\xaa' >> bootparams.bin
-		# Combine bootparams.bin and bl2.bin into single binary
-		# Only if a new version of bl2.bin is created
-		if [ "bl2.bin" -nt "bl2_bp.bin" ] || [p! -e "bl2_bp.bin" ] ; then
-			echo -e "\n[Adding bootparams.bin to bl2.bin]"
-			cat bootparams.bin bl2.bin > bl2_bp.bin
-		fi
+cat <<EOF > create_bl2_with_bootparam.sh
+#!/bin/bash
+echo -e "\n[Creating bootparams.bin]"
+SIZE=$(stat -L --printf="%s" bl2.bin)
+SIZE_ALIGNED=$(expr $SIZE + 3)
+SIZE_ALIGNED2=$((SIZE_ALIGNED & 0xFFFFFFFC))
+SIZE_HEX=$(printf '%08x\n' $SIZE_ALIGNED2)
+echo "  bl2.bin size=$SIZE, Aligned size=$SIZE_ALIGNED2 (0x${SIZE_HEX})"
+STRING=$(echo \\x${SIZE_HEX:6:2}\\x${SIZE_HEX:4:2}\\x${SIZE_HEX:2:2}\\x${SIZE_HEX:0:2})
+printf "$STRING" > bootparams.bin
+for i in `seq 1 506`e ; do printf '\xff' >> bootparams.bin ; done
+printf '\x55\xaa' >> bootparams.bin
+# Combine bootparams.bin and bl2.bin into single binary
+# Only if a new version of bl2.bin is created
+if [ "bl2.bin" -nt "bl2_bp.bin" ] || ! [ -e "bl2_bp.bin" ] ; then
+	echo -e "\n[Adding bootparams.bin to bl2.bin]"
+	cat bootparams.bin bl2.bin > bl2_bp.bin
+fi
+EOF
+chmod +x create_bl2_with_bootparam.sh
+./create_bl2_with_bootparam.sh
+cd -
 
 # Make the fip creation tool:
 cd tools/fiptool && make -j$(nproc) plat=g2l && cd -
 
 # create the fip file by combining the bl31.bin and u-boot.bin (copy the u-boot.bin in the ATF root folder)
-cp $ROOTDIR/build/*u-boot*/u-boot.bin $ROOTDIR/build/rzg_trusted*/
+#cp $ROOTDIR/build/*u-boot*/u-boot.bin $ROOTDIR/build/rzg_trusted*/
+U_BOOT_BIN=$(find $ROOTDIR/build/renesas-u-boot-cip -iname u-boot.bin)
+cp $U_BOOT_BIN $ROOTDIR/build/rzg_trusted*/
 tools/fiptool/fiptool create --align 16 --soc-fw build/g2l/release/bl31.bin --nt-fw u-boot.bin fip.bin
 
+cp fip.bin build/g2l/release/bl2.bin build/g2l/release/bootparams.bin ../bootloader_files/
+
+cd $ROOTDIR/bootloader_files/
 ## Outputs -> fip.bin & bl2_bp.bin & bootparams.bin
 DEVICE=/dev/sda
 sudo dd if=bootparams.bin of=$DEVICE bs=512 seek=1 count=1 conv=notrunc
-sudo dd if=bl2_bp.bin of=$DEVICE bs=512 seek=8 conv=notrunc
+sudo dd if=bl2.bin of=$DEVICE bs=512 seek=8 conv=notrunc
 sudo dd if=fip.bin of=$DEVICE bs=512 seek=128 conv=notrunc
 
 # bl2_bp.bin and fip.bin are the files that have to be programmed using Flash Writer.
