@@ -1,5 +1,7 @@
 #!/bin/bash
+
 set -e
+set -o pipefail
 
 ###############################################################################
 # General configurations
@@ -106,11 +108,19 @@ for i in $QORIQ_COMPONENTS; do
       git clone $SHALLOW_FLAG $BUILDROOT_REPO
     fi
 
-    # Applay patches...
-		cd $i
-    if [ -f $ROOTDIR/patches/${i}/*.patch ]; then
-		     git am $ROOTDIR/patches/${i}/*.patch
-    fi
+	# Apply patches...
+	cd $i
+	for patch in "${ROOTDIR}/patches/${i}"/*; do
+		echo "Applying $patch ..."
+		test -e .git && git am "$patch"
+		test -e .git || patch -p1 < $patch
+
+		if [ $? -ne 0 ]; then
+			echo "Error: Failed to apply $patch!"
+			exit 1
+		fi
+	done
+
 	fi
 done
 
