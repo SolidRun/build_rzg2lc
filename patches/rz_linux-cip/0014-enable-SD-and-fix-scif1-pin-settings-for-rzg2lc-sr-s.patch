@@ -1,0 +1,140 @@
+From 218c8b46e083cf9ac395927650a5260bf0b2038c Mon Sep 17 00:00:00 2001
+From: Yazan Shhady <yazan.shhady@solid-run.com>
+Date: Wed, 24 May 2023 18:11:06 +0300
+Subject: [PATCH] enable SD and fix scif1 pin settings for rzg2lc-sr-som
+
+---
+ .../boot/dts/renesas/rzg2lc-hummingboard.dts   | 18 ++++++++++--------
+ .../dts/renesas/rzg2lc-sr-pinfunction.dtsi     | 14 ++++++++------
+ arch/arm64/boot/dts/renesas/rzg2lc-sr-som.dtsi | 18 ++++++++----------
+ 3 files changed, 26 insertions(+), 24 deletions(-)
+
+diff --git a/arch/arm64/boot/dts/renesas/rzg2lc-hummingboard.dts b/arch/arm64/boot/dts/renesas/rzg2lc-hummingboard.dts
+index 53724561c7d4..eef3daf9231b 100644
+--- a/arch/arm64/boot/dts/renesas/rzg2lc-hummingboard.dts
++++ b/arch/arm64/boot/dts/renesas/rzg2lc-hummingboard.dts
+@@ -18,7 +18,7 @@
+  * Please change below macros according to SW1 setting
+  */
+ 
+-#define SW_SD0_DEV_SEL	1
++#define SW_SD0_DEV_SEL	0
+ 
+ #define SW_SCIF_CAN	0
+ #if (SW_SCIF_CAN)
+@@ -63,9 +63,10 @@ sound_card {
+ 		dais = <&i2s2_port0>;
+ 	};
+ #endif
++};
+ 
+ &pinctrl {
+-  gpio-lte_reset {
++  gpio-lte_on {
+     gpio-hog;
+     gpios = <RZG2L_GPIO(19, 1) GPIO_ACTIVE_HIGH>;
+     output-high;
+@@ -115,12 +116,13 @@ codec_endpoint: endpoint {
+ 		};
+ 	};
+ 
+-  rtc@69 {
+-        compatible = "abracon,abx80x";
+-        reg = <0x69>;
+-        abracon,tc-diode = "schottky";
+-        abracon,tc-resistor = <3>;
+-};
++	rtc@69 {
++		compatible = "abracon,abx80x";
++		reg = <0x69>;
++		abracon,tc-diode = "schottky";
++		abracon,tc-resistor = <3>;
++	};
++
+ 
+ };
+ 
+diff --git a/arch/arm64/boot/dts/renesas/rzg2lc-sr-pinfunction.dtsi b/arch/arm64/boot/dts/renesas/rzg2lc-sr-pinfunction.dtsi
+index 4d6492271a49..c6350f7b2dec 100644
+--- a/arch/arm64/boot/dts/renesas/rzg2lc-sr-pinfunction.dtsi
++++ b/arch/arm64/boot/dts/renesas/rzg2lc-sr-pinfunction.dtsi
+@@ -65,18 +65,20 @@ scif0_pins: scif0 {
+ 			 <RZG2L_PORT_PINMUX(38, 1, 1)>;	/* RxD */
+ 	};
+ 
++#if (!SCIF1_GPT3)
+ 	scif1_pins: scif1 {
+-		pinmux = <RZG2L_PORT_PINMUX(42, 0, 4)>, /* TxD */
+-			 <RZG2L_PORT_PINMUX(42, 1, 4)>, /* RxD */
+-			 <RZG2L_PORT_PINMUX(5, 1, 2)>, /* CTS# */
+-			 <RZG2L_PORT_PINMUX(5, 2, 2)>; /* RTS# */
++		pinmux = <RZG2L_PORT_PINMUX(40, 0, 1)>, /* TxD */
++			 <RZG2L_PORT_PINMUX(40, 1, 1)>, /* RxD */
++			 <RZG2L_PORT_PINMUX(41, 0, 1)>, /* CTS# */
++			 <RZG2L_PORT_PINMUX(41, 1, 1)>; /* RTS# */
+ 	};
++#endif
+ 
+-	lte-pwr-en-hog {
++	sd1-pwr-en-hog {
+ 		gpio-hog;
+ 		gpios = <RZG2L_GPIO(39, 2) GPIO_ACTIVE_HIGH>;
+ 		output-high;
+-		line-name = "lte_pwr_en";
++		line-name = "sd1_pwr_en";
+ 	};
+ 
+ 	sdhi1_pins: sd1 {
+diff --git a/arch/arm64/boot/dts/renesas/rzg2lc-sr-som.dtsi b/arch/arm64/boot/dts/renesas/rzg2lc-sr-som.dtsi
+index a513b87d2ba9..8bce9f904985 100644
+--- a/arch/arm64/boot/dts/renesas/rzg2lc-sr-som.dtsi
++++ b/arch/arm64/boot/dts/renesas/rzg2lc-sr-som.dtsi
+@@ -111,7 +111,7 @@ vccq_sdhi0: regulator-vccq-sdhi0 {
+ 		regulator-max-microvolt = <3300000>;
+ 		states = <3300000 1>, <1800000 0>;
+ 		regulator-boot-on;
+-		gpios = <&pinctrl RZG2L_GPIO(39, 0) GPIO_ACTIVE_HIGH>;
++		//gpios = <&pinctrl RZG2L_GPIO(39, 0) GPIO_ACTIVE_HIGH>;
+ 		regulator-always-on;
+ 	};
+ 
+@@ -216,7 +216,7 @@ eth0_pins: eth0 {
+ 
+ 	gpio-sd0-pwr-en-hog {
+ 		gpio-hog;
+-		gpios = <RZG2L_GPIO(18, 1) GPIO_ACTIVE_HIGH>;
++		gpios = <RZG2L_GPIO(18, 1) GPIO_ACTIVE_LOW>;
+ 		output-high;
+ 		line-name = "gpio_sd0_pwr_en";
+ 	};
+@@ -362,8 +362,6 @@ &sdhi0 {
+ 	vmmc-supply = <&reg_3p3v>;
+ 	vqmmc-supply = <&vccq_sdhi0>;
+ 	bus-width = <4>;
+-	sd-uhs-sdr50;
+-	sd-uhs-sdr104;
+   max-frequency = <50000000>;
+ 	status = "okay";
+ };
+@@ -473,12 +471,12 @@ &i2c0 {
+ 	pinctrl-names = "default";
+ 	status = "okay";
+ 
+-  /* EEPROM CAT24AA01TDI-GT3 1-kb (128 B x 8)  */
+-  eeprom: eeprom@50 {
+-    compatible = "atmel,24c02";
+-    reg = <0x50>;
+-    pagesize = <16>;
+-  };
++	/* EEPROM CAT24AA01TDI-GT3 1-kb (128 B x 8)  */
++	eeprom: eeprom@50 {
++		compatible = "atmel,24c02";
++		reg = <0x50>;
++		pagesize = <16>;
++	};
+ };
+ 
+ &i2c1 {
+-- 
+2.25.1
+
