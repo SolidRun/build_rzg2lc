@@ -1,47 +1,26 @@
-# Base image
-FROM ubuntu:20.04
+# use debian base
+FROM debian:bullseye-slim
 
-ARG DEBIAN_FRONTEND=noninteractive
+# retry at least 3 times to succeed on sketchy connections
+RUN printf 'Acquire::http { Proxy "%s"; };\n' $APTPROXY | tee -a /etc/apt/apt.conf.d/proxy
 
-# Update & upgrade the packages
-RUN set -e; apt-get update && DEBCONF_NOWARNINGS=yes \
-  apt-get install -y apt-utils && apt-get upgrade -y
+# apt proxy (optional)
+ARG APTPROXY=
+RUN printf 'Acquire::Retries 3;\n' | tee -a /etc/apt/apt.conf.d/retry || true
 
-# Install packages
-RUN apt-get install -y \
-	git make mtools coreutils u-boot-tools bison \
-	gcc-arm-linux-gnueabihf gcc-arm-linux-gnueabi \
-	gcc-aarch64-linux-gnu python3 python3-pyelftools \
-	libssl-dev build-essential device-tree-compiler \
-	bc unzip tar util-linux binutils e2fsprogs gawk \
-	wget diffstat texinfo chrpath sed g++ bash patch \
-	cpio python2 rsync file python3-pip flex dosfstools \
-  parted udev
-  # acpica-tools p7zip-full e2fsprogs qemu-system-arm python pandoc meson ninja-build kmod
+# update
+RUN set -e; \
+	apt-get update; \
+	apt-get -y upgrade; \
+	:
 
+RUN set -e; \
+	apt-get update; \
+	apt-get --no-install-recommends -y install acpica-tools bash bc binutils bison build-essential chrpath coreutils cpio device-tree-compiler diffstat dosfstools e2fsprogs e2tools file flex g++ gawk gcc gcc-aarch64-linux-gnu gcc-arm-linux-gnueabi gcc-arm-linux-gnueabihf git kmod libncurses5-dev libncursesw5-dev libssl-dev make meson mtools ninja-build p7zip p7zip-full pandoc parted patch python python2 python3 python3-pip python3-pyelftools qemu-system-arm rsync sed sudo tar texinfo u-boot-tools udev unzip util-linux wget whiptail; \
+	:
 
-# Install python modules
-RUN pip3 install pycryptodome
-RUN pip3 install mkdocs-material
-
-# Set workdir
-WORKDIR /rzg_build
-
-# Add user bashrc
-CMD source ~/.bashrc
-
-# Build arguments, username and user id
-ARG user
-ARG userid
-
-# If user passed no arguments, exit with an error
-RUN if [ -z "$user" ]; then printf "\n\nuser argument not received\n\n"; exit -1; fi
-
-RUN if [ -z "$userid" ]; then printf "\n\nuserid argument not received\n\n"; exit -1; fi
-
-
-# Add user
-RUN useradd -u $userid $user
-
-# Run as user
-USER $user
+# build environment
+WORKDIR /work
+COPY shflags /
+COPY entry.sh /
+ENTRYPOINT ["/bin/sh", "/entry.sh"]

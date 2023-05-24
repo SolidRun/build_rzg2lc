@@ -2,41 +2,28 @@
 # SolidRun's RZ/G2LC based build scripts
 
 ## Introduction
-Main intention of this repository is to build a buildroot based build environment for RZ/G2LC based products.
 
-The build script provides ready to use images that can be deployed on a micro SD|eMMC card.
+Main intention of this repository is to produce a reference system for RZ/G2LC based products.
+Automatic binary releases are available on [our website](https://images.solid-run.com/RZG2LC/rzg2lc_build) for download.
 
-## Source code versions
+## Get Started
 
-- [U-boot 2021.10](https://github.com/renesas-rz/renesas-u-boot-cip/commits/v2021.10/rz)
-- [Linux kernel 5.10](https://github.com/renesas-rz/rz_linux-cip/commits/rz-5.10-cip22-rt9)
-- [Buildroot 2022.02.4](https://github.com/buildroot/buildroot/tree/2022.02.4)
+### Deploy to microSD
 
-## Building Image
-
-The build script will check for required tools, clone and build images and place results in images/ directory.
-
-### Native Build
-Simply:
-
-```
-./runme.sh
-```
-
-## Deploying
-In order to create a bootable SD card, plug in a micro SD into your machine and run the following, where sdX is the location of the SD card got probed into your machine -
+To get started the latest binary release under the link above can be used for creating a bootable microSD card:
+Plug in a micro SD into your machine and run the following, where sdX is the location of the SD card got probed into your machine -
 
 ```
 umount /media/<relevant directory>
 sudo dd if=images/rzg2lc*-<hash>.img of=/dev/sdX
 ```
 
-## Login
+### Login
 **username:** root
 **password:** root
 
 ---
-## Boot from SD and flash eMMC
+### Boot from SD and flash eMMC
 If you use **HummingBoard** Carrier board:
 - set the dip switch to boot from SD (In order to configure the boot media, please refer to [HummingBoard RZ/G2LC Boot Select]( https://solidrun.atlassian.net/wiki/spaces/developer/pages/411861143).)
 - install same above image on USB-DISK (for mounting the Root-FS)
@@ -52,27 +39,34 @@ booti 0x48080000 - 0x48000000
 ```
 ---
 
-### Docker build (TBD)
 
-* Build the Docker image (<b>Just once</b>):
+## Source code versions
 
-```
-docker build --build-arg user=$(whoami) --build-arg userid=$(id -u) -t rzg2lc docker/
-```
+- [U-boot 2021.10](https://github.com/renesas-rz/renesas-u-boot-cip/commits/v2021.10/rz)
+- [Linux kernel 5.10](https://github.com/renesas-rz/rz_linux-cip/commits/rz-5.10-cip22-rt9)
+- [Buildroot 2022.02.4](https://github.com/buildroot/buildroot/tree/2022.02.4)
 
-To check if the image exists in you machine, you can use the following command:
 
-```
-docker images | grep rzg2lc
-```
+## Build with Docker
+A docker image providing a consistent build environment can be used as below:
 
-* Run the build script:
-```
-docker run --rm -it -v "$PWD":/rzg_build/ rzg2lc:latest ./runme.sh
-```
-**Note:** run the above commands from build_rzg2lc directory
+1. build container image (first time only)
+   ```
+   docker build -t rzg2lc_build docker
+   # optional with an apt proxy, e.g. apt-cacher-ng
+   # docker build --build-arg APTPROXY=http://127.0.0.1:3142 -t rzg2lc_build docker
+   ```
 
-To Delete all containers:
-```
-docker rm -f $(docker ps -a -q)
-```
+2. invoke build script in working directory
+   ```
+   docker run --rm -i -t -v "$PWD":/work rzg2lc_build -u $(id -u) -g $(id -g)
+   ```
+
+### rootless Podman
+
+Due to the way podman performs user-id mapping, the root user inside the container (uid=0, gid=0) will be mapped to the user running podman (e.g. 1000:100).
+Therefore in order for the build directory to be owned by current user, `-u 0 -g 0` have to be passed to *docker run*.
+
+## Build with host tools
+
+Simply running `./runme.sh`, it will check for required tools, clone and build images and place results in images/ directory.
