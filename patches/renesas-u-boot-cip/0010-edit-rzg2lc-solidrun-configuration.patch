@@ -1,4 +1,4 @@
-From baed9cf37ccbed8543a989bc13013dd7bb996972 Mon Sep 17 00:00:00 2001
+From 0942c0c6c8c3043102791aaf7ef2c2e5959debb9 Mon Sep 17 00:00:00 2001
 From: Yazan Shhady <yazan.shhady@solid-run.com>
 Date: Wed, 24 May 2023 17:49:36 +0300
 Subject: [PATCH] edit rzg2lc-solidrun configuration
@@ -73,7 +73,7 @@ index 83e7f58f78..319425975f 100644
 +CONFIG_DISTRO_DEFAULTS=y
 +CONFIG_SYSRESET=y
 diff --git a/include/configs/rzg2lc-solidrun.h b/include/configs/rzg2lc-solidrun.h
-index fc5b702630..81a7a22082 100644
+index fc5b702630..7852168645 100644
 --- a/include/configs/rzg2lc-solidrun.h
 +++ b/include/configs/rzg2lc-solidrun.h
 @@ -60,19 +60,15 @@
@@ -96,12 +96,12 @@ index fc5b702630..81a7a22082 100644
 +        "bootm_size=0x10000000 \0" \
 +        "fdtfile=rzg2lc-hummingboard.dtb\0" \
 +        "dtb_addr=0x48000000  \0" \
-+        "kerenl_addr=0x48080000  \0" 
++        "kerenl_addr=0x48080000  \0"
 +
 +#define CONFIG_BOOTCOMMAND \
-+        "setenv bootargs 'root=/dev/mmcblk0p1 rootwait' ;echo 'rzg2lc-3';" \
-+        "mmc dev 0;ext4load mmc 0:1 $kerenl_addr boot/Image; ext4load mmc 0:1 $dtb_addr boot/$fdtfile;" \
-+        "booti  $kerenl_addr - $dtb_addr"
++        "setenv bootargs 'root=/dev/mmcblk0p2 rootwait'; echo 'rzg2lc-solidrun';" \
++        "mmc dev 0; fatload mmc 0:1 $kerenl_addr Image; fatload mmc 0:1 $dtb_addr $fdtfile;" \
++        "booti $kerenl_addr - $dtb_addr"
  
  /* For board */
  /* Ethernet RAVB */
