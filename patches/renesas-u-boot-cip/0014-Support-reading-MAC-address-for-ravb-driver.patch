@@ -1,0 +1,40 @@
+From d577d68ea2fa42b61b0311ec76e49ac6de7e7902 Mon Sep 17 00:00:00 2001
+From: Alvaro Karsz <alvaro.karsz@solid-run.com>
+Date: Thu, 25 May 2023 13:15:54 +0300
+Subject: [PATCH] Support reading MAC address for ravb driver
+
+Implement the read_rom_hwaddr callback for the ravb network driver.
+Read the MAC address from EEPROM.
+
+Signed-off-by: Alvaro Karsz <alvaro.karsz@solid-run.com>
+---
+ drivers/net/ravb.c | 6 ++++++
+ 1 file changed, 6 insertions(+)
+
+diff --git a/drivers/net/ravb.c b/drivers/net/ravb.c
+index 5a5a242d51..0a4cd2bfcd 100644
+--- a/drivers/net/ravb.c
++++ b/drivers/net/ravb.c
+@@ -369,6 +369,11 @@ static int ravb_write_hwaddr(struct udevice *dev)
+ 	return 0;
+ }
+ 
++static int ravb_read_hwaddr(struct udevice *dev)
++{
++	return mac_read_from_eeprom();
++}
++
+ /* E-MAC init function */
+ static int ravb_mac_init(struct ravb_priv *eth)
+ {
+@@ -701,6 +706,7 @@ static const struct eth_ops ravb_ops = {
+ 	.free_pkt		= ravb_free_pkt,
+ 	.stop			= ravb_stop,
+ 	.write_hwaddr		= ravb_write_hwaddr,
++	.read_rom_hwaddr	= ravb_read_hwaddr,
+ };
+ 
+ int ravb_of_to_plat(struct udevice *dev)
+-- 
+2.34.1
+

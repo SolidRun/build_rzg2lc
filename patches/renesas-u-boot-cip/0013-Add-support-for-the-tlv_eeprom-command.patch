@@ -1,0 +1,44 @@
+From cf367d0bf5a13691e330da55a581f4d2448bfef0 Mon Sep 17 00:00:00 2001
+From: Alvaro Karsz <alvaro.karsz@solid-run.com>
+Date: Thu, 25 May 2023 12:19:55 +0300
+Subject: [PATCH] Add support for the tlv_eeprom command
+
+Support the u-boot command and define a EEPROM in devicetree, bus 0x0
+address 0x50
+
+Signed-off-by: Alvaro Karsz <alvaro.karsz@solid-run.com>
+---
+ arch/arm/dts/rzg2lc-solidrun.dts  | 5 +++++
+ configs/rzg2lc-solidrun_defconfig | 3 +++
+ 2 files changed, 8 insertions(+)
+
+diff --git a/arch/arm/dts/rzg2lc-solidrun.dts b/arch/arm/dts/rzg2lc-solidrun.dts
+index 81fff1d8c7..d26bf76470 100644
+--- a/arch/arm/dts/rzg2lc-solidrun.dts
++++ b/arch/arm/dts/rzg2lc-solidrun.dts
+@@ -108,6 +108,11 @@
+ 		compatible = "adi,adv7535";
+ 		reg = <0x3d>;
+ 	};
++
++	m24c02@50 {
++		compatible = "atmel,24c02";
++		reg = <0x50>;
++	};
+ };
+ 
+ &ehci0 {
+diff --git a/configs/rzg2lc-solidrun_defconfig b/configs/rzg2lc-solidrun_defconfig
+index a40f0fc0ba..b193a6c51d 100644
+--- a/configs/rzg2lc-solidrun_defconfig
++++ b/configs/rzg2lc-solidrun_defconfig
+@@ -78,3 +78,6 @@ CONFIG_SYS_MMC_ENV_DEV=0
+ CONFIG_SYS_MMC_ENV_PART=2
+ CONFIG_SYS_I2C_RZG2L_RIIC=y
+ CONFIG_NET_RANDOM_ETHADDR=y
++CONFIG_MISC=y
++CONFIG_I2C_EEPROM=y
++CONFIG_CMD_TLV_EEPROM=y
+-- 
+2.34.1
+
