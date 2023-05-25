@@ -40,6 +40,110 @@ booti 0x48080000 - 0x48000000
 ---
 
 
+### Booting from Network
+
+In order to boot over ethernet, you'll need a TFTP server to serve the required files.
+
+#### Setting a TFTP server (From a different Linux machine in the same network)
+
+* Install tftpd, xinetd and tftp.
+
+```
+sudo apt-get install tftpd xinetd tftp
+```
+
+* Create the directory you'll use to store the booting files.
+
+```
+mkdir /path/to/boot/dir
+chmod -R 777 /path/to/boot/dir
+sudo chown -R nobody /path/to/boot/dir
+```
+
+* Create /etc/xinetd.d/tftp, and write in the file:
+
+```
+service tftp
+{
+protocol        = udp
+port            = 69
+socket_type     = dgram
+wait            = yes
+user            = nobody
+server          = /usr/sbin/in.tftpd
+server_args     = /path/to/boot/dir
+disable         = no
+}
+```
+
+> Edit /path/to/boot/dir according to your directory
+
+* Restart service
+
+```
+sudo service xinetd restart
+```
+
+* Copy booting files into your directory
+
+```
+# Copy device tree
+cp build/rz_linux-cip/arch/arm64/boot/dts/renesas/rzg2lc-hummingboard.dtb /path/to/boot/dir/
+
+# Copy Kernel
+cp build/rz_linux-cip/arch/arm64/boot/Image /path/to/boot/dir/
+```
+
+* Allow TFTP in your firewall (ufw for example)
+
+```
+sudo ufw allow tftp
+```
+
+#### Retrieving files over ethetnet.
+This part assumes that you have a tftp server in the same network.
+
+* Stop board in u-boot.
+
+* Get IP address using dhcp command (ignore the error, we are using this command to get an IP address for a DHCP server)
+
+```
+=> dhcp
+link up on port 1, speed 1000, full duplex
+BOOTP broadcast 1
+BOOTP broadcast 2
+BOOTP broadcast 3
+DHCP client bound to address <Some IP address> (X ms)
+*** ERROR: `serverip' not set
+Cannot autoload with TFTPGET
+```
+
+* Set the tftp server IP address.
+
+```
+setenv serverip <the.server.ip.addr>
+```
+
+* Load Linux kernel into RAM
+
+```
+setenv loadaddr ${kerenl_addr}
+tftpboot Image
+```
+
+* Load DeviceTree into RAM.
+
+```
+setenv loadaddr ${dtb_addr}
+tftpboot rzg2lc-hummingboard.dtb
+```
+
+* boot
+
+```
+boot
+```
+
 ## Source code versions
 
 - [U-boot 2021.10](https://github.com/renesas-rz/renesas-u-boot-cip/commits/v2021.10/rz)
