@@ -1,0 +1,22 @@
+From 0dde662ffcd3c57cddfe1c5c49854d0edcb2139b Mon Sep 17 00:00:00 2001
+From: Alvaro Karsz <alvaro.karsz@solid-run.com>
+Date: Thu, 25 May 2023 11:16:11 +0300
+Subject: [PATCH] Allow usage of random MAC addresses
+
+Signed-off-by: Alvaro Karsz <alvaro.karsz@solid-run.com>
+---
+ configs/rzg2lc-solidrun_defconfig | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/configs/rzg2lc-solidrun_defconfig b/configs/rzg2lc-solidrun_defconfig
+index f38bce41dc..a40f0fc0ba 100644
+--- a/configs/rzg2lc-solidrun_defconfig
++++ b/configs/rzg2lc-solidrun_defconfig
+@@ -77,3 +77,4 @@ CONFIG_SYS_RELOC_GD_ENV_ADDR=y
+ CONFIG_SYS_MMC_ENV_DEV=0
+ CONFIG_SYS_MMC_ENV_PART=2
+ CONFIG_SYS_I2C_RZG2L_RIIC=y
++CONFIG_NET_RANDOM_ETHADDR=y
+-- 
+2.34.1
+
