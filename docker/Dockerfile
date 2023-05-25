@@ -8,6 +8,9 @@ RUN printf 'Acquire::http { Proxy "%s"; };\n' $APTPROXY | tee -a /etc/apt/apt.co
 ARG APTPROXY=
 RUN printf 'Acquire::Retries 3;\n' | tee -a /etc/apt/apt.conf.d/retry || true
 
+# prevent dpkg interactive dialogues
+ENV DEBIAN_FRONTEND=noninteractive
+
 # update
 RUN set -e; \
 	apt-get update; \

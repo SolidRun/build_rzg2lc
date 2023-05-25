@@ -5,7 +5,8 @@ set -o pipefail
 ###############################################################################
 # General configurations
 ###############################################################################
-BUILDROOT_VERSION=2022.02.4
+: ${BUILDROOT_VERSION:=2022.02.4}
+: ${BR2_PRIMARY_SITE:=} # custom buildroot mirror
 UBOOT_COMMIT_HASH=83b2ea37f4b2dd52accce8491af86cbb280f6774
 : ${BOOTLOADER_MENU:=false}
 : ${SHALLOW:=false}
@@ -124,6 +125,14 @@ for i in $QORIQ_COMPONENTS; do
 	fi
 done
 
+# we don't have status code checks for each step - use "-e" with a trap instead
+function error() {
+	status=$?
+	printf "ERROR: Line %i failed with status %i: %s\n" $BASH_LINENO $status "$BASH_COMMAND" >&2
+	exit $status
+}
+trap error ERR
+set -e
 
 ###############################################################################
 # Building bootloader

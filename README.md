@@ -60,6 +60,8 @@ A docker image providing a consistent build environment can be used as below:
 2. invoke build script in working directory
    ```
    docker run --rm -i -t -v "$PWD":/work rzg2lc_build -u $(id -u) -g $(id -g)
+   # optional with local buildroot mirror
+   # docker run --rm -i -t -v "$PWD":/work -e BR2_PRIMARY_SITE=http://127.0.0.1/buildroot rzg2lc_build -u $(id -u) -g $(id -g)
    ```
 
 ### rootless Podman
@@ -70,3 +72,10 @@ Therefore in order for the build directory to be owned by current user, `-u 0 -g
 ## Build with host tools
 
 Simply running `./runme.sh`, it will check for required tools, clone and build images and place results in images/ directory.
+
+## Build-Time Configuration Options
+
+several options influencing the build are supported by the runme script, and can be specified as environment variables for a native build, or by using the `-e` option with docker:
+
+- BUILDROOT_VERSION: Download and compile a specific release of buildroot
+- BR2_PRIMARY_SITE: Use specific (local) buildroot mirror
