@@ -1,0 +1,28 @@
+From 00e28ad721871c4a695101c4c025d14edf6e89e5 Mon Sep 17 00:00:00 2001
+From: Yazan Shhady <yazan.shhady@solid-run.com>
+Date: Sun, 28 May 2023 13:11:15 +0300
+Subject: [PATCH] add carrier eeprom support for rzg2lc-Hummingboard
+
+---
+ arch/arm64/boot/dts/renesas/rzg2lc-hummingboard.dts | 5 +++++
+ 1 file changed, 5 insertions(+)
+
+diff --git a/arch/arm64/boot/dts/renesas/rzg2lc-hummingboard.dts b/arch/arm64/boot/dts/renesas/rzg2lc-hummingboard.dts
+index eef3daf9231b..746acfe58d15 100644
+--- a/arch/arm64/boot/dts/renesas/rzg2lc-hummingboard.dts
++++ b/arch/arm64/boot/dts/renesas/rzg2lc-hummingboard.dts
+@@ -123,6 +123,11 @@ rtc@69 {
+ 		abracon,tc-resistor = <3>;
+ 	};
+ 
++  eeprom_carrier: eeprom@57 {
++    compatible = "st,24c02", "atmel,24c02";
++    reg = <0x57>;
++    pagesize = <16>;
++  };
+ 
+ };
+ 
+-- 
+2.25.1
+

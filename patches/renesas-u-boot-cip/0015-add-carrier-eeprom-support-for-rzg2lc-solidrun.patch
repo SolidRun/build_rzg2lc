@@ -1,0 +1,35 @@
+From c6393bd17fdfda0edb860572ca6d3addc72cd44b Mon Sep 17 00:00:00 2001
+From: Yazan Shhady <yazan.shhady@solid-run.com>
+Date: Sun, 28 May 2023 13:16:36 +0300
+Subject: [PATCH] add carrier eeprom support for rzg2lc-solidrun
+
+---
+ arch/arm/dts/rzg2lc-solidrun.dts | 9 ++++++++-
+ 1 file changed, 8 insertions(+), 1 deletion(-)
+
+diff --git a/arch/arm/dts/rzg2lc-solidrun.dts b/arch/arm/dts/rzg2lc-solidrun.dts
+index d26bf76470..d832b7767b 100644
+--- a/arch/arm/dts/rzg2lc-solidrun.dts
++++ b/arch/arm/dts/rzg2lc-solidrun.dts
+@@ -109,10 +109,17 @@
+ 		reg = <0x3d>;
+ 	};
+ 
+-	m24c02@50 {
++	eeprom_som: m24c02@50 {
+ 		compatible = "atmel,24c02";
+ 		reg = <0x50>;
+ 	};
++
++	eeprom_carrier: eeprom@57 {
++		compatible = "st,24c02", "atmel,24c02";
++		reg = <0x57>;
++		pagesize = <8>;
++	};
++
+ };
+ 
+ &ehci0 {
+-- 
+2.25.1
+
