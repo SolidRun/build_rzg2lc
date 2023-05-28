@@ -1,0 +1,43 @@
+From 323f419b996cb3b43c9bfeca7d7a2f395ccb4082 Mon Sep 17 00:00:00 2001
+From: Josua Mayer <josua@solid-run.com>
+Date: Sun, 28 May 2023 16:21:12 +0300
+Subject: [PATCH] arm64: dts: rz-g2lc hummingboard: fix hdmi if connected
+ during boot
+
+There is a bug causing display to not initialise when hdmi cable was
+already connected during boot.
+
+The symptom is that rzg2l_mipi_dsi_enable is never called, so the GPU
+isn't sending any data to the hdmi bridge.
+
+Workaround by disabling interrupts for hdmi bridge.
+
+Signed-off-by: Josua Mayer <josua@solid-run.com>
+---
+ arch/arm64/boot/dts/renesas/rzg2lc-hummingboard.dts | 10 ++++++++--
+ 1 file changed, 8 insertions(+), 2 deletions(-)
+
+diff --git a/arch/arm64/boot/dts/renesas/rzg2lc-hummingboard.dts b/arch/arm64/boot/dts/renesas/rzg2lc-hummingboard.dts
+index 7c4ac1f19b3f..400707824c75 100644
+--- a/arch/arm64/boot/dts/renesas/rzg2lc-hummingboard.dts
++++ b/arch/arm64/boot/dts/renesas/rzg2lc-hummingboard.dts
+@@ -70,8 +70,14 @@ adv7535@3d {
+ 		adi,dsi-lanes = <4>;
+ 		adi,addr-edid = <0x3b>;
+ 		pd-gpios = <&pinctrl RZG2L_GPIO(40, 2) GPIO_ACTIVE_LOW>; // ADV_PD / DSI_EN J9-34 / P40_2
+-		interrupt-parent = <&pinctrl>;
+-		interrupts = <RZG2L_GPIO(42, 2) IRQ_TYPE_EDGE_FALLING>; // DSI_TS_nINT J5001-43 P42_2
++		/*
++		 * With interrupts enabled and hdmi connected during boot,
++		 * rzg2l_mipi_dsi_enable never happens and display receives no signal.
++		 * Re-enable once issue has been resolved.
++		 *
++		 * interrupt-parent = <&pinctrl>;
++		 * interrupts = <RZG2L_GPIO(42, 2) IRQ_TYPE_EDGE_FALLING>; // DSI_TS_nINT J5001-43 P42_2
++		 */
+ 		status = "okay";
+ 
+ 		ports {
+-- 
+2.35.3
+
