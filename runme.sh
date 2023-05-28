@@ -256,23 +256,48 @@ cp $ROOTDIR/build/buildroot/output/images/rootfs* $ROOTDIR/images/tmp/
 ###############################################################################
 # Assembling Boot Image
 ###############################################################################
+echo "================================="
 echo "Assembling Boot Image"
+echo "================================="
 cd $ROOTDIR/images/
 IMG=rzg2lc_solidrun-sd-${REPO_PREFIX}.img
 rm -rf $ROOTDIR/images/${IMG}
 dd if=/dev/zero of=${IMG} bs=1M count=401
 
+# Make extlinux configuration file
+cat > $ROOTDIR/images/tmp/extlinux.conf << EOF
+	timeout 30
+	default linux
+  menu title RZ/G2* boot options
+  label primary
+		menu label primary kernel
+    linux /boot/Image
+    fdtdir /boot/
+    APPEND console=serial0,115200 console=ttySC0 root=/dev/mmcblk0p2 rw rootwait
+EOF
+
 # FAT Partion
 dd if=/dev/zero of=tmp/part1.fat32 bs=1M count=148
 env PATH="$PATH:/sbin:/usr/sbin" mkdosfs tmp/part1.fat32
-# mmd -i tmp/part1.fat32 ::/boot
-mcopy -i tmp/part1.fat32 $ROOTDIR/images/tmp/Image ::/Image
-mcopy -s -i tmp/part1.fat32 $ROOTDIR/images/tmp/*.dtb ::/
+mmd -i tmp/part1.fat32 ::/extlinux
+mmd -i tmp/part1.fat32 ::/boot
+mcopy -i tmp/part1.fat32 $ROOTDIR/images/tmp/Image ::/boot/Image
+mcopy -s -i tmp/part1.fat32 $ROOTDIR/images/tmp/*.dtb ::/boot/
+mcopy -s -i tmp/part1.fat32 $ROOTDIR/images/tmp/rootfs.cpio ::/boot/rootfs.cpio
+mcopy -i tmp/part1.fat32 $ROOTDIR/images/tmp/extlinux.conf ::/extlinux/extlinux.conf
+
+# EXT2 Partion
+ROOTFS=$ROOTDIR/images/tmp/rootfs.ext2
+e2mkdir -G 0 -O 0 ${ROOTFS}:extlinux
+#e2cp -G 0 -O 0 $ROOTDIR/images/tmp/extlinux.conf ${ROOTFS}:extlinux/
+e2mkdir -G 0 -O 0 ${ROOTFS}:boot
+e2cp -G 0 -O 0 $ROOTDIR/images/tmp/Image ${ROOTFS}:/boot/
+e2cp -G 0 -O 0 $ROOTDIR/images/tmp/*.dtb ${ROOTFS}:/boot/
 
 # EXT partion
 env PATH="$PATH:/sbin:/usr/sbin" parted --script ${IMG} mklabel msdos mkpart primary 2MiB 150MiB mkpart primary 150MiB 400MiB
 dd if=tmp/part1.fat32 of=${IMG} bs=1M seek=2 conv=notrunc
-dd if=$ROOTDIR/build/buildroot/output/images/rootfs.ext2 of=${IMG} bs=1M seek=150 conv=notrunc
+dd if=${ROOTFS} of=${IMG} bs=1M seek=150 conv=notrunc
 # Boot loader
 if [ -f tmp/bootparams-rzg2lc-solidrun.bin ] && [ -f tmp/bl2-rzg2lc-solidrun.bin ] && [ -f tmp/fip-rzg2lc-solidrun.bin ]; then
   echo "Find Solidrun boot files..."; sleep 1

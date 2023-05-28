@@ -1,0 +1,86 @@
+From a4b131334d04097181e2962bae798c19fd2d3861 Mon Sep 17 00:00:00 2001
+From: Yazan Shhady <yazan.shhady@solid-run.com>
+Date: Sun, 28 May 2023 21:16:00 +0300
+Subject: [PATCH] add ditroboot support for rzg2lc-solidrun
+
+---
+ configs/rzg2lc-solidrun_defconfig |  7 ++++++-
+ include/configs/rzg2lc-solidrun.h | 32 ++++++++++++++++++++++---------
+ 2 files changed, 29 insertions(+), 10 deletions(-)
+
+diff --git a/configs/rzg2lc-solidrun_defconfig b/configs/rzg2lc-solidrun_defconfig
+index b193a6c51d..69a009a01d 100644
+--- a/configs/rzg2lc-solidrun_defconfig
++++ b/configs/rzg2lc-solidrun_defconfig
+@@ -14,6 +14,8 @@ CONFIG_SPL=n
+ CONFIG_FIT=y
+ CONFIG_USE_BOOTARGS=y
+ CONFIG_BOOTARGS="rw rootwait earlycon root=/dev/mmcblk0p1"
++CONFIG_USE_BOOTCOMMAND=y
++CONFIG_BOOTCOMMAND="run distro_bootcmd"
+ CONFIG_SUPPORT_RAW_INITRD=y
+ CONFIG_DEFAULT_FDT_FILE="rzg2lc-hummingboard.dtb"
+ CONFIG_VERSION_VARIABLE=y
+@@ -73,7 +75,6 @@ CONFIG_USB_STORAGE=y
+ CONFIG_OF_LIBFDT_OVERLAY=y
+ CONFIG_SMBIOS_MANUFACTURER=""
+ CONFIG_ENV_IS_IN_MMC=y
+-CONFIG_SYS_RELOC_GD_ENV_ADDR=y
+ CONFIG_SYS_MMC_ENV_DEV=0
+ CONFIG_SYS_MMC_ENV_PART=2
+ CONFIG_SYS_I2C_RZG2L_RIIC=y
+@@ -81,3 +82,7 @@ CONFIG_NET_RANDOM_ETHADDR=y
+ CONFIG_MISC=y
+ CONFIG_I2C_EEPROM=y
+ CONFIG_CMD_TLV_EEPROM=y
++CONFIG_CMD_SYSBOOT=y
++CONFIG_CMD_PART=y
++CONFIG_CMD_FS_UUID=y
++CONFIG_PARTITION_UUIDS=y
+diff --git a/include/configs/rzg2lc-solidrun.h b/include/configs/rzg2lc-solidrun.h
+index 7852168645..d93dd767b9 100644
+--- a/include/configs/rzg2lc-solidrun.h
++++ b/include/configs/rzg2lc-solidrun.h
+@@ -59,16 +59,30 @@
+ 
+ /* ENV setting */
+ 
++#define BOOT_TARGET_DEVICES(func) \
++        func(MMC, mmc, 0) \
++        func(USB, usb, 0) \
++        func(DHCP, dhcp, na)
++
++#include <config_distro_bootcmd.h>
++
++#define KERNEL_ADDR_R	__stringify(0x48000000)
++#define FDT_ADDR_R	__stringify(0x4c000000)
++#define SCRIPT_ADDR_R	__stringify(0x4c100000)
++#define PXEFILE_ADDR_R	__stringify(0x4c200000)
++#define RAMDISK_ADDR_R	__stringify(0x4c800000)
++
+ #define CONFIG_EXTRA_ENV_SETTINGS \
+-        "bootm_size=0x10000000 \0" \
+-        "fdtfile=rzg2lc-hummingboard.dtb\0" \
+-        "dtb_addr=0x48000000  \0" \
+-        "kerenl_addr=0x48080000  \0"
+-
+-#define CONFIG_BOOTCOMMAND \
+-        "setenv bootargs 'root=/dev/mmcblk0p2 rootwait'; echo 'rzg2lc-solidrun';" \
+-        "mmc dev 0; fatload mmc 0:1 $kerenl_addr Image; fatload mmc 0:1 $dtb_addr $fdtfile;" \
+-        "booti $kerenl_addr - $dtb_addr"
++	"kernel_addr_r=" KERNEL_ADDR_R "\0" \
++	"fdt_addr_r=" FDT_ADDR_R "\0" \
++	"ramdisk_addr_r=" RAMDISK_ADDR_R "\0" \
++	"scriptaddr=" SCRIPT_ADDR_R "\0" \
++	"pxefile_addr_r=" PXEFILE_ADDR_R "\0" \
++	"fdt_high=0xffffffffffffffff\0"	\
++	"initrd_high=0xffffffffffffffff\0" \
++	"fdtfile=" CONFIG_DEFAULT_FDT_FILE "\0" \
++BOOTENV
++
+ 
+ /* For board */
+ /* Ethernet RAVB */
+-- 
+2.25.1
+
