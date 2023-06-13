@@ -1,0 +1,136 @@
+From 64bfcb4a38203ab81f02442fce5aa9763e76cc78 Mon Sep 17 00:00:00 2001
+From: Yazan Shhady <yazan.shhady@solid-run.com>
+Date: Tue, 13 Jun 2023 14:01:34 +0300
+Subject: [PATCH] edit rz/g2lc dts - set scif2 pins and fix sd0_vdd
+
+---
+ .../dts/renesas/rzg2lc-sr-pinfunction.dtsi    | 12 ++--
+ .../arm64/boot/dts/renesas/rzg2lc-sr-som.dtsi | 59 +++++++++++++------
+ 2 files changed, 47 insertions(+), 24 deletions(-)
+
+diff --git a/arch/arm64/boot/dts/renesas/rzg2lc-sr-pinfunction.dtsi b/arch/arm64/boot/dts/renesas/rzg2lc-sr-pinfunction.dtsi
+index 7412d8c1cb7a..cb24e81266b8 100644
+--- a/arch/arm64/boot/dts/renesas/rzg2lc-sr-pinfunction.dtsi
++++ b/arch/arm64/boot/dts/renesas/rzg2lc-sr-pinfunction.dtsi
+@@ -39,12 +39,12 @@ scif1_pins: scif1 {
+ 			 <RZG2L_PORT_PINMUX(41, 1, 1)>; /* RTS# */
+ 	};
+ 
+-	sd1-pwr-en-hog {
+-		gpio-hog;
+-		gpios = <RZG2L_GPIO(39, 2) GPIO_ACTIVE_HIGH>;
+-		output-high;
+-		line-name = "sd1_pwr_en";
+-	};
++        scif2_pins: scif2 {
++                pinmux = <RZG2L_PORT_PINMUX(42, 0, 1)>, /* TxD */
++                         <RZG2L_PORT_PINMUX(42, 1, 1)>, /* RxD */
++                         <RZG2L_PORT_PINMUX(5, 1, 1)>, /* CTS# */
++                         <RZG2L_PORT_PINMUX(5, 2, 1)>; /* RTS# */
++        };
+ 
+ 	sdhi1_pins: sd1 {
+ 		sd1_data {
+diff --git a/arch/arm64/boot/dts/renesas/rzg2lc-sr-som.dtsi b/arch/arm64/boot/dts/renesas/rzg2lc-sr-som.dtsi
+index 278dd4a1fa1d..ff102546dad9 100644
+--- a/arch/arm64/boot/dts/renesas/rzg2lc-sr-som.dtsi
++++ b/arch/arm64/boot/dts/renesas/rzg2lc-sr-som.dtsi
+@@ -141,24 +141,14 @@ &eth0 {
+ 	phy-mode = "rgmii-id";
+ 	status = "okay";
+ 
+-	phy0: ethernet-phy@0 {
++        phy0: ethernet-phy@0 {
+ 		reg = <0>;
+ 		max-speed = <100>;  /* configure ethernet max speed for ethernet0 */
+-		rxc-skew-psec = <2400>;
+-		txc-skew-psec = <2400>;
+-		rxdv-skew-psec = <0>;
+-		txdv-skew-psec = <0>;
+-		rxd0-skew-psec = <0>;
+-		rxd1-skew-psec = <0>;
+-		rxd2-skew-psec = <0>;
+-		rxd3-skew-psec = <0>;
+-		txd0-skew-psec = <0>;
+-		txd1-skew-psec = <0>;
+-		txd2-skew-psec = <0>;
+-		txd3-skew-psec = <0>;
+-
+-		interrupt-parent = <&pinctrl>;
+-		interrupts = <RZG2L_GPIO(0, 0) IRQ_TYPE_LEVEL_LOW>;
++		/*
++		* disable interrupt mode
++		* interrupt-parent = <&pinctrl>;
++		* interrupts = <RZG2L_GPIO(27, 0) IRQ_TYPE_LEVEL_LOW>;
++		*/
+ 	};
+ };
+ 
+@@ -215,8 +205,8 @@ qspi0-ctrl {
+ 	/*
+ 	 * The below switch logic can be used to select the device between
+ 	 * eMMC and microSD, after setting GPIO_SD0_DEV_SEL to high in DT.
+-	 * S3[1] should be at OFF position to enable eMMC
+-	 * S3[1] should be at position ON to enable uSD card
++	 * S3[6] should be at OFF position to enable eMMC
++	 * S3[6] should be at position ON to enable uSD card
+ 	 */
+ 
+ 	/*
+@@ -307,6 +297,15 @@ &sdhi0 {
+   max-frequency = <50000000>;
+ 	status = "okay";
+ };
++
++gpio-sd0-dev-sel-sd-hog {
++  gpio-hog;
++  gpios = <RZG2L_GPIO(22, 1) GPIO_ACTIVE_HIGH>;
++  output-high;
++  line-name = "gpio_sd0_dev_sel_sd";
++  status = "okay";
++};
++
+ #endif
+ 
+ #if SW_SD0_DEV_SEL
+@@ -324,6 +323,23 @@ &sdhi0 {
+ 	fixed-emmc-driver-type = <1>;
+ 	status = "okay";
+ };
++
++gpio-sd0-dev-sel-emmc-hog {
++  gpio-hog;
++  gpios = <RZG2L_GPIO(22, 1) GPIO_ACTIVE_LOW>;
++  output-high;
++  line-name = "gpio_sd0_dev_sel_emmc";
++  status = "okay";
++};
++
++/* P39_0 - LDO_SEL1 (High: 3.3v [SD]; Low: 1.8v [eMMC]) */
++gpio-sd0-vdd-18v-hog {
++  gpio-hog;
++  gpios = <RZG2L_GPIO(39, 0) GPIO_ACTIVE_LOW>;
++  output-high;
++  line-name = "gpio_sd0_vdd_1.8v";
++  status = "okay";
++};
+ #endif
+ 
+ &wdt0 {
+@@ -441,6 +457,13 @@ &scif1 {
+ 	pinctrl-names = "default";
+ 	uart-has-rtscts;
+ 	status = "okay";
++};
++
++&scif2 {
++        pinctrl-0 = <&scif2_pins>;
++        pinctrl-names = "default";
++        uart-has-rtscts;
++        status = "okay";
+ 
+   bluetooth {
+     pinctrl-names = "default";
+-- 
+2.25.1
+
