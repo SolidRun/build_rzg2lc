@@ -1,0 +1,93 @@
+From 5c08b70cee5b0ef44f2aa09325bb0f93d617f285 Mon Sep 17 00:00:00 2001
+From: Yazan Shhady <yazan.shhady@solid-run.com>
+Date: Tue, 13 Jun 2023 14:42:06 +0300
+Subject: [PATCH] edit rz/g2lc dts - fix sd/emmc vdd select
+
+---
+ .../arm64/boot/dts/renesas/rzg2lc-sr-som.dtsi | 56 ++++++++++---------
+ 1 file changed, 30 insertions(+), 26 deletions(-)
+
+diff --git a/arch/arm64/boot/dts/renesas/rzg2lc-sr-som.dtsi b/arch/arm64/boot/dts/renesas/rzg2lc-sr-som.dtsi
+index ff102546dad9..8371c4401429 100644
+--- a/arch/arm64/boot/dts/renesas/rzg2lc-sr-som.dtsi
++++ b/arch/arm64/boot/dts/renesas/rzg2lc-sr-som.dtsi
+@@ -219,6 +219,36 @@ qspi0-ctrl {
+ 	 * 	line-name = "gpio_sd0_dev_sel";
+ 	 * };
+ 	 */
++ #if (!SW_SD0_DEV_SEL)
++ /* uSD */
++   gpio-sd0-dev-sel-sd-hog {
++     gpio-hog;
++     gpios = <RZG2L_GPIO(22, 1) GPIO_ACTIVE_HIGH>;
++     output-high;
++     line-name = "gpio_sd0_dev_sel_sd";
++     status = "okay";
++   };
++#endif
++
++#if SW_SD0_DEV_SEL
++/* eMMC */
++   gpio-sd0-dev-sel-emmc-hog {
++     gpio-hog;
++     gpios = <RZG2L_GPIO(22, 1) GPIO_ACTIVE_LOW>;
++     output-high;
++     line-name = "gpio_sd0_dev_sel_emmc";
++     status = "okay";
++   };
++
++   /* P39_0 - LDO_SEL1 (High: 3.3v [SD]; Low: 1.8v [eMMC]) */
++   gpio-sd0-vdd-18v-hog {
++     gpio-hog;
++     gpios = <RZG2L_GPIO(39, 0) GPIO_ACTIVE_LOW>;
++     output-high;
++     line-name = "gpio_sd0_vdd_1.8v";
++     status = "okay";
++   };
++#endif
+ 
+   gpio-sd1-bt_reg_on {
+     gpio-hog;
+@@ -297,15 +327,6 @@ &sdhi0 {
+   max-frequency = <50000000>;
+ 	status = "okay";
+ };
+-
+-gpio-sd0-dev-sel-sd-hog {
+-  gpio-hog;
+-  gpios = <RZG2L_GPIO(22, 1) GPIO_ACTIVE_HIGH>;
+-  output-high;
+-  line-name = "gpio_sd0_dev_sel_sd";
+-  status = "okay";
+-};
+-
+ #endif
+ 
+ #if SW_SD0_DEV_SEL
+@@ -323,23 +344,6 @@ &sdhi0 {
+ 	fixed-emmc-driver-type = <1>;
+ 	status = "okay";
+ };
+-
+-gpio-sd0-dev-sel-emmc-hog {
+-  gpio-hog;
+-  gpios = <RZG2L_GPIO(22, 1) GPIO_ACTIVE_LOW>;
+-  output-high;
+-  line-name = "gpio_sd0_dev_sel_emmc";
+-  status = "okay";
+-};
+-
+-/* P39_0 - LDO_SEL1 (High: 3.3v [SD]; Low: 1.8v [eMMC]) */
+-gpio-sd0-vdd-18v-hog {
+-  gpio-hog;
+-  gpios = <RZG2L_GPIO(39, 0) GPIO_ACTIVE_LOW>;
+-  output-high;
+-  line-name = "gpio_sd0_vdd_1.8v";
+-  status = "okay";
+-};
+ #endif
+ 
+ &wdt0 {
+-- 
+2.25.1
+
