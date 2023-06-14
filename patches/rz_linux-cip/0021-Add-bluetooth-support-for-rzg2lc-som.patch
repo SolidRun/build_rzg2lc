@@ -1,0 +1,82 @@
+From 1cc16bbca29c9ce7e09c9ae0f8c1aec92d64a81d Mon Sep 17 00:00:00 2001
+From: Mikhail Anikin <mikhail.anikin@solid-run.com>
+Date: Wed, 14 Jun 2023 15:15:59 +0300
+Subject: [PATCH] Add bluetooth support for rzg2lc som
+
+---
+ .../dts/renesas/rzg2lc-sr-pinfunction.dtsi    | 12 +++++-----
+ .../arm64/boot/dts/renesas/rzg2lc-sr-som.dtsi | 22 +++++++------------
+ 2 files changed, 14 insertions(+), 20 deletions(-)
+
+diff --git a/arch/arm64/boot/dts/renesas/rzg2lc-sr-pinfunction.dtsi b/arch/arm64/boot/dts/renesas/rzg2lc-sr-pinfunction.dtsi
+index cb24e81266b8..d60cb2e0700d 100644
+--- a/arch/arm64/boot/dts/renesas/rzg2lc-sr-pinfunction.dtsi
++++ b/arch/arm64/boot/dts/renesas/rzg2lc-sr-pinfunction.dtsi
+@@ -39,12 +39,12 @@ scif1_pins: scif1 {
+ 			 <RZG2L_PORT_PINMUX(41, 1, 1)>; /* RTS# */
+ 	};
+ 
+-        scif2_pins: scif2 {
+-                pinmux = <RZG2L_PORT_PINMUX(42, 0, 1)>, /* TxD */
+-                         <RZG2L_PORT_PINMUX(42, 1, 1)>, /* RxD */
+-                         <RZG2L_PORT_PINMUX(5, 1, 1)>, /* CTS# */
+-                         <RZG2L_PORT_PINMUX(5, 2, 1)>; /* RTS# */
+-        };
++    scif2_pins: scif2 {
++        pinmux = <RZG2L_PORT_PINMUX(42, 0, 4)>, /* TxD */
++            <RZG2L_PORT_PINMUX(42, 1, 4)>, /* RxD */
++            <RZG2L_PORT_PINMUX(5, 1, 2)>, /* CTS# */
++            <RZG2L_PORT_PINMUX(5, 2, 2)>; /* RTS# */
++    };
+ 
+ 	sdhi1_pins: sd1 {
+ 		sd1_data {
+diff --git a/arch/arm64/boot/dts/renesas/rzg2lc-sr-som.dtsi b/arch/arm64/boot/dts/renesas/rzg2lc-sr-som.dtsi
+index 8371c4401429..e501c7b9dec4 100644
+--- a/arch/arm64/boot/dts/renesas/rzg2lc-sr-som.dtsi
++++ b/arch/arm64/boot/dts/renesas/rzg2lc-sr-som.dtsi
+@@ -250,13 +250,6 @@ gpio-sd0-vdd-18v-hog {
+    };
+ #endif
+ 
+-  gpio-sd1-bt_reg_on {
+-    gpio-hog;
+-    gpios = <RZG2L_GPIO(23, 1) GPIO_ACTIVE_HIGH>;
+-    output-high;
+-    line-name = "gpio_sd1_bt_reg_on";
+-  };
+-
+ 	sdhi0_emmc_pins: sd0emmc {
+ 		sd0_emmc_data {
+ 			pins = "SD0_DATA0", "SD0_DATA1", "SD0_DATA2", "SD0_DATA3",
+@@ -464,19 +457,20 @@ &scif1 {
+ };
+ 
+ &scif2 {
+-        pinctrl-0 = <&scif2_pins>;
+-        pinctrl-names = "default";
+-        uart-has-rtscts;
+-        status = "okay";
++	pinctrl-0 = <&scif2_pins>;
++	pinctrl-names = "default";
++	uart-has-rtscts;
++	status = "okay";
+ 
+   bluetooth {
+     pinctrl-names = "default";
+-    compatible = "brcm,bcm43439-bt";
+-    //host-wakeup-gpios = <&gpio1 28 0>;
+-    max-speed = <4000000>;
++    max-speed = <460800>;
++	compatible = "brcm,bcm4329-bt";
++	shutdown-gpios = <&pinctrl RZG2L_GPIO(23, 1) GPIO_ACTIVE_HIGH>;
+   };
+ };
+ 
++
+ /* WiFi - CYW43439 */
+ &sdhi1 {
+   #address-cells = <1>;
+-- 
+2.34.1
+
