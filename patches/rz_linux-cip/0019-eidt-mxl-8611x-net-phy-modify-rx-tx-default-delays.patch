@@ -1,0 +1,36 @@
+From d0a0d7ec70ac4c92617d81a23a1fb36d439823d3 Mon Sep 17 00:00:00 2001
+From: Yazan Shhady <yazan.shhady@solid-run.com>
+Date: Tue, 20 Jun 2023 18:23:41 +0300
+Subject: [PATCH] eidt mxl-8611x net/phy: modify rx/tx default delays
+
+- TX_1G_DELAY: changed from 0x1 to 0xE (2.1 ns)
+- RX_DELAY_DEFAULT:  chnaged from 0xF to 0x0 (no delay)
+
+Signed-off-by: Yazan Shhady <yazan.shhady@solid-run.com>
+---
+ drivers/net/phy/mxl-8611x.c | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/drivers/net/phy/mxl-8611x.c b/drivers/net/phy/mxl-8611x.c
+index 1346c86711f4..59482d096cb8 100644
+--- a/drivers/net/phy/mxl-8611x.c
++++ b/drivers/net/phy/mxl-8611x.c
+@@ -68,13 +68,13 @@
+ #define MXL8611X_EXT_RGMII_CFG1_NO_DELAY					0
+ #define MXL8611X_EXT_RGMII_CFG1_RX_DELAY_MAX				(0xF << 10)
+ #define MXL8611X_EXT_RGMII_CFG1_RX_DELAY_MIN				(0x1 << 10)
+-#define MXL8611X_EXT_RGMII_CFG1_RX_DELAY_DEFAULT			(0xF << 10)
++#define MXL8611X_EXT_RGMII_CFG1_RX_DELAY_DEFAULT			(0x0 << 10)
+ 
+ #define MXL8611X_EXT_RGMII_CFG1_RX_DELAY_MASK				GENMASK(13, 10)
+ #define MXL8611X_EXT_RGMII_CFG1_TX_1G_DELAY_MAX				(0xF << 0)
+ #define MXL8611X_EXT_RGMII_CFG1_TX_1G_DELAY_MIN				(0x1 << 0)
+ #define MXL8611X_EXT_RGMII_CFG1_TX_1G_DELAY_MASK			GENMASK(3, 0)
+-#define MXL8611X_EXT_RGMII_CFG1_TX_1G_DELAY_DEFAULT			(0x1 << 0)
++#define MXL8611X_EXT_RGMII_CFG1_TX_1G_DELAY_DEFAULT			(0xE << 0)
+ 
+ #define MXL8611X_EXT_RGMII_CFG1_TX_10MB_100MB_DELAY_MAX		(0xF << 4)
+ #define MXL8611X_EXT_RGMII_CFG1_TX_10MB_100MB_DELAY_MIN		(0x1 << 4)
+-- 
+2.25.1
+
