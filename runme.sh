@@ -9,7 +9,7 @@ set -o pipefail
 UBOOT_COMMIT_HASH=83b2ea37f4b2dd52accce8491af86cbb280f6774
 : ${BOOTLOADER_MENU:=false}
 : ${SHALLOW:=false}
-: ${MACHINE:=rzg2lc-solidrun}
+: ${MACHINE:=rzg2l-solidrun}
 REPO_PREFIX=`git log -1 --pretty=format:%h`
 
 TFA_DIR_DEFAULT='rzg_trusted-firmware-a'
@@ -147,92 +147,104 @@ function error() {
 trap error ERR
 set -e
 
-# ###############################################################################
-# # Building bootloader
-# ###############################################################################
- echo "================================="
- echo "*** Generating Bootloader...."
- echo "================================="
- cd $ROOTDIR/build/
- if [ "x$BOOTLOADER_MENU" == "xtrue" ]; then
- 	# ================ Install build scripts ====== #
- 	cp $ROOTDIR/build_scripts/*.sh $ROOTDIR/build/
- 	chmod +x $ROOTDIR/build/*.sh
- 	\rm -rf output_*
- 	# Clean U-Boot Code
- 	# cd $ROOTDIR/build/renesas-u-boot-cip && make mrproper && make -j$(nproc) O=.out && cd -
- 	cd $ROOTDIR/build/*u-boot* && make mrproper && cd -
- 	# Select toolchain that you have:
- 	./build.sh s
- 	# build u-boot:
- 	./build.sh u
- 	# build ATF
- 	./build.sh t
- 	# copy output files
- 	\cp -r output_*/* $ROOTDIR/images/tmp/
- else
- 	UBOOT_DEFCONFIG=rzg2lc-solidrun_defconfig
- 	OUTPUT_BOOTLOADER_DIR=$ROOTDIR/build/output_${MACHINE}
- 	\rm -rf ${OUTPUT_BOOTLOADER_DIR}
- 	mkdir -p ${OUTPUT_BOOTLOADER_DIR}
- 	echo "================================="
- 	echo "Generating U-Boot...."
- 	echo "================================="
- 	# Generate U-Boot (u-boot.bin)
- 	cd $ROOTDIR/build/${UBOOT_DIR_DEFAULT}
- 	# make mrproper
- 	make O=.out $UBOOT_DEFCONFIG
- 	make -j${PARALLEL} O=.out
- 	# Generate ATF (BL2 & FIP & BOOTPARMS)
- 	echo "================================="
- 	echo "Generating ATF...."
- 	echo "================================="
- 	cd $ROOTDIR/build/${TFA_DIR_DEFAULT}
- 	# create the fip file by combining the bl31.bin and u-boot.bin (copy the u-boot.bin in the ATF root folder)
- 	# cp $ROOTDIR/build/${UBOOT_DIR_DEFAULT}/.out/u-boot.bin $ROOTDIR/build/${TFA_DIR_DEFAULT}
- 	U_BOOT_BIN=$(find $ROOTDIR/build/${UBOOT_DIR_DEFAULT} -iname u-boot.bin)
- 	cp $U_BOOT_BIN $ROOTDIR/build/${TFA_DIR_DEFAULT}/
- 	PLATFORM=g2l
- 	BOARD=sr_rzg2lc_1g
- 	make -j${PARALLEL} bl2 bl31 PLAT=${PLATFORM} BOARD=${BOARD} RZG_DRAM_ECC_FULL=0 LOG_LEVEL=20 MBEDTLS_DIR=../mbedtls
- 	# Binaries (bl2.bin and bl31.bin) are located in the build/g2l/release|debug folder.
- 	cp create_bl2_with_bootparam.sh build/${PLATFORM}/release/
- 	cd build/${PLATFORM}/release
- 	chmod +x create_bl2_with_bootparam.sh
- 	# We have to combine bl2.bin with boot parameters, we can use this simple bash script to do that:
- 	./create_bl2_with_bootparam.sh
- 	cd $ROOTDIR/build/${TFA_DIR_DEFAULT}
- 	# Make the fip creation tool:
- 	cd tools/fiptool && make clean && make -j${PARALLEL} plat=${PLATFORM} && cd -
- 	tools/fiptool/fiptool create --align 16 --soc-fw build/${PLATFORM}/release/bl31.bin --nt-fw u-boot.bin fip.bin
- 	# Copy output files BL2|FIP|BOOTPARMS to ${OUTPUT_BOOTLOADER_DIR}
- 	cp fip.bin ${OUTPUT_BOOTLOADER_DIR}/fip-${MACHINE}.bin
- 	cp build/${PLATFORM}/release/bl2.bin ${OUTPUT_BOOTLOADER_DIR}/bl2-${MACHINE}.bin
- 	cp build/${PLATFORM}/release/bootparams.bin ${OUTPUT_BOOTLOADER_DIR}/bootparams-${MACHINE}.bin
- 	cp build/${PLATFORM}/release/bl2_bp.bin ${OUTPUT_BOOTLOADER_DIR}/bl2_bp-${MACHINE}.bin
- 	\cp -r ${OUTPUT_BOOTLOADER_DIR}/* $ROOTDIR/images/tmp/
- 	echo "bootloader binaries are here ${OUTPUT_BOOTLOADER_DIR}... "
- 	ls -la ${OUTPUT_BOOTLOADER_DIR}/
- fi
+###############################################################################
+# Building bootloader
+###############################################################################
+echo "================================="
+echo "*** Generating Bootloader...."
+echo "================================="
+cd $ROOTDIR/build/
+if [ "x$BOOTLOADER_MENU" == "xtrue" ]; then
+	# ================ Install build scripts ====== #
+	cp $ROOTDIR/build_scripts/*.sh $ROOTDIR/build/
+	chmod +x $ROOTDIR/build/*.sh
+	\rm -rf output_*
+	# Clean U-Boot Code
+	# cd $ROOTDIR/build/renesas-u-boot-cip && make mrproper && make -j$(nproc) O=.out && cd -
+	cd $ROOTDIR/build/*u-boot* && make mrproper && cd -
+	# Select toolchain that you have:
+	./build.sh s
+	# build u-boot:
+	./build.sh u
+	# build ATF
+	./build.sh t
+	# copy output files
+	\cp -r output_*/* $ROOTDIR/images/tmp/
+else
+	# Select machine configuration
+	case "$MACHINE" in
+		"rzg2lc-humminboard" | "rzg2lc-solidrun")
+			UBOOT_DEFCONFIG=rzg2lc-solidrun_defconfig
+			PLATFORM=g2l
+			BOARD=sr_rzg2lc_1g
+			;;
+		"rzg2l-humminboard" | "rzg2l-solidrun")
+			UBOOT_DEFCONFIG=rzg2l-solidrun_defconfig
+                        PLATFORM=g2l
+                        BOARD=sr_rzg2l_1g
+			;;
+		*)
+			echo "Unknown Machine=$MACHINE -> defualt=rzg2lc-solidrun"
+			UBOOT_DEFCONFIG=rzg2lc-solidrun_defconfig
+			PLATFORM=g2l
+			BOARD=sr_rzg2lc_1g
+	    ;;
+	esac
 
- # make the SD-Image
- cd $ROOTDIR/images/
- BOOT_IMG=rzg2lc_solidrun-sd-bootloader-${REPO_PREFIX}.img
- rm -rf $ROOTDIR/images/${BOOT_IMG}
- dd if=/dev/zero of=${BOOT_IMG} bs=1M count=1
+	OUTPUT_BOOTLOADER_DIR=$ROOTDIR/build/output_${MACHINE}
+	\rm -rf ${OUTPUT_BOOTLOADER_DIR}
+	mkdir -p ${OUTPUT_BOOTLOADER_DIR}
+	echo "================================="
+	echo "Generating U-Boot...."
+	echo "================================="
+	# Generate U-Boot (u-boot.bin)
+	cd $ROOTDIR/build/${UBOOT_DIR_DEFAULT}
+	make mrproper
+	make O=.out $UBOOT_DEFCONFIG
+	make -j$(nproc) O=.out
+	# Generate ATF (BL2 & FIP & BOOTPARMS)
+	echo "================================="
+	echo "Generating ATF...."
+	echo "================================="
+	cd $ROOTDIR/build/${TFA_DIR_DEFAULT}
+	# create the fip file by combining the bl31.bin and u-boot.bin (copy the u-boot.bin in the ATF root folder)
+	# cp $ROOTDIR/build/${UBOOT_DIR_DEFAULT}/.out/u-boot.bin $ROOTDIR/build/${TFA_DIR_DEFAULT}
+	U_BOOT_BIN=$(find $ROOTDIR/build/${UBOOT_DIR_DEFAULT} -iname u-boot.bin)
+	cp $U_BOOT_BIN $ROOTDIR/build/${TFA_DIR_DEFAULT}/
+	make -j32 bl2 bl31 PLAT=${PLATFORM} BOARD=${BOARD} RZG_DRAM_ECC_FULL=0 LOG_LEVEL=20 MBEDTLS_DIR=../mbedtls
+	# Binaries (bl2.bin and bl31.bin) are located in the build/g2l/release|debug folder.
+	cp create_bl2_with_bootparam.sh build/${PLATFORM}/release/
+	cd build/${PLATFORM}/release
+	chmod +x create_bl2_with_bootparam.sh
+	# We have to combine bl2.bin with boot parameters, we can use this simple bash script to do that:
+	./create_bl2_with_bootparam.sh
+	cd $ROOTDIR/build/${TFA_DIR_DEFAULT}
+	# Make the fip creation tool:
+	cd tools/fiptool && make -j$(nproc) plat=${PLATFORM} && cd -
+	tools/fiptool/fiptool create --align 16 --soc-fw build/${PLATFORM}/release/bl31.bin --nt-fw u-boot.bin fip.bin
+	# Copy output files BL2|FIP|BOOTPARMS to ${OUTPUT_BOOTLOADER_DIR}
+	cp fip.bin ${OUTPUT_BOOTLOADER_DIR}/fip-${MACHINE}.bin
+	cp build/${PLATFORM}/release/bl2.bin ${OUTPUT_BOOTLOADER_DIR}/bl2-${MACHINE}.bin
+	cp build/${PLATFORM}/release/bootparams.bin ${OUTPUT_BOOTLOADER_DIR}/bootparams-${MACHINE}.bin
+	\cp -r ${OUTPUT_BOOTLOADER_DIR}/* $ROOTDIR/images/tmp/
+	echo "bootloader binaries are here ${OUTPUT_BOOTLOADER_DIR}... "
+	ls -la ${OUTPUT_BOOTLOADER_DIR}/
+fi
 
- # Boot loader
- if [ -f tmp/bootparams-rzg2lc-solidrun.bin ] && [ -f tmp/bl2-rzg2lc-solidrun.bin ] && [ -f tmp/fip-rzg2lc-solidrun.bin ]; then
-   echo "Find Solidrun boot files..."; sleep 1
-   dd if=$ROOTDIR/images/tmp/bootparams-rzg2lc-solidrun.bin of=$BOOT_IMG bs=512 seek=1 count=1 conv=notrunc
-   dd if=$ROOTDIR/images/tmp/bl2-rzg2lc-solidrun.bin of=$BOOT_IMG bs=512 seek=8 conv=notrunc
-   dd if=$ROOTDIR/images/tmp/fip-rzg2lc-solidrun.bin of=$BOOT_IMG bs=512 seek=128 conv=notrunc
- else
-   dd if=$ROOTDIR/images/tmp/bootparams-smarc-rzg2lc.bin of=$BOOT_IMG bs=512 seek=1 count=1 conv=notrunc
-   dd if=$ROOTDIR/images/tmp/bl2-smarc-rzg2lc.bin of=$BOOT_IMG bs=512 seek=8 conv=notrunc
-   dd if=$ROOTDIR/images/tmp/fip-smarc-rzg2lc.bin of=$BOOT_IMG bs=512 seek=128 conv=notrunc
- fi
- echo "SD booloader image ready -> images/$BOOT_IMG"
+# make the SD-Image
+cd $ROOTDIR/images/
+BOOT_IMG=${MACHINE}-sd-bootloader-${REPO_PREFIX}.img
+rm -rf $ROOTDIR/images/${BOOT_IMG}
+dd if=/dev/zero of=${BOOT_IMG} bs=1M count=1
+
+# Boot loader
+if [ -f tmp/bootparams-${MACHINE}.bin ] && [ -f tmp/bl2-${MACHINE}.bin ] && [ -f tmp/fip-${MACHINE}.bin ]; then
+  echo "Find Solidrun boot files..."; sleep 1
+  dd if=$ROOTDIR/images/tmp/bootparams-${MACHINE}.bin of=$BOOT_IMG bs=512 seek=1 count=1 conv=notrunc
+  dd if=$ROOTDIR/images/tmp/bl2-${MACHINE}.bin of=$BOOT_IMG bs=512 seek=8 conv=notrunc
+  dd if=$ROOTDIR/images/tmp/fip-${MACHINE}.bin of=$BOOT_IMG bs=512 seek=128 conv=notrunc
+fi
+echo "SD booloader image ready -> images/$BOOT_IMG"
 
  ###############################################################################
  # Building Linux
@@ -369,7 +381,7 @@ echo "================================="
 echo "Assembling Boot Image"
 echo "================================="
 cd $ROOTDIR/images/
-IMG=rzg2lc_solidrun_${DISTRO}-sd-${REPO_PREFIX}.img
+IMG=${MACHINE}-sd-${REPO_PREFIX}.img
 rm -rf $ROOTDIR/images/${IMG}
 IMAGE_BOOTPART_SIZE_MB=150 # bootpart size = 150MiB
 IMAGE_BOOTPART_SIZE=$((IMAGE_BOOTPART_SIZE_MB*1024*1024)) # Convert megabytes to bytes 
@@ -422,15 +434,11 @@ env PATH="$PATH:/sbin:/usr/sbin" parted --script ${IMG} mklabel msdos mkpart pri
 dd if=tmp/part1.fat32 of=${IMG} bs=1M seek=2 conv=notrunc
 dd if=${ROOTFS} of=${IMG} bs=1M seek=${IMAGE_BOOTPART_SIZE_MB} conv=notrunc
 # Boot loader
-if [ -f tmp/bootparams-rzg2lc-solidrun.bin ] && [ -f tmp/bl2-rzg2lc-solidrun.bin ] && [ -f tmp/fip-rzg2lc-solidrun.bin ]; then
+if [ -f tmp/bootparams-${MACHINE}.bin ] && [ -f tmp/bl2-${MACHINE}.bin ] && [ -f tmp/fip-${MACHINE}.bin ]; then
   echo "Find Solidrun boot files..."; sleep 1
-  dd if=$ROOTDIR/images/tmp/bootparams-rzg2lc-solidrun.bin of=$IMG bs=512 seek=1 count=1 conv=notrunc
-  dd if=$ROOTDIR/images/tmp/bl2-rzg2lc-solidrun.bin of=$IMG bs=512 seek=8 conv=notrunc
-  dd if=$ROOTDIR/images/tmp/fip-rzg2lc-solidrun.bin of=$IMG bs=512 seek=128 conv=notrunc
-else
-  dd if=$ROOTDIR/images/tmp/bootparams-smarc-rzg2lc.bin of=$IMG bs=512 seek=1 count=1 conv=notrunc
-  dd if=$ROOTDIR/images/tmp/bl2-smarc-rzg2lc.bin of=$IMG bs=512 seek=8 conv=notrunc
-  dd if=$ROOTDIR/images/tmp/fip-smarc-rzg2lc.bin of=$IMG bs=512 seek=128 conv=notrunc
+  dd if=$ROOTDIR/images/tmp/bootparams-${MACHINE}.bin of=$IMG bs=512 seek=1 count=1 conv=notrunc
+  dd if=$ROOTDIR/images/tmp/bl2-${MACHINE}.bin of=$IMG bs=512 seek=8 conv=notrunc
+  dd if=$ROOTDIR/images/tmp/fip-${MACHINE}.bin of=$IMG bs=512 seek=128 conv=notrunc
 fi
 echo -e "\n\n*** Image is ready - images/${IMG}"
 sync
