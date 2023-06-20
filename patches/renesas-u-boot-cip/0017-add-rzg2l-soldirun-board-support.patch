@@ -1,0 +1,1076 @@
+From 63a19965521f663cb55e00a178fd1cd1c971aafe Mon Sep 17 00:00:00 2001
+From: Yazan Shhady <yazan.shhady@solid-run.com>
+Date: Wed, 31 May 2023 13:35:05 +0300
+Subject: [PATCH] add rzg2l soldirun board support
+
+---
+ arch/arm/dts/Makefile                  |   1 +
+ arch/arm/dts/rzg2l-solidrun.dts        | 103 +++++++++++
+ arch/arm/mach-rmobile/Kconfig.64       |   6 +
+ board/solidrun/rcar-common/common.c    | 160 ++++++++++++++++
+ board/solidrun/rcar-common/gen3-spl.c  |  60 ++++++
+ board/solidrun/rzg-common/common.h     |  26 +++
+ board/solidrun/rzg-common/update_fdt.c | 245 +++++++++++++++++++++++++
+ board/solidrun/rzg2l/Kconfig           |  15 ++
+ board/solidrun/rzg2l/Makefile          |  13 ++
+ board/solidrun/rzg2l/rzg2l-solidrun.c  | 156 ++++++++++++++++
+ configs/rzg2l-solidrun_defconfig       |  81 ++++++++
+ include/configs/rzg2l-solidrun.h       |  88 +++++++++
+ 12 files changed, 954 insertions(+)
+ create mode 100644 arch/arm/dts/rzg2l-solidrun.dts
+ create mode 100644 board/solidrun/rcar-common/common.c
+ create mode 100644 board/solidrun/rcar-common/gen3-spl.c
+ create mode 100644 board/solidrun/rzg-common/common.h
+ create mode 100644 board/solidrun/rzg-common/update_fdt.c
+ create mode 100644 board/solidrun/rzg2l/Kconfig
+ create mode 100644 board/solidrun/rzg2l/Makefile
+ create mode 100644 board/solidrun/rzg2l/rzg2l-solidrun.c
+ create mode 100644 configs/rzg2l-solidrun_defconfig
+ create mode 100644 include/configs/rzg2l-solidrun.h
+
+diff --git a/arch/arm/dts/Makefile b/arch/arm/dts/Makefile
+index 7b59d9b4f8..62382b9541 100644
+--- a/arch/arm/dts/Makefile
++++ b/arch/arm/dts/Makefile
+@@ -923,6 +923,7 @@ dtb-$(CONFIG_RCAR_GEN3) += \
+ 	r8a77995-draak-u-boot.dtb \
+ 	r8a779a0-falcon-u-boot.dtb \
+ 	rzg2l-dev.dtb \
++	rzg2l-solidrun.dtb \
+ 	smarc-rzg2l.dtb \
+ 	rzv2l-dev.dtb \
+ 	smarc-rzv2l.dtb \
+diff --git a/arch/arm/dts/rzg2l-solidrun.dts b/arch/arm/dts/rzg2l-solidrun.dts
+new file mode 100644
+index 0000000000..79e9f8522c
+--- /dev/null
++++ b/arch/arm/dts/rzg2l-solidrun.dts
+@@ -0,0 +1,103 @@
++// SPDX-License-Identifier: GPL-2.0
++/*
++ * Device Tree Source for the GR-Peach board
++ *
++ * Copyright (C) 2017 Jacopo Mondi <jacopo+renesas@jmondi.org>
++ * Copyright (C) 2016 Renesas Electronics
++ */
++
++/dts-v1/;
++#include <dt-bindings/gpio/gpio.h>
++#include "r9a07g044l.dtsi"
++#include "r9a07g044l-u-boot.dtsi"
++#include <dt-bindings/pinctrl/rzg2l-pinctrl.h>
++
++/ {
++	model = "sr-rzg2l";
++	compatible = "renesas,r9a07g044l", "renesas,rzg2l";
++
++	aliases {
++		serial0 = &scif0;
++	};
++
++	chosen {
++		stdout-path = "serial0:115200n8";
++	};
++
++	memory@48000000 {
++		device_type = "memory";
++		/* first 128MB is reserved for secure area. */
++		reg = <0 0x48000000 0 0x78000000>;
++	};
++
++};
++
++&pinctrl {
++	eth0_pins: eth0 {
++		pinmux = <RZG2L_PINMUX(20, 0, 1)>, //ET0_TXC_TX_CLK
++				<RZG2L_PINMUX(20, 1, 1)>, // ET0_TX_CTL_TX_EN
++				<RZG2L_PINMUX(20, 2, 1)>, // ET0_TXD0
++				<RZG2L_PINMUX(21, 0, 1)>, // ET0_TXD1
++				<RZG2L_PINMUX(21, 1, 1)>, // ET0_TXD2
++				<RZG2L_PINMUX(22, 0, 1)>, // ET0_TXD3
++				<RZG2L_PINMUX(22, 1, 1)>, // ET0_TX_ERR
++				<RZG2L_PINMUX(23, 0, 1)>, // ET0_TX_COL
++				<RZG2L_PINMUX(23, 1, 1)>, // ET0_TX_CRS
++				<RZG2L_PINMUX(24, 0, 1)>, // ET0_RXC_RX_CLK
++				<RZG2L_PINMUX(24, 1, 1)>, // ET0_RX_CTL_RX_DV
++				<RZG2L_PINMUX(25, 0, 1)>, // ET0_RXD 
++				<RZG2L_PINMUX(25, 1, 1)>, // ET0_RXD1
++				<RZG2L_PINMUX(26, 0, 1)>, // ET0_RXD2
++				<RZG2L_PINMUX(26, 1, 1)>, // ET0_RXD3
++				<RZG2L_PINMUX(27, 0, 1)>, // ET0_RX_ERR
++				<RZG2L_PINMUX(27, 1, 1)>, // ET0_MDC
++				<RZG2L_PINMUX(28, 0, 1)>, // ET0_MDIO
++				<RZG2L_PINMUX(28, 1, 1)>; // ET0_LINKSTA
++	};
++};
++
++&xinclk {
++        clock-frequency = <24000000>;
++};
++
++&scif0 {
++	status = "okay";
++	clock = <100000000>;
++};
++
++&sdhi0 {
++	/* pinctrl placeholder
++	 * If this channel is used for interfacing with a SD card, a power enable
++	 * pin (SD0_PWR_EN) must be defined.
++	 * The SD0_PWR_EN pin is associated with P4_1.
++	 * A HIGH signal on SD0_PWR_EN will enable supply voltage for SD card.
++	*/
++	bus-width = <8>;
++	status = "okay";
++};
++
++&sdhi1 {
++	status = "disabled";
++};
++
++&eth0 {
++	pinctrl-names = "default";
++	pinctrl-0 = <&eth0_pins>;
++	phy-handle = <&phy0>;
++	phy-mode = "rgmii";
++	status = "okay";
++
++	phy0: ethernet-phy@0 {
++		reg = <0>;
++	};
++};
++
++&i2c0 {
++	pinctrl-names = "default";
++	status = "okay";
++
++	adv7535: hdmi@3d {
++		compatible = "adi,adv7535";
++		reg = <0x3d>;
++	};
++};
+diff --git a/arch/arm/mach-rmobile/Kconfig.64 b/arch/arm/mach-rmobile/Kconfig.64
+index 6e74123014..2a0e2d6258 100644
+--- a/arch/arm/mach-rmobile/Kconfig.64
++++ b/arch/arm/mach-rmobile/Kconfig.64
+@@ -182,6 +182,11 @@ config TARGET_SMARC_RZG2L
+ 	help
+           Support for Renesas RZ/G2L Dev Platform
+ 
++config TARGET_RZG2L_SOLIDRUN
++        bool "RZ/G2L SolidRun board"
++        help
++          Support for Solidrun RZ/G2L Dev Platform
++
+ config TARGET_RZV2L_DEV
+ 	bool "RZ/V2L Dev board"
+ 	help
+@@ -238,6 +243,7 @@ source "board/beacon/beacon-rzg2m/Kconfig"
+ source "board/hoperun/hihope-rzg2/Kconfig"
+ source "board/silinux/ek874/Kconfig"
+ source "board/renesas/rzg2l-dev/Kconfig"
++source "board/solidrun/rzg2l/Kconfig"
+ source "board/renesas/rzv2l-dev/Kconfig"
+ source "board/renesas/rzg2lc-dev/Kconfig"
+ source "board/renesas/rzg2ul-dev/Kconfig"
+diff --git a/board/solidrun/rcar-common/common.c b/board/solidrun/rcar-common/common.c
+new file mode 100644
+index 0000000000..ed0afde64f
+--- /dev/null
++++ b/board/solidrun/rcar-common/common.c
+@@ -0,0 +1,160 @@
++// SPDX-License-Identifier: GPL-2.0
++/*
++ * board/renesas/rcar-common/common.c
++ *
++ * Copyright (C) 2013 Renesas Electronics Corporation
++ * Copyright (C) 2013 Nobuhiro Iwamatsu <nobuhiro.iwamatsu.yj@renesas.com>
++ * Copyright (C) 2015 Nobuhiro Iwamatsu <iwamatsu@nigauri.org>
++ */
++
++#include <common.h>
++#include <dm.h>
++#include <init.h>
++#include <asm/global_data.h>
++#include <dm/uclass-internal.h>
++#include <asm/arch/rmobile.h>
++#include <linux/libfdt.h>
++
++#ifdef CONFIG_RCAR_GEN3
++
++#if defined(CONFIG_TARGET_HIHOPE_RZG2)
++#include <asm/system.h>
++#include <asm/ptrace.h>
++
++#include "../rzg-common/common.h"
++#endif
++
++DECLARE_GLOBAL_DATA_PTR;
++
++/* If the firmware passed a device tree use it for U-Boot DRAM setup. */
++extern u64 rcar_atf_boot_args[];
++
++#if !(defined(CONFIG_R9A07G044L) || defined(CONFIG_R9A07G044C) || defined(CONFIG_R9A07G054L) || defined(CONFIG_R9A07G043U))
++int fdtdec_board_setup(const void *fdt_blob)
++{
++	void *atf_fdt_blob = (void *)(rcar_atf_boot_args[1]);
++	if (fdt_magic(atf_fdt_blob) == FDT_MAGIC)
++		fdt_overlay_apply_node((void *)fdt_blob, 0, atf_fdt_blob, 0);
++	return 0;
++}
++#endif
++
++int dram_init(void)
++{
++	return fdtdec_setup_mem_size_base();
++}
++
++int dram_init_banksize(void)
++{
++#if defined (CONFIG_TARGET_HIHOPE_RZG2)
++	int use_ecc = 0;
++	struct pt_regs regs;
++#endif
++
++	fdtdec_setup_memory_banksize();
++
++#if defined (CONFIG_TARGET_HIHOPE_RZG2)
++	if (rmobile_get_cpu_type() == RMOBILE_CPU_TYPE_R8A7795) {
++		/* Setting SiP Service GET_ECC_MODE command*/
++		regs.regs[0] = RZG_SIP_SVC_GET_ECC_MODE;
++		smc_call(&regs);
++		/* First result is USE ECC or not*/
++		use_ecc = regs.regs[0];
++
++		if (use_ecc == 1) {
++			int bank;
++
++			for (bank = 0; bank < CONFIG_NR_DRAM_BANKS; bank++) {
++				if ((gd->bd->bi_dram[bank].start & (0x500000000U)) == (0x500000000U)) {
++					gd->bd->bi_dram[bank].start =
++						(gd->bd->bi_dram[bank].start & 0x0FFFFFFFFU)
++						| 0x600000000U;
++				}
++			}
++		}
++	}
++#endif
++
++	return 0;
++}
++
++#if defined(CONFIG_OF_BOARD_SETUP)
++static int is_mem_overlap(void *blob, int first_mem_node, int curr_mem_node)
++{
++	struct fdt_resource first_mem_res, curr_mem_res;
++	int curr_mem_reg, first_mem_reg = 0;
++	int ret;
++
++	for (;;) {
++		ret = fdt_get_resource(blob, first_mem_node, "reg",
++				       first_mem_reg++, &first_mem_res);
++		if (ret) /* No more entries, no overlap found */
++			return 0;
++
++		curr_mem_reg = 0;
++		for (;;) {
++			ret = fdt_get_resource(blob, curr_mem_node, "reg",
++					       curr_mem_reg++, &curr_mem_res);
++			if (ret) /* No more entries, check next tuple */
++				break;
++
++			if (curr_mem_res.end < first_mem_res.start)
++				continue;
++
++			if (curr_mem_res.start >= first_mem_res.end)
++				continue;
++
++			printf("Overlap found: 0x%llx..0x%llx / 0x%llx..0x%llx\n",
++				first_mem_res.start, first_mem_res.end,
++				curr_mem_res.start, curr_mem_res.end);
++
++			return 1;
++		}
++	}
++
++	return 0;
++}
++
++int ft_board_setup(void *blob, struct bd_info *bd)
++{
++	/*
++	 * Scrub duplicate /memory@* node entries here. Some R-Car DTs might
++	 * contain multiple /memory@* nodes, however fdt_fixup_memory_banks()
++	 * either generates single /memory node or updates the first /memory
++	 * node. Any remaining memory nodes are thus potential duplicates.
++	 *
++	 * However, it is not possible to delete all the memory nodes right
++	 * away, since some of those might not be DRAM memory nodes, but some
++	 * sort of other memory. Thus, delete only the memory nodes which are
++	 * in the R-Car3 DBSC ranges.
++	 */
++	int mem = 0, first_mem_node = 0;
++
++	for (;;) {
++		mem = fdt_node_offset_by_prop_value(blob, mem,
++						    "device_type", "memory", 7);
++		if (mem < 0)
++			break;
++		if (!fdtdec_get_is_enabled(blob, mem))
++			continue;
++
++		/* First memory node, patched by U-Boot */
++		if (!first_mem_node) {
++			first_mem_node = mem;
++			continue;
++		}
++
++		/* Check the remaining nodes and delete duplicates */
++		if (!is_mem_overlap(blob, first_mem_node, mem))
++			continue;
++
++		/* Delete duplicate node, start again */
++		fdt_del_node(blob, mem);
++		first_mem_node = 0;
++		mem = 0;
++	}
++
++	return 0;
++}
++#endif
++#endif
+diff --git a/board/solidrun/rcar-common/gen3-spl.c b/board/solidrun/rcar-common/gen3-spl.c
+new file mode 100644
+index 0000000000..b02a946a21
+--- /dev/null
++++ b/board/solidrun/rcar-common/gen3-spl.c
+@@ -0,0 +1,60 @@
++// SPDX-License-Identifier: GPL-2.0
++/*
++ * R-Car Gen3 recovery SPL
++ *
++ * Copyright (C) 2019 Marek Vasut <marek.vasut@gmail.com>
++ */
++
++#include <common.h>
++#include <cpu_func.h>
++#include <image.h>
++#include <init.h>
++#include <log.h>
++#include <asm/io.h>
++#include <spl.h>
++#include <linux/bitops.h>
++
++#define RCAR_CNTC_BASE	0xE6080000
++#define CNTCR_EN	BIT(0)
++
++void board_init_f(ulong dummy)
++{
++	writel(CNTCR_EN, RCAR_CNTC_BASE);
++	timer_init();
++}
++
++void spl_board_init(void)
++{
++	/* UART clocks enabled and gd valid - init serial console */
++	preloader_console_init();
++}
++
++u32 spl_boot_device(void)
++{
++	return BOOT_DEVICE_UART;
++}
++
++void __noreturn jump_to_image_no_args(struct spl_image_info *spl_image)
++{
++	debug("image entry point: 0x%lx\n", spl_image->entry_point);
++	if (spl_image->os == IH_OS_ARM_TRUSTED_FIRMWARE) {
++		typedef void (*image_entry_arg_t)(int, int, int, int)
++			__attribute__ ((noreturn));
++		image_entry_arg_t image_entry =
++			(image_entry_arg_t)(uintptr_t) spl_image->entry_point;
++		image_entry(IH_MAGIC, CONFIG_SPL_TEXT_BASE, 0, 0);
++	} else {
++		typedef void __noreturn (*image_entry_noargs_t)(void);
++		image_entry_noargs_t image_entry =
++			(image_entry_noargs_t)spl_image->entry_point;
++		image_entry();
++	}
++}
++
++void s_init(void)
++{
++}
++
++void reset_cpu(void)
++{
++}
+diff --git a/board/solidrun/rzg-common/common.h b/board/solidrun/rzg-common/common.h
+new file mode 100644
+index 0000000000..1cea22e380
+--- /dev/null
++++ b/board/solidrun/rzg-common/common.h
+@@ -0,0 +1,26 @@
++/* SPDX-License-Identifier: GPL-2.0+ */
++#ifndef __RZG_COMMON_H__
++#define __RZG_COMMON_H__
++
++#ifndef ARRAY_SIZE
++#define ARRAY_SIZE(x)	(sizeof(x) / sizeof((x)[0]))
++#endif
++
++/* This SiP service command must be gotten from IPL document.*/
++#define RZG_SIP_SVC_GET_ECC_MODE	(0x8200000F)
++
++/*
++ * The parameters must be defined with below requirement.
++ * * The size must is multiply of 3.
++ * * The list of char array with size is multiply of 3.
++ *   Each 3 properties are present for:
++ *       "FDT full path of Node", "Property", "Value of Property"
++ * * If none of define "Property", "Node" will be deleted
++ * * "Value of Property" will be:
++ *   "<xxx yyy>":
++ *       xxx, yyy: have '&' prefix, they are as phandle reference
++ *       xxx, yyy: are number, otherwise won't be process
++ *   "xxx yyy": They are processed as string
++ */
++int update_fdt(void *fdt, const char **list_dt_change, int size);
++#endif //__RZG_COMMON_H__
+diff --git a/board/solidrun/rzg-common/update_fdt.c b/board/solidrun/rzg-common/update_fdt.c
+new file mode 100644
+index 0000000000..ecd4fca20c
+--- /dev/null
++++ b/board/solidrun/rzg-common/update_fdt.c
+@@ -0,0 +1,245 @@
++// SPDX-License-Identifier: GPL-2.0+
++#ifndef __RZG_UPDATE_FDT__
++#define __RZG_UPDATE_FDT__
++
++#include <common.h>
++#include <malloc.h>
++#include <fdt_support.h>
++#include <linux/ctype.h>
++#include "common.h"
++
++int add_new_node(void *fdt, char *node);
++
++int add_new_node(void *fdt, char *node)
++{
++	char *parent, *name;
++	int len, nodeoffset;
++
++	name = strrchr(node, '/');
++	if (!strcmp(node, "/") || !name)
++		return 0;
++
++	len = strlen(node) - strlen(name) + 1;
++	parent = malloc(sizeof(char) * len);
++	strncpy(parent, node, len);
++	parent[len] = '\0';
++	nodeoffset = fdt_path_offset(fdt, parent);
++	if (nodeoffset < 0) {
++		/* Remove the last '/' in the path*/
++		parent[len - 1] = '\0';
++		nodeoffset = add_new_node(fdt, parent);
++		if (nodeoffset == 0)
++			nodeoffset = fdt_path_offset(fdt, "/");
++	}
++	nodeoffset = fdt_add_subnode(fdt, nodeoffset, name + 1);
++	free(parent);
++	return nodeoffset;
++}
++
++int fdt_parse_prop(void *fdt, char **newval, char *data, int *len)
++{
++	char *cp;               /* temporary char pointer */
++	char *newp;             /* temporary newval char pointer */
++	unsigned long tmp;      /* holds converted values */
++
++	*len = 0;
++	newp = newval[0];
++
++	/* An array of cells */
++	if (*newp == '<') {
++		newp++;
++		while ((*newp != '>')) {
++			/*
++			 * Keep searching until we find that last ">"
++			 * That way users don't have to escape the spaces
++			 */
++			if (*newp == '\0')
++				break;
++
++			cp = newp;
++
++			if (strchr(cp, '&')) {
++				char *handler, *next;
++				int size, nodeoffset;
++				u32 phandle;
++
++				cp = strchr(cp, '&');
++				next = strchr(cp + 1, '&');
++				if (!next)
++					size = strlen(cp) - 1;
++				else
++					size = next - cp - 1;
++
++				/* Trim the space or tab*/
++				while (cp[size] == ' ' || cp[size] == '\t')
++					size--;
++
++				handler = malloc(sizeof(char) * size);
++				/* We increase data pointer and decrease size
++				 * to 1 value to remove '&' character
++				 */
++				strncpy(handler, cp + 1, size - 1);
++				handler[size - 1] = '\0';
++				nodeoffset = fdt_path_offset(fdt, handler);
++				if (nodeoffset > 0) {
++					phandle = fdt_get_phandle(fdt,
++								  nodeoffset);
++					if (phandle == 0) {
++						phandle =
++							fdt_alloc_phandle(fdt);
++						fdt_set_phandle(fdt, nodeoffset,
++								phandle);
++					}
++					*(fdt32_t *)data =
++							cpu_to_fdt32(phandle);
++				}
++				free(handler);
++				/* Move to the next */
++				newp = cp + size;
++			} else  {
++				tmp = simple_strtoul(cp, &newp, 0);
++				if (*cp != '?')
++					*(fdt32_t *)data = cpu_to_fdt32(tmp);
++				else
++					newp++;
++			}
++			data  += 4;
++			*len += 4;
++
++			/* If the ptr didn't advance,
++			 * something went wrong
++			 */
++			if ((newp - cp) <= 0) {
++				printf("Sorry, I could not convert ");
++				printf("\"%s\"\n", cp);
++				return 1;
++			}
++			while (*newp == ' ')
++				newp++;
++		}
++
++		if (*newp != '>') {
++			printf("Unexpected character '%c'\n", *newp);
++			return 1;
++		}
++	} else if (*newp == '[') {
++		/*
++		 * Byte stream.  Convert the values.
++		 */
++		newp++;
++		while (*newp != ']') {
++			while (*newp == ' ')
++				newp++;
++			if (*newp == '\0')
++				break;
++			if (!isxdigit(*newp))
++				break;
++			tmp = simple_strtoul(newp, &newp, 16);
++			*data++ = tmp & 0xFF;
++			*len    = *len + 1;
++		}
++		if (*newp != ']') {
++			printf("Unexpected character '%c'\n", *newp);
++			return 1;
++		}
++	} else {
++		/*
++		 * Assume it is one or more strings.  Copy it into our
++		 * data area for convenience (including the
++		 * terminating '\0's).
++		 */
++		size_t length = strlen(newp) + 1;
++
++		strcpy(data, newp);
++		data += length;
++		*len += length;
++	}
++	return 0;
++}
++
++int process_node_data(void *fdt, char *node, char *prop, char *val)
++{
++	static char data[1024] __aligned(4);
++	const void *ptmp;
++	int len, ret, nodeoffset;
++
++	nodeoffset = fdt_path_offset(fdt, node);
++	if (!val) {
++		len = 0;
++	} else {
++		ptmp = fdt_getprop(working_fdt, nodeoffset, prop, &len);
++		if (len > 1024) {
++			printf("prop (%d) doesn't fit in scratchpad!\n", len);
++			return 1;
++		}
++		if (ptmp)
++			memcpy(data, ptmp, len);
++
++		ret = fdt_parse_prop(fdt, &val, data, &len);
++		if (ret != 0)
++			return ret;
++	}
++
++	/* After parsing value for property, nodeoffset may be changed*/
++	nodeoffset = fdt_path_offset(fdt, node);
++
++	return fdt_setprop(fdt, nodeoffset, prop, data, len);
++}
++
++int update_fdt(void *fdt, const char **list_dt_change, int size)
++{
++	int i, ret;
++
++	if (!list_dt_change)
++		return 1;
++
++	if ((size > 0) && ((size % 3) == 0)) {
++		printf("Changing the current FDT in %lx.\n", (uintptr_t)fdt);
++	} else {
++		pr_debug("Wrong define FDT change structure. No change FDT.\n");
++		return 1;
++	}
++
++	for (i = 0 ; i < size; i += 3) {
++		int nodeoffset;
++		char *node, *prop, *val;
++
++		node = (char *)list_dt_change[i];
++		prop = (char *)list_dt_change[i + 1];
++		val = (char *)list_dt_change[i + 2];
++		nodeoffset = fdt_path_offset(fdt, node);
++
++		if (!node)
++			continue;
++
++		if (!prop) {
++			if (nodeoffset < 0) {
++				pr_debug("\tUnavailable node %s\n", node);
++				continue;
++			}
++			printf("   Remove Node %s\n", node);
++			ret = fdt_del_node(fdt, nodeoffset);
++			if (ret < 0) {
++				printf("\tCan't remove. ERR %d\n", ret);
++			} else {
++				printf("\tRemoved.\n");
++			}
++		} else {
++			printf("   Config Node %s\n", node);
++			if (nodeoffset < 0) {
++				pr_debug("\tUnavailable node\n");
++				printf("\tCreate node.\n");
++				nodeoffset = add_new_node(fdt, node);
++			}
++			printf("\tSet property %s : %s\n", prop, val);
++			ret = process_node_data(fdt, node, prop, val);
++			if (ret < 0) {
++				printf("\t\tCan't set property. ERR %d\n", ret);
++			}
++		}
++	}
++	/* We fit the FDT size in order not to consume the memory*/
++	fdt_shrink_to_minimum(fdt, 0x0);
++	return 1;
++}
++#endif // __RZG_UPDATE_FDT__
+diff --git a/board/solidrun/rzg2l/Kconfig b/board/solidrun/rzg2l/Kconfig
+new file mode 100644
+index 0000000000..9dac8b3f6c
+--- /dev/null
++++ b/board/solidrun/rzg2l/Kconfig
+@@ -0,0 +1,15 @@
++if TARGET_RZG2L_SOLIDRUN
++
++config SYS_SOC
++	default "rmobile"
++
++config SYS_BOARD
++	default "rzg2l"
++
++config SYS_VENDOR
++	default "solidrun"
++
++config SYS_CONFIG_NAME
++	default "rzg2l-solidrun"
++
++endif
+diff --git a/board/solidrun/rzg2l/Makefile b/board/solidrun/rzg2l/Makefile
+new file mode 100644
+index 0000000000..91091e01ad
+--- /dev/null
++++ b/board/solidrun/rzg2l/Makefile
+@@ -0,0 +1,13 @@
++#
++# board/renesas/salvator-x/Makefile
++#
++# Copyright (C) 2015 Renesas Electronics Corporation
++#
++# SPDX-License-Identifier: GPL-2.0+
++#
++
++ifdef CONFIG_SPL_BUILD
++obj-y	:= ../rcar-common/gen3-spl.o
++else
++obj-y	:= rzg2l-solidrun.o ../rcar-common/common.o
++endif
+diff --git a/board/solidrun/rzg2l/rzg2l-solidrun.c b/board/solidrun/rzg2l/rzg2l-solidrun.c
+new file mode 100644
+index 0000000000..1e7d7711e6
+--- /dev/null
++++ b/board/solidrun/rzg2l/rzg2l-solidrun.c
+@@ -0,0 +1,156 @@
++#include <common.h>
++#include <cpu_func.h>
++#include <image.h>
++#include <init.h>
++#include <malloc.h>
++#include <netdev.h>
++#include <dm.h>
++#include <dm/platform_data/serial_sh.h>
++#include <asm/processor.h>
++#include <asm/mach-types.h>
++#include <asm/io.h>
++#include <linux/bitops.h>
++#include <linux/errno.h>
++#include <asm/arch/sys_proto.h>
++#include <asm/gpio.h>
++#include <asm/arch/gpio.h>
++#include <asm/arch/rmobile.h>
++#include <asm/arch/rcar-mstp.h>
++#include <asm/arch/sh_sdhi.h>
++#include <i2c.h>
++#include <mmc.h>
++
++DECLARE_GLOBAL_DATA_PTR;
++
++#define PFC_BASE	0x11030000
++
++#define ETH_CH0		(PFC_BASE + 0x300c)
++#define ETH_CH1		(PFC_BASE + 0x3010)
++#define I2C_CH1 	(PFC_BASE + 0x1870)
++#define ETH_PVDD_3300	0x00
++#define ETH_PVDD_1800	0x01
++#define ETH_PVDD_2500	0x02
++#define ETH_MII_RGMII	(PFC_BASE + 0x3018)
++
++/* CPG */
++#define CPG_BASE					0x11010000
++#define CPG_CLKON_BASE				(CPG_BASE + 0x500)
++#define CPG_RESET_BASE				(CPG_BASE + 0x800)
++#define CPG_RESET_ETH				(CPG_RESET_BASE + 0x7C)
++#define CPG_RESET_I2C                           (CPG_RESET_BASE + 0x80)
++#define CPG_RST_USB				(CPG_BASE + 0x878)
++#define CPG_CLKON_USB				(CPG_BASE + 0x578)
++
++/* PFC */
++#define PFC_P37						(PFC_BASE + 0x037)
++#define PFC_PM37					(PFC_BASE + 0x16E)
++#define PFC_PMC37					(PFC_BASE + 0x237)
++#define PFC_PWPR					(PFC_BASE + 0x3014)
++#define PFC_PMC14					(PFC_BASE + 0x214)
++#define PFC_PFC14					(PFC_BASE + 0x450)
++#define PFC_PMC15					(PFC_BASE + 0x215)
++#define PFC_PFC15					(PFC_BASE + 0x454)
++#define PFC_PMC3A					(PFC_BASE + 0x23a)
++#define PFC_PFC3A					(PFC_BASE + 0x4e8)
++
++#define USBPHY_BASE		(0x11c40000)
++#define USB0_BASE		(0x11c50000)
++#define USB1_BASE		(0x11c70000)
++#define USBF_BASE		(0x11c60000)
++#define USBPHY_RESET		(USBPHY_BASE + 0x000u)
++#define COMMCTRL		0x800
++#define HcRhDescriptorA		0x048
++#define LPSTS			0x102
++
++void s_init(void)
++{
++	/* SD1 power control: P39_1 = 0; P39_2 = 1; */
++	*(volatile u32 *)(PFC_PMC37) &= 0xFFFFFFF9; /* Port func mode 0b00 */
++	*(volatile u32 *)(PFC_PM37) = (*(volatile u32 *)(PFC_PM37) & 0xFFFFFFC3) | 0x28; /* Port output mode 0b1010 */
++#if CONFIG_TARGET_RZG2L_SOLIDRUN
++	*(volatile u32 *)(PFC_P37) = (*(volatile u32 *)(PFC_P37) & 0xFFFFFFF9) | 0x6;	/* Port 39[2:1] output value 0b11*/
++#else
++
++	*(volatile u32 *)(PFC_P37) = (*(volatile u32 *)(PFC_P37) & 0xFFFFFFF9) | 0x4;	/* Port 39[2:1] output value 0b10*/
++#endif
++
++	/* can go in board_eht_init() once enabled */
++	*(volatile u32 *)(ETH_CH0) = (*(volatile u32 *)(ETH_CH0) & 0xFFFFFFFC) | ETH_PVDD_1800;
++	*(volatile u32 *)(ETH_CH1) = (*(volatile u32 *)(ETH_CH1) & 0xFFFFFFFC) | ETH_PVDD_1800;
++	/* Enable RGMII for both ETH{0,1} */
++	*(volatile u32 *)(ETH_MII_RGMII) = (*(volatile u32 *)(ETH_MII_RGMII) & 0xFFFFFFFC);
++	/* ETH CLK */
++	*(volatile u32 *)(CPG_RESET_ETH) = 0x30003;
++	/* I2C CLK */
++	*(volatile u32 *)(CPG_RESET_I2C) = 0xF000F;
++	/* I2C pin non GPIO enable */
++	*(volatile u32 *)(I2C_CH1) = 0x01010101;
++}
++
++static void board_usb_init(void)
++{
++	/*Enable USB*/
++	(*(volatile u32 *)CPG_RST_USB) = 0x000f000f;
++	(*(volatile u32 *)CPG_CLKON_USB) = 0x000f000f;
++
++	/* Setup  */
++	/* Disable GPIO Write Protect */
++	(*(volatile u32 *)PFC_PWPR) &= ~(0x1u << 7);	/* PWPR.BOWI = 0 */
++	(*(volatile u32 *)PFC_PWPR) |= (0x1u << 6);	/* PWPR.PFCWE = 1 */
++
++	/* set P4_0 as Func.1 for VBUSEN */
++	(*(volatile u8 *)PFC_PMC14) |= (0x1u << 0);	/* PMC14.b0 = 1 */
++	(*(volatile u8 *)PFC_PFC14) &= ~(0x7u << 0);	/* PFC14.PFC0 = 0 */
++	(*(volatile u8 *)PFC_PFC14) |= (0x1u << 0);
++
++	/* set P5_0 as Func.1 for OVERCUR */
++	(*(volatile u8 *)PFC_PMC15) |= (0x1u << 0);	/* PMC15.b0 = 1 */
++	(*(volatile u8 *)PFC_PFC15) &= ~(0x7u << 0);	/* PFC15.PFC0 = 0 */
++	(*(volatile u8 *)PFC_PFC15) |= (0x1u << 0);
++
++	/* set P42_0 as Func.1 for VBUSEN */
++	(*(volatile u8 *)PFC_PMC3A) |= (0x1u << 0);	/* PMC14.b0 = 1 */
++	(*(volatile u8 *)PFC_PFC3A) &= ~(0xfu << 0);	/* PFC15.PFC0 = 0 */
++	(*(volatile u8 *)PFC_PFC3A) |= (0x1u << 0);
++
++	/* set P42_1 as Func.1 for OVERCUR */
++	(*(volatile u8 *)PFC_PMC3A) |= (0x1u << 0);	/* PMC14.b1 = 1 */
++	(*(volatile u8 *)PFC_PFC3A) &= ~(0xfu << 4);	/* PFC15.PFC1 = 0 */
++	(*(volatile u8 *)PFC_PFC3A) |= (0x1u << 4);
++
++	/* Enable write protect */
++	(*(volatile u32 *)PFC_PWPR) &= ~(0x1u << 6);	/* PWPR.PFCWE = 0 */
++	(*(volatile u32 *)PFC_PWPR) |= (0x1u << 7);	/* PWPR.BOWI = 1 */
++
++	/*Enable 2 USB ports*/
++	(*(volatile u32 *)USBPHY_RESET) = 0x00001000u;
++	/*USB0 is HOST*/
++	(*(volatile u32 *)(USB0_BASE + COMMCTRL)) = 0;
++	/*USB1 is HOST*/
++	(*(volatile u32 *)(USB1_BASE + COMMCTRL)) = 0;
++	/* Set USBPHY normal operation (Function only) */
++	(*(volatile u16 *)(USBF_BASE + LPSTS)) |= (0x1u << 14);		/* USBPHY.SUSPM = 1 (func only) */
++	/* Overcurrent is not supported */
++	(*(volatile u32 *)(USB0_BASE + HcRhDescriptorA)) |= (0x1u << 12);	/* NOCP = 1 */
++	(*(volatile u32 *)(USB1_BASE + HcRhDescriptorA)) |= (0x1u << 12);	/* NOCP = 1 */
++}
++
++int board_early_init_f(void)
++{
++
++	return 0;
++}
++
++int board_init(void)
++{
++	/* adress of boot parameters */
++	gd->bd->bi_boot_params = CONFIG_SYS_TEXT_BASE + 0x50000;
++	board_usb_init();
++
++	return 0;
++}
++
++void reset_cpu(void)
++{
++
++}
+diff --git a/configs/rzg2l-solidrun_defconfig b/configs/rzg2l-solidrun_defconfig
+new file mode 100644
+index 0000000000..258b2505eb
+--- /dev/null
++++ b/configs/rzg2l-solidrun_defconfig
+@@ -0,0 +1,81 @@
++CONFIG_ARM=y
++CONFIG_ARCH_CPU_INIT=y
++CONFIG_ARCH_RMOBILE=y
++CONFIG_SYS_TEXT_BASE=0x50000000
++CONFIG_ENV_SIZE=0x20000
++CONFIG_ENV_OFFSET=0xFFFE0000
++CONFIG_DM_GPIO=y
++CONFIG_RCAR_GEN3=y
++CONFIG_R9A07G044L=y
++CONFIG_TARGET_RZG2L_SOLIDRUN=y
++CONFIG_DEFAULT_DEVICE_TREE="rzg2l-solidrun"
++CONFIG_USE_BOOTCOMMAND=y
++CONFIG_BOOTCOMMAND="run distro_bootcmd"
++CONFIG_SMBIOS_PRODUCT_NAME=""
++CONFIG_SPL=n
++CONFIG_FIT=y
++CONFIG_USE_BOOTARGS=y
++CONFIG_BOOTARGS="root=/dev/mmcblk0p2 rw rootwait"
++CONFIG_SUPPORT_RAW_INITRD=y
++CONFIG_DEFAULT_FDT_FILE="rzg2l-solidrun.dtb"
++CONFIG_VERSION_VARIABLE=y
++CONFIG_HUSH_PARSER=y
++CONFIG_CMD_BOOTZ=y
++CONFIG_CMD_GPIO=y
++CONFIG_CMD_I2C=y
++CONFIG_CMD_MMC=y
++CONFIG_CMD_PCI=y
++CONFIG_CMD_USB=y
++CONFIG_CMD_DHCP=y
++CONFIG_CMD_MII=y
++CONFIG_CMD_PING=y
++CONFIG_CMD_EXT2=y
++CONFIG_CMD_EXT4=y
++CONFIG_CMD_EXT4_WRITE=y
++CONFIG_CMD_FAT=y
++CONFIG_CMD_FS_GENERIC=y
++CONFIG_OF_CONTROL=y
++CONFIG_OF_PLATDATA=y
++CONFIG_OF_LIST="rzg2l-solidrun"
++CONFIG_MULTI_DTB_FIT_LZO=y
++CONFIG_MULTI_DTB_FIT_USER_DEFINED_AREA=y
++CONFIG_ENV_OVERWRITE=y
++CONFIG_SYS_RELOC_GD_ENV_ADDR=y
++CONFIG_REGMAP=y
++CONFIG_SYSCON=y
++CONFIG_CLK=y
++CONFIG_CLK_RENESAS=y
++CONFIG_CLK_R9A07G044L=y
++CONFIG_RCAR_GPIO=y
++CONFIG_PINCTRL_PFC_RZG2L=y
++CONFIG_RZG2L_GPIO=y
++CONFIG_DM_I2C=y
++CONFIG_SYS_I2C_RCAR_IIC=y
++CONFIG_SH_SDHI=y
++CONFIG_BITBANGMII=y
++CONFIG_PHY_MICREL=y
++CONFIG_PHY_MICREL_KSZ90X1=y
++CONFIG_DM_ETH=y
++CONFIG_RENESAS_RAVB=y
++CONFIG_PCI=y
++CONFIG_DM_PCI=y
++CONFIG_PCI_RCAR_GEN3=y
++CONFIG_DM_REGULATOR=y
++CONFIG_DM_REGULATOR_FIXED=y
++CONFIG_DM_REGULATOR_GPIO=y
++CONFIG_SCIF_CONSOLE=y
++CONFIG_TEE=y
++CONFIG_OPTEE=y
++CONFIG_USB=y
++CONFIG_DM_USB=y
++CONFIG_USB_XHCI_HCD=y
++CONFIG_USB_EHCI_HCD=y
++CONFIG_USB_EHCI_GENERIC=y
++CONFIG_USB_STORAGE=y
++CONFIG_OF_LIBFDT_OVERLAY=y
++CONFIG_SMBIOS_MANUFACTURER=""
++CONFIG_ENV_IS_IN_MMC=y
++CONFIG_CLK_R9A07G044L=y
++CONFIG_SYS_I2C_RZG2L_RIIC=y
++CONFIG_NET_RANDOM_ETHADDR=y
++CONFIG_DISTRO_DEFAULTS=y
+diff --git a/include/configs/rzg2l-solidrun.h b/include/configs/rzg2l-solidrun.h
+new file mode 100644
+index 0000000000..b5063a4cfb
+--- /dev/null
++++ b/include/configs/rzg2l-solidrun.h
+@@ -0,0 +1,88 @@
++/* SPDX-License-Identifier: GPL-2.0+ */
++/*
++ * Copyright (C) 2023 Renesas Electronics Corporation
++ */
++
++#ifndef __RZG2L_SOLIDRUN_H
++#define __RZG2L_SOLIDRUN_H
++
++#include <asm/arch/rmobile.h>
++
++#define CONFIG_REMAKE_ELF
++
++#ifdef CONFIG_SPL
++#define CONFIG_SPL_TARGET	"spl/u-boot-spl.scif"
++#endif
++
++/* boot option */
++
++#define CONFIG_CMDLINE_TAG
++#define CONFIG_SETUP_MEMORY_TAGS
++#define CONFIG_INITRD_TAG
++
++/* Generic Interrupt Controller Definitions */
++/* RZ/G2L use GIC-v3 */
++#define CONFIG_GICV3
++#define GICD_BASE	0x11900000
++#define GICR_BASE	0x11960000
++
++/* console */
++#define CONFIG_SYS_CBSIZE		2048
++#define CONFIG_SYS_BARGSIZE		CONFIG_SYS_CBSIZE
++#define CONFIG_SYS_MAXARGS		64
++#define CONFIG_SYS_BAUDRATE_TABLE	{ 115200, 38400 }
++
++/* PHY needs a longer autoneg timeout */
++#define PHY_ANEG_TIMEOUT		20000
++
++/* MEMORY */
++#define CONFIG_SYS_INIT_SP_ADDR		CONFIG_SYS_TEXT_BASE
++
++/* SDHI clock freq */
++#define CONFIG_SH_SDHI_FREQ		133000000
++
++#define DRAM_RSV_SIZE			0x08000000
++#define CONFIG_SYS_SDRAM_BASE		(0x40000000 + DRAM_RSV_SIZE)
++#define CONFIG_SYS_SDRAM_SIZE		(0x40000000u - DRAM_RSV_SIZE) //total 1GB
++#define CONFIG_SYS_LOAD_ADDR		0x58000000
++#define CONFIG_LOADADDR			CONFIG_SYS_LOAD_ADDR // Default load address for tfpt,bootp...
++#define CONFIG_VERY_BIG_RAM
++#define CONFIG_MAX_MEM_MAPPED		(0x40000000u - DRAM_RSV_SIZE)
++
++#define CONFIG_SYS_MONITOR_BASE		0x00000000
++#define CONFIG_SYS_MONITOR_LEN		(1 * 1024 * 1024)
++#define CONFIG_SYS_MALLOC_LEN		(64 * 1024 * 1024)
++#define CONFIG_SYS_BOOTM_LEN		(64 << 20)
++
++/* The HF/QSPI layout permits up to 1 MiB large bootloader blob */
++#define CONFIG_BOARD_SIZE_LIMIT		1048576
++
++#define BOOT_TARGET_DEVICES(func) \
++        func(MMC, mmc, 0) \
++        func(USB, usb, 0) \
++        func(DHCP, dhcp, na)
++
++#include <config_distro_bootcmd.h>
++
++#define KERNEL_ADDR_R   __stringify(0x48000000)
++#define FDT_ADDR_R      __stringify(0x4c000000)
++#define SCRIPT_ADDR_R   __stringify(0x4c100000)
++#define PXEFILE_ADDR_R  __stringify(0x4c200000)
++#define RAMDISK_ADDR_R  __stringify(0x4c800000)
++
++#define CONFIG_EXTRA_ENV_SETTINGS \
++        "kernel_addr_r=" KERNEL_ADDR_R "\0" \
++        "fdt_addr_r=" FDT_ADDR_R "\0" \
++        "ramdisk_addr_r=" RAMDISK_ADDR_R "\0" \
++        "scriptaddr=" SCRIPT_ADDR_R "\0" \
++        "pxefile_addr_r=" PXEFILE_ADDR_R "\0" \
++        "fdt_high=0xffffffffffffffff\0" \
++        "initrd_high=0xffffffffffffffff\0" \
++        "fdtfile=" CONFIG_DEFAULT_FDT_FILE "\0" \
++BOOTENV
++
++/* For board */
++/* Ethernet RAVB */
++#define CONFIG_BITBANGMII_MULTI
++
++#endif /* __RZG2L_SOLIDRUN_H */
+-- 
+2.25.1
+
