@@ -5,8 +5,7 @@ set -o pipefail
 ###############################################################################
 # General configurations
 ###############################################################################
-: ${BUILDROOT_VERSION:=2022.02.4}
-: ${BR2_PRIMARY_SITE:=} # custom buildroot mirror
+
 UBOOT_COMMIT_HASH=83b2ea37f4b2dd52accce8491af86cbb280f6774
 : ${BOOTLOADER_MENU:=false}
 : ${SHALLOW:=false}
@@ -16,6 +15,20 @@ REPO_PREFIX=`git log -1 --pretty=format:%h`
 TFA_DIR_DEFAULT='rzg_trusted-firmware-a'
 UBOOT_DIR_DEFAULT='renesas-u-boot-cip'
 KERNEL_DIR_DEFAULT='rz_linux-cip'
+
+# Distribution for rootfs
+# - buildroot
+# - debian
+: ${DISTRO:=buildroot}
+
+## Buildroot Options
+: ${BUILDROOT_VERSION:=2022.02.4}
+: ${BUILDROOT_DEFCONFIG:=rzg2lc-solidrun_defconfig}
+: ${BR2_PRIMARY_SITE:=} # custom buildroot mirror
+
+## Debian Options
+: ${DEBIAN_VERSION:=bullseye}
+: ${DEBIAN_ROOTFS_SIZE:=936M}
 
 ROOTDIR=`pwd`
 #\rm -rf $ROOTDIR/images/tmp
@@ -241,16 +254,115 @@ cp $ROOTDIR/build/rz_linux-cip/arch/arm64/boot/dts/renesas/rzg2l*.dtb $ROOTDIR/i
 # "rz-smarc-common.dtsi")
 
 ###############################################################################
-# Building FS Builroot
+# Building FS Builroot/Debian
 ###############################################################################
-echo "================================="
-echo "*** Building Buildroot FS..."
-echo "================================="
-cd $ROOTDIR/build/buildroot
-cp $ROOTDIR/configs/buildroot/rzg2lc-solidrun_defconfig $ROOTDIR/build/buildroot/configs
-make rzg2lc-solidrun_defconfig
-make -j$PARALLEL
-cp $ROOTDIR/build/buildroot/output/images/rootfs* $ROOTDIR/images/tmp/
+
+do_build_buildroot() {
+	echo "================================="
+	echo "*** Building Buildroot FS..."
+	echo "================================="
+	cd $ROOTDIR/build/buildroot
+	cp $ROOTDIR/configs/buildroot/rzg2lc-solidrun_defconfig $ROOTDIR/build/buildroot/configs
+	make ${BUILDROOT_DEFCONFIG}
+	make -j$PARALLEL
+	cp $ROOTDIR/build/buildroot/output/images/rootfs* $ROOTDIR/images/tmp/
+}
+
+do_build_debian() {
+	echo "================================="
+	echo "*** Building Debian FS..."
+	echo "================================="
+	mkdir -p $ROOTDIR/build/debian
+	cd $ROOTDIR/build/debian
+
+	# (re-)generate only if rootfs doesn't exist or runme script has changed
+	if [ ! -f rootfs.e2.orig ] || [[ ${ROOTDIR}/${BASH_SOURCE[0]} -nt rootfs.e2.orig ]]; then
+		rm -f rootfs.e2.orig
+
+		# bootstrap a first-stage rootfs
+		rm -rf stage1
+		fakeroot debootstrap --variant=minbase \
+			--arch=arm64 --components=main,contrib,non-free \
+			--foreign \
+			--include=apt-transport-https,busybox,ca-certificates,can-utils,command-not-found,chrony,curl,e2fsprogs,ethtool,fdisk,gpiod,haveged,i2c-tools,ifupdown,iputils-ping,isc-dhcp-client,initramfs-tools,libiio-utils,lm-sensors,locales,nano,net-tools,ntpdate,openssh-server,psmisc,rfkill,sudo,systemd-sysv,tio,usbutils,wget,xterm,xz-utils \
+			${DEBIAN_VERSION} \
+			stage1 \
+			https://deb.debian.org/debian
+
+		# prepare init-script for second stage inside VM
+		cat > stage1/stage2.sh << EOF
+#!/bin/sh
+
+# run second-stage bootstrap
+/debootstrap/debootstrap --second-stage
+
+# mount pseudo-filesystems
+mount -vt proc proc /proc
+mount -vt sysfs sysfs /sys
+
+# configure dns
+cat /proc/net/pnp > /etc/resolv.conf
+
+# set empty root password
+passwd -d root
+
+# update command-not-found db
+apt-file update
+update-command-not-found
+
+# enable optional system services
+# none yet ...
+
+# populate fstab
+printf "/dev/root / ext4 defaults 0 1\\n" > /etc/fstab
+
+# delete self
+rm -f /stage2.sh
+
+# flush disk
+sync
+
+# power-off
+reboot -f
+EOF
+		chmod +x stage1/stage2.sh
+
+		# create empty partition image
+		dd if=/dev/zero of=rootfs.e2.orig bs=1 count=0 seek=${DEBIAN_ROOTFS_SIZE}
+
+		# create filesystem from first stage
+		mkfs.ext2 -L rootfs -E root_owner=0:0 -d stage1 rootfs.e2.orig
+
+		# bootstrap second stage within qemu
+		qemu-system-aarch64 \
+			-m 1G \
+			-M virt \
+			-cpu cortex-a57 \
+			-smp 1 \
+			-netdev user,id=eth0 \
+			-device virtio-net-device,netdev=eth0 \
+			-drive file=rootfs.e2.orig,if=none,format=raw,id=hd0 \
+			-device virtio-blk-device,drive=hd0 \
+			-nographic \
+			-no-reboot \
+			-kernel "${ROOTDIR}/images/tmp/Image" \
+			-append "console=ttyAMA0 root=/dev/vda rootfstype=ext2 ip=dhcp rw init=/stage2.sh" \
+
+		:
+
+		# convert to ext4
+		tune2fs -O extents,uninit_bg,dir_index,has_journal rootfs.e2.orig
+	fi;
+
+	# export final rootfs for next steps
+	cp rootfs.e2.orig "${ROOTDIR}/images/tmp/rootfs.ext4"
+
+	# apply overlay (configuration + data files only - can't "chmod +x")
+	find "${ROOTDIR}/overlay/${DISTRO}" -type f -printf "%P\n" | e2cp -G 0 -O 0 -s "${ROOTDIR}/overlay/${DISTRO}" -d "${ROOTDIR}/images/tmp/rootfs.ext4:" -a
+}
+
+# BUILD selected Distro buildroot/debian
+do_build_${DISTRO}
 
 ###############################################################################
 # Assembling Boot Image
@@ -259,24 +371,34 @@ echo "================================="
 echo "Assembling Boot Image"
 echo "================================="
 cd $ROOTDIR/images/
-IMG=rzg2lc_solidrun-sd-${REPO_PREFIX}.img
+IMG=rzg2lc_solidrun_${DISTRO}-sd-${REPO_PREFIX}.img
 rm -rf $ROOTDIR/images/${IMG}
-dd if=/dev/zero of=${IMG} bs=1M count=401
+IMAGE_BOOTPART_SIZE_MB=150 # bootpart size = 150MiB
+IMAGE_BOOTPART_SIZE=$((IMAGE_BOOTPART_SIZE_MB*1024*1024)) # Convert megabytes to bytes 
+IMAGE_ROOTPART_SIZE=`stat -c "%s" tmp/rootfs.ext4`
+IMAGE_ROOTPART_SIZE_MB=$(($IMAGE_ROOTPART_SIZE / (1024 * 1024) )) # Convert bytes to megabytes
+IMAGE_SIZE=$((IMAGE_BOOTPART_SIZE+IMAGE_ROOTPART_SIZE+2*1024*1024))  # additional 2M at the end
+IMAGE_SIZE_MB=$(echo "$IMAGE_SIZE / (1024 * 1024)" | bc) # Convert bytes to megabytes
+dd if=/dev/zero of=${IMG} bs=1M count=${IMAGE_SIZE_MB}
+
+
+#$(echo "scale=2; $IMAGE_BOOTPART_SIZE / (1024 * 1024)" | bc)
+
 
 # Make extlinux configuration file
 cat > $ROOTDIR/images/tmp/extlinux.conf << EOF
 	timeout 30
 	default linux
-  menu title RZ/G2* boot options
-  label primary
-		menu label primary kernel
-    linux /boot/Image
-    fdtdir /boot/
-    APPEND console=serial0,115200 console=ttySC0 root=/dev/mmcblk0p2 rw rootwait
+	menu title RZ/G2* boot options
+	label primary
+	menu label primary kernel
+		linux /boot/Image
+		fdtdir /boot/
+		APPEND console=serial0,115200 console=ttySC0 root=/dev/mmcblk0p2 rw rootwait
 EOF
 
-# FAT Partion
-dd if=/dev/zero of=tmp/part1.fat32 bs=1M count=148
+# Boot Partion (FAT Partion)
+dd if=/dev/zero of=tmp/part1.fat32 bs=1M count=$((IMAGE_BOOTPART_SIZE_MB-2))
 env PATH="$PATH:/sbin:/usr/sbin" mkdosfs tmp/part1.fat32
 mmd -i tmp/part1.fat32 ::/extlinux
 mmd -i tmp/part1.fat32 ::/boot
@@ -286,7 +408,7 @@ mcopy -s -i tmp/part1.fat32 $ROOTDIR/images/tmp/rootfs.cpio ::/boot/rootfs.cpio
 mcopy -i tmp/part1.fat32 $ROOTDIR/images/tmp/extlinux.conf ::/extlinux/extlinux.conf
 
 # EXT2 Partion
-ROOTFS=$ROOTDIR/images/tmp/rootfs.ext2
+ROOTFS=$ROOTDIR/images/tmp/rootfs.ext4
 e2mkdir -G 0 -O 0 ${ROOTFS}:extlinux
 #e2cp -G 0 -O 0 $ROOTDIR/images/tmp/extlinux.conf ${ROOTFS}:extlinux/
 e2mkdir -G 0 -O 0 ${ROOTFS}:boot
@@ -294,9 +416,9 @@ e2cp -G 0 -O 0 $ROOTDIR/images/tmp/Image ${ROOTFS}:/boot/
 e2cp -G 0 -O 0 $ROOTDIR/images/tmp/*.dtb ${ROOTFS}:/boot/
 
 # EXT partion
-env PATH="$PATH:/sbin:/usr/sbin" parted --script ${IMG} mklabel msdos mkpart primary 2MiB 150MiB mkpart primary 150MiB 400MiB
+env PATH="$PATH:/sbin:/usr/sbin" parted --script ${IMG} mklabel msdos mkpart primary 2MiB ${IMAGE_BOOTPART_SIZE_MB}MiB mkpart primary ${IMAGE_BOOTPART_SIZE_MB}MiB $((IMAGE_SIZE_MB - 1))MiB
 dd if=tmp/part1.fat32 of=${IMG} bs=1M seek=2 conv=notrunc
-dd if=${ROOTFS} of=${IMG} bs=1M seek=150 conv=notrunc
+dd if=${ROOTFS} of=${IMG} bs=1M seek=${IMAGE_BOOTPART_SIZE_MB} conv=notrunc
 # Boot loader
 if [ -f tmp/bootparams-rzg2lc-solidrun.bin ] && [ -f tmp/bl2-rzg2lc-solidrun.bin ] && [ -f tmp/fip-rzg2lc-solidrun.bin ]; then
   echo "Find Solidrun boot files..."; sleep 1
