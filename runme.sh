@@ -30,6 +30,9 @@ KERNEL_DIR_DEFAULT='rz_linux-cip'
 : ${DEBIAN_VERSION:=bullseye}
 : ${DEBIAN_ROOTFS_SIZE:=936M}
 
+# Kernel Modules:
+: ${INCLUDE_KERNEL_MODULES:=true}
+
 ROOTDIR=`pwd`
 #\rm -rf $ROOTDIR/images/tmp
 mkdir -p build images/tmp/boot
@@ -242,10 +245,12 @@ echo "================================="
 cd $ROOTDIR/build/rz_linux-cip
 make defconfig
 ./scripts/kconfig/merge_config.sh .config $ROOTDIR/configs/linux/kernel.extra
-make -j$PARALLEL Image dtbs
+make -j${PARALLEL} Image dtbs modules
 cp $ROOTDIR/build/rz_linux-cip/arch/arm64/boot/Image $ROOTDIR/images/tmp/
 cp $ROOTDIR/build/rz_linux-cip/arch/arm64/boot/dts/renesas/*smarc.dtb $ROOTDIR/images/tmp/
 cp $ROOTDIR/build/rz_linux-cip/arch/arm64/boot/dts/renesas/rzg2l*.dtb $ROOTDIR/images/tmp/
+rm -rf ${ROOTDIR}/images/tmp/usr # remove old modules
+make -j${PARALLEL} INSTALL_MOD_PATH="${ROOTDIR}/images/tmp/usr" modules_install
 # ref -> r9a07g044c2-smarc.dtb-> (r9a07g044c2.dtsi -> r9a07g044.dtsi) &
 # (rzg2lc-smarc.dtsi ->
 # <dt-bindings/gpio/gpio.h>
@@ -381,10 +386,6 @@ IMAGE_SIZE=$((IMAGE_BOOTPART_SIZE+IMAGE_ROOTPART_SIZE+2*1024*1024))  # additiona
 IMAGE_SIZE_MB=$(echo "$IMAGE_SIZE / (1024 * 1024)" | bc) # Convert bytes to megabytes
 dd if=/dev/zero of=${IMG} bs=1M count=${IMAGE_SIZE_MB}
 
-
-#$(echo "scale=2; $IMAGE_BOOTPART_SIZE / (1024 * 1024)" | bc)
-
-
 # Make extlinux configuration file
 cat > $ROOTDIR/images/tmp/extlinux.conf << EOF
 	timeout 30
@@ -407,13 +408,21 @@ mcopy -s -i tmp/part1.fat32 $ROOTDIR/images/tmp/*.dtb ::/boot/
 mcopy -s -i tmp/part1.fat32 $ROOTDIR/images/tmp/rootfs.cpio ::/boot/rootfs.cpio
 mcopy -i tmp/part1.fat32 $ROOTDIR/images/tmp/extlinux.conf ::/extlinux/extlinux.conf
 
-# EXT2 Partion
+# EXT4 Partion
 ROOTFS=$ROOTDIR/images/tmp/rootfs.ext4
 e2mkdir -G 0 -O 0 ${ROOTFS}:extlinux
 #e2cp -G 0 -O 0 $ROOTDIR/images/tmp/extlinux.conf ${ROOTFS}:extlinux/
 e2mkdir -G 0 -O 0 ${ROOTFS}:boot
 e2cp -G 0 -O 0 $ROOTDIR/images/tmp/Image ${ROOTFS}:/boot/
 e2cp -G 0 -O 0 $ROOTDIR/images/tmp/*.dtb ${ROOTFS}:/boot/
+
+if [ "x${INCLUDE_KERNEL_MODULES}" = "xtrue" ]; then
+	echo "copying kernel modules ..."
+	find "${ROOTDIR}/images/tmp/usr/lib/modules" -type f -not -name "*.ko*" -printf "%P\n" | e2cp -G 0 -O 0 -P 644 -s "${ROOTDIR}/images/tmp/usr/lib/modules" -d "${ROOTDIR}/images/tmp/rootfs.ext4:usr/lib/modules" -a
+	find "${ROOTDIR}/images/tmp/usr/lib/modules" -type f -name "*.ko*" -printf "%P\n" | e2cp -G 0 -O 0 -P 644 -s "${ROOTDIR}/images/tmp/usr/lib/modules" -d "${ROOTDIR}/images/tmp/rootfs.ext4:usr/lib/modules" -a -v
+	# TODO: create symlink  /lib/modules/ -> /usr/lib/modules/
+	# ln -s /usr/lib/modules/ /lib/modules/
+fi
 
 # EXT partion
 env PATH="$PATH:/sbin:/usr/sbin" parted --script ${IMG} mklabel msdos mkpart primary 2MiB ${IMAGE_BOOTPART_SIZE_MB}MiB mkpart primary ${IMAGE_BOOTPART_SIZE_MB}MiB $((IMAGE_SIZE_MB - 1))MiB
