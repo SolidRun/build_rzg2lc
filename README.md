@@ -6,6 +6,8 @@
 Main intention of this repository is to produce a reference system for RZ/G2LC based products.
 Automatic binary releases are available on [our website](https://images.solid-run.com/RZG2LC/rzg2lc_build) for download.
 
+The build script can support two Linux distrebutions **Debian/Buildroot**.
+
 ## Get Started
 
 ### Deploy to microSD
@@ -19,8 +21,8 @@ sudo dd if=images/rzg2lc*-<hash>.img of=/dev/sdX
 ```
 
 ### Login
-**username:** root
-**password:** root
+- **username:** root
+- **password:** root
 
 ---
 ### Boot from SD and flash eMMC
@@ -149,9 +151,31 @@ boot
 - [U-boot 2021.10](https://github.com/renesas-rz/renesas-u-boot-cip/commits/v2021.10/rz)
 - [Linux kernel 5.10](https://github.com/renesas-rz/rz_linux-cip/commits/rz-5.10-cip22-rt9)
 - [Buildroot 2022.02.4](https://github.com/buildroot/buildroot/tree/2022.02.4)
+- [Debian bullseye](https://deb.debian.org/debian)
 
+## Compiling Image from Source
 
-## Build with Docker
+### Configuration Options
+
+The build script supports several customisation options that can be applied through environment variables:
+
+- INCLUDE_KERNEL_MODULES: include kernel modules in rootfs
+   - true (default)
+   - false
+- DISTRO: Choose Linux distribution for rootfs
+  - buildroot (default)
+  - debian
+- BUILDROOT_VERSION
+  - 2020.02.4 (default)
+- BUILDROOT_DEFCONFIG: Choose specific config file name from `config/` folder
+  - rzg2lc-solidrun_defconfig (default)
+- BR2_PRIMARY_SITE: Use specific (local) buildroot mirror
+- DEBIAN_VERSION
+  - bullseye (default)
+- DEBIAN_ROOTFS_SIZE
+  - 936M (default)
+    
+### Build with Docker
 A docker image providing a consistent build environment can be used as below:
 
 1. build container image (first time only)
@@ -168,14 +192,18 @@ A docker image providing a consistent build environment can be used as below:
    # docker run --rm -i -t -v "$PWD":/work -e BR2_PRIMARY_SITE=http://127.0.0.1/buildroot rzg2lc_build -u $(id -u) -g $(id -g)
    ```
 
-### rootless Podman
+#### rootless Podman
 
 Due to the way podman performs user-id mapping, the root user inside the container (uid=0, gid=0) will be mapped to the user running podman (e.g. 1000:100).
 Therefore in order for the build directory to be owned by current user, `-u 0 -g 0` have to be passed to *docker run*.
 
-## Build with host tools
+### Build with host tools (on Host OS)
 
 Simply running `./runme.sh`, it will check for required tools, clone and build images and place results in images/ directory.
+- ```DISTOR=debian ./runme.sh```
+- ```DISTOR=buildroot ./runme.sh```
+  
+**Note:** This can only work on Debian-based host, and has been tested only on Ubuntu 20.04.
 
 ## Build-Time Configuration Options
 
