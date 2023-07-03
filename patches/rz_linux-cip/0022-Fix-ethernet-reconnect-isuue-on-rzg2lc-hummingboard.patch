@@ -1,0 +1,32 @@
+From cb689f251f6f336c44352a6af1152266592f7eed Mon Sep 17 00:00:00 2001
+From: Mikhail Anikin <mikhail.anikin@solid-run.com>
+Date: Tue, 27 Jun 2023 11:16:37 +0300
+Subject: [PATCH] Fix ethernet reconnect isuue on rzg2lc-hummingboard
+
+This commit solves the rzg2lc hummingboard ethernet reconnect issue.
+After reconnecting, an ethernet cable SOM was unable to up the link.
+There were kernel messages "device will be stopped after h/w processes are done" and "failed to switch device to config mode".
+It happened because of a link status communication issue between Renesas MAC and ADIN PHY.
+The "renesas,no-ether-link" boolean dts flag forces MAC to check the link via registers, which solves the issue.
+---
+ arch/arm64/boot/dts/renesas/rzg2lc-sr-som.dtsi | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+diff --git a/arch/arm64/boot/dts/renesas/rzg2lc-sr-som.dtsi b/arch/arm64/boot/dts/renesas/rzg2lc-sr-som.dtsi
+index e501c7b9dec..43658a0b300 100644
+--- a/arch/arm64/boot/dts/renesas/rzg2lc-sr-som.dtsi
++++ b/arch/arm64/boot/dts/renesas/rzg2lc-sr-som.dtsi
+@@ -140,8 +140,9 @@ &eth0 {
+ 	phy-handle = <&phy0>;
+ 	phy-mode = "rgmii-id";
+ 	status = "okay";
++	renesas,no-ether-link;
+ 
+-        phy0: ethernet-phy@0 {
++    phy0: ethernet-phy@0 {
+ 		reg = <0>;
+ 		max-speed = <100>;  /* configure ethernet max speed for ethernet0 */
+ 		/*
+-- 
+2.34.1
+
