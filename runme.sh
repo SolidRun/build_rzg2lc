@@ -79,11 +79,12 @@ cd $ROOTDIR
 ###############################################################################
 
 #QORIQ_COMPONENTS="${TFA_DIR_DEFAULT} ${UBOOT_DIR_DEFAULT} ${KERNEL_DIR_DEFAULT} buildroot"
-QORIQ_COMPONENTS="renesas-u-boot-cip rzg_trusted-firmware-a rz_linux-cip buildroot"
+QORIQ_COMPONENTS="renesas-u-boot-cip rzg_trusted-firmware-a rz_linux-cip buildroot rzg2_flash_writer"
 UBOOT_REPO='https://github.com/renesas-rz/renesas-u-boot-cip -b v2021.10/rz'
 ATF_REPO='https://github.com/renesas-rz/rzg_trusted-firmware-a -b v2.7/rz'
 LINUX_REPO='https://github.com/renesas-rz/rz_linux-cip -b rz-5.10-cip22-rt9'
 BUILDROOT_REPO="https://github.com/buildroot/buildroot.git -b $BUILDROOT_VERSION"
+FLASH_WRITER_REPO='https://github.com/renesas-rz/rzg2_flash_writer -b rz_g2l'
 
 #├── build_dir
 #│   ├── renesas-u-boot-cip/        <<<<<<
@@ -119,6 +120,10 @@ for i in $QORIQ_COMPONENTS; do
     # Clone Buildroot
     if [ "x$i" == "xbuildroot" ]; then
       git clone $SHALLOW_FLAG $BUILDROOT_REPO
+    fi
+	# Clone Flash writer
+    if [ "x$i" == "xrzg2_flash_writer" ]; then
+      git clone $SHALLOW_FLAG $FLASH_WRITER_REPO
     fi
 
 		# Apply patches...
@@ -211,6 +216,7 @@ else
 	cp fip.bin ${OUTPUT_BOOTLOADER_DIR}/fip-${MACHINE}.bin
 	cp build/${PLATFORM}/release/bl2.bin ${OUTPUT_BOOTLOADER_DIR}/bl2-${MACHINE}.bin
 	cp build/${PLATFORM}/release/bootparams.bin ${OUTPUT_BOOTLOADER_DIR}/bootparams-${MACHINE}.bin
+	cp build/${PLATFORM}/release/bl2_bp.bin ${OUTPUT_BOOTLOADER_DIR}/bl2_bp-${MACHINE}.bin
 	\cp -r ${OUTPUT_BOOTLOADER_DIR}/* $ROOTDIR/images/tmp/
 	echo "bootloader binaries are here ${OUTPUT_BOOTLOADER_DIR}... "
 	ls -la ${OUTPUT_BOOTLOADER_DIR}/
@@ -242,15 +248,16 @@ echo "SD booloader image ready -> images/$BOOT_IMG"
 echo "================================="
 echo "*** Building Linux kernel..."
 echo "================================="
+LINUX_DEFCONFIG="rzg2lc-solidrun_defconfig"
 cd $ROOTDIR/build/rz_linux-cip
-make defconfig
-./scripts/kconfig/merge_config.sh .config $ROOTDIR/configs/linux/kernel.extra
-make -j${PARALLEL} Image dtbs modules
+cp $ROOTDIR/configs/linux/$LINUX_DEFCONFIG arch/arm64/configs
+make $LINUX_DEFCONFIG
+make -j$PARALLEL Image dtbs modules
 cp $ROOTDIR/build/rz_linux-cip/arch/arm64/boot/Image $ROOTDIR/images/tmp/
 cp $ROOTDIR/build/rz_linux-cip/arch/arm64/boot/dts/renesas/*smarc.dtb $ROOTDIR/images/tmp/
 cp $ROOTDIR/build/rz_linux-cip/arch/arm64/boot/dts/renesas/rzg2l*.dtb $ROOTDIR/images/tmp/
-rm -rf ${ROOTDIR}/images/tmp/usr # remove old modules
-make -j${PARALLEL} INSTALL_MOD_PATH="${ROOTDIR}/images/tmp/usr" modules_install
+rm -rf ${ROOTDIR}/images/tmp/modules # remove old modules
+make -j${PARALLEL} INSTALL_MOD_PATH="${ROOTDIR}/images/tmp/modules" modules_install
 # ref -> r9a07g044c2-smarc.dtb-> (r9a07g044c2.dtsi -> r9a07g044.dtsi) &
 # (rzg2lc-smarc.dtsi ->
 # <dt-bindings/gpio/gpio.h>
@@ -271,6 +278,8 @@ do_build_buildroot() {
 	make ${BUILDROOT_DEFCONFIG}
 	make -j$PARALLEL
 	cp $ROOTDIR/build/buildroot/output/images/rootfs* $ROOTDIR/images/tmp/
+	# Preparing initrd
+	mkimage -A arm64 -O linux -T ramdisk -C gzip -d $ROOTDIR/images/tmp/rootfs.cpio.gz $ROOTDIR/images/tmp/initrd.img
 }
 
 do_build_debian() {
@@ -370,6 +379,17 @@ EOF
 do_build_${DISTRO}
 
 ###############################################################################
+# Building Flash Writer
+###############################################################################
+echo "================================="
+echo "*** Building Flash Writer"
+echo "================================="
+cd $ROOTDIR/build/rzg2_flash_writer
+FLASH_WRITER_BUILD_ARGS="DEVICE=RZG2LC DDR_TYPE=DDR4 DDR_SIZE=1GB_1PCS SWIZZLE=T3BC FILENAME_ADD=_RZG2LC_HUMMINGBOARD"
+make $FLASH_WRITER_BUILD_ARGS -f makefile.linaro
+cp ./AArch64_output/Flash_Writer_SCIF_RZG2LC_HUMMINGBOARD_DDR4_1GB_1PCS.mot $ROOTDIR/images
+
+###############################################################################
 # Assembling Boot Image
 ###############################################################################
 echo "================================="
@@ -405,7 +425,7 @@ mmd -i tmp/part1.fat32 ::/extlinux
 mmd -i tmp/part1.fat32 ::/boot
 mcopy -i tmp/part1.fat32 $ROOTDIR/images/tmp/Image ::/boot/Image
 mcopy -s -i tmp/part1.fat32 $ROOTDIR/images/tmp/*.dtb ::/boot/
-mcopy -s -i tmp/part1.fat32 $ROOTDIR/images/tmp/rootfs.cpio ::/boot/rootfs.cpio
+mcopy -s -i tmp/part1.fat32 $ROOTDIR/images/tmp/initrd.img ::/boot/initrd.img
 mcopy -i tmp/part1.fat32 $ROOTDIR/images/tmp/extlinux.conf ::/extlinux/extlinux.conf
 
 # EXT4 Partion
@@ -418,8 +438,8 @@ e2cp -G 0 -O 0 $ROOTDIR/images/tmp/*.dtb ${ROOTFS}:/boot/
 
 if [ "x${INCLUDE_KERNEL_MODULES}" = "xtrue" ]; then
 	echo "copying kernel modules ..."
-	find "${ROOTDIR}/images/tmp/usr/lib/modules" -type f -not -name "*.ko*" -printf "%P\n" | e2cp -G 0 -O 0 -P 644 -s "${ROOTDIR}/images/tmp/usr/lib/modules" -d "${ROOTDIR}/images/tmp/rootfs.ext4:usr/lib/modules" -a
-	find "${ROOTDIR}/images/tmp/usr/lib/modules" -type f -name "*.ko*" -printf "%P\n" | e2cp -G 0 -O 0 -P 644 -s "${ROOTDIR}/images/tmp/usr/lib/modules" -d "${ROOTDIR}/images/tmp/rootfs.ext4:usr/lib/modules" -a -v
+	find "${ROOTDIR}/images/tmp/modules/lib/modules" -type f -not -name "*.ko*" -printf "%P\n" | e2cp -G 0 -O 0 -P 644 -s "${ROOTDIR}/images/tmp/modules/lib/modules" -d "${ROOTDIR}/images/tmp/rootfs.ext4:lib/modules" -a
+	find "${ROOTDIR}/images/tmp/modules/lib/modules" -type f -name "*.ko*" -printf "%P\n" | e2cp -G 0 -O 0 -P 644 -s "${ROOTDIR}/images/tmp/modules/lib/modules" -d "${ROOTDIR}/images/tmp/rootfs.ext4:lib/modules" -a -v
 	# TODO: create symlink  /lib/modules/ -> /usr/lib/modules/
 	# ln -s /usr/lib/modules/ /lib/modules/
 fi
