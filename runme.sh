@@ -103,28 +103,28 @@ for i in $QORIQ_COMPONENTS; do
 	if [[ ! -d $ROOTDIR/build/$i ]]; then
 		echo "$i source code clonig ..."
 		cd $ROOTDIR/build
-    # ================ Clone U-Boot =========== #
+    	# ================ Clone U-Boot =========== #
 		if [ "x$i" == "xrenesas-u-boot-cip" ]; then
 			git clone $SHALLOW_FLAG $UBOOT_REPO
 			cd $ROOTDIR/build/renesas-u-boot-cip && git checkout $UBOOT_COMMIT_HASH
 			cd $ROOTDIR/build/
 		fi
-    # ================ Clone ATF ============= #
-    if [ "x$i" == "xrzg_trusted-firmware-a" ]; then
-      git clone $SHALLOW_FLAG $ATF_REPO
-    fi
-    # ================ Clone Linux =========== #
-    if [ "x$i" == "xrz_linux-cip" ]; then
-      git clone $SHALLOW_FLAG $LINUX_REPO
-    fi
-    # Clone Buildroot
-    if [ "x$i" == "xbuildroot" ]; then
-      git clone $SHALLOW_FLAG $BUILDROOT_REPO
-    fi
-	# Clone Flash writer
-    if [ "x$i" == "xrzg2_flash_writer" ]; then
-      git clone $SHALLOW_FLAG $FLASH_WRITER_REPO
-    fi
+		# ================ Clone ATF ============= #
+		if [ "x$i" == "xrzg_trusted-firmware-a" ]; then
+		git clone $SHALLOW_FLAG $ATF_REPO
+		fi
+		# ================ Clone Linux =========== #
+		if [ "x$i" == "xrz_linux-cip" ]; then
+		git clone $SHALLOW_FLAG $LINUX_REPO
+		fi
+		# Clone Buildroot
+		if [ "x$i" == "xbuildroot" ]; then
+		git clone $SHALLOW_FLAG $BUILDROOT_REPO
+		fi
+		# Clone Flash writer
+		if [ "x$i" == "xrzg2_flash_writer" ]; then
+		git clone $SHALLOW_FLAG $FLASH_WRITER_REPO
+		fi
 
 		# Apply patches...
 		echo "Checking patches for ${i}"
@@ -141,6 +141,13 @@ for i in $QORIQ_COMPONENTS; do
 				fi
 			done
 		fi
+
+		# Creating symolinks for ATF/U-Boo	t/Linux
+		cd ${ROOTDIR}/build/
+		ln -s renesas-u-boot-cip/ u-boot
+		ln -s rzg_trusted-firmware-a/ atf
+		ln -s rz_linux-cip/ linux
+		cd ${ROOTDIR}/
 
 	fi
 done
