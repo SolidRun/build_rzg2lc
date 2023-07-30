@@ -1,0 +1,49 @@
+From 9413ba7474b30edeb78f8346f2939988d475be30 Mon Sep 17 00:00:00 2001
+From: Yazan Shhady <yazan.shhady@solid-run.com>
+Date: Sun, 30 Jul 2023 15:04:29 +0300
+Subject: [PATCH] Set SD0_DEV_SEL_SW signal in rzg2lc-solidrun dts
+
+- Set SD0_DEV_SEL_SW (P22_1) GPIO to select eMMC/SD during boot
+
+Signed-off-by: Yazan Shhady <yazan.shhady@solid-run.com>
+---
+ arch/arm/dts/rzg2lc-solidrun.dts | 9 ++++++++-
+ 1 file changed, 8 insertions(+), 1 deletion(-)
+
+diff --git a/arch/arm/dts/rzg2lc-solidrun.dts b/arch/arm/dts/rzg2lc-solidrun.dts
+index 75f8811a04..9236155ac3 100644
+--- a/arch/arm/dts/rzg2lc-solidrun.dts
++++ b/arch/arm/dts/rzg2lc-solidrun.dts
+@@ -33,6 +33,13 @@
+ 
+ 
+ &pinctrl {
++  pinctrl-names = "default";
++  pinctrl-0 = <&pinctrl_hog>;
++
++  pinctrl_hog: hoggrp {
++    pinmux = <RZG2L_PINMUX(22, 1, 0)>; /* SD0_DEV_SEL_SW */
++  };
++
+ 	eth0_pins: eth0 {
+ 		pinmux = <RZG2L_PINMUX(20, 0, 1)>,
+ 				<RZG2L_PINMUX(20, 1, 1)>,
+@@ -40,7 +47,6 @@
+ 				<RZG2L_PINMUX(21, 0, 1)>,
+ 				<RZG2L_PINMUX(21, 1, 1)>,
+ 				<RZG2L_PINMUX(22, 0, 1)>,
+-				<RZG2L_PINMUX(22, 1, 1)>,
+ 				<RZG2L_PINMUX(23, 0, 1)>,
+ 				<RZG2L_PINMUX(23, 1, 1)>,
+ 				<RZG2L_PINMUX(24, 0, 1)>,
+@@ -62,6 +68,7 @@
+ 	usb1_pins: usb1 {
+ 		pinmux = <RZG2L_PINMUX(5, 0, 1)>; /* VBUS */
+ 	};
++
+ };
+ 
+ 
+-- 
+2.25.1
+
