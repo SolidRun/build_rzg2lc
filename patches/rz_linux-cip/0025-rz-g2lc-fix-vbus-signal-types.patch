@@ -1,0 +1,98 @@
+From ffd97db2eac9f930bc10ccd23e560948bbccbf32 Mon Sep 17 00:00:00 2001
+From: Mikhail Anikin <mikhail.anikin@solid-run.com>
+Date: Tue, 1 Aug 2023 13:17:55 +0300
+Subject: [PATCH 2/2] rz/g2lc: fix vbus signal types
+
+There was a mistake in the pinmux configuration. The USB1 VBUS was actually configured as OVCUR.
+It worked on the hummingboard because hummingboard needs open-drain vbus signals.
+Now by default som has push-pull vbus signals and the hummingboard dts overrides it to open-drain.
+---
+ .../boot/dts/renesas/rzg2lc-hummingboard.dts  | 10 ++++++++++
+ .../dts/renesas/rzg2lc-sr-pinfunction.dtsi    |  9 ---------
+ .../arm64/boot/dts/renesas/rzg2lc-sr-som.dtsi | 19 +++++++++----------
+ 3 files changed, 19 insertions(+), 19 deletions(-)
+
+diff --git a/arch/arm64/boot/dts/renesas/rzg2lc-hummingboard.dts b/arch/arm64/boot/dts/renesas/rzg2lc-hummingboard.dts
+index 86ee0312be43..55cc20e7b002 100644
+--- a/arch/arm64/boot/dts/renesas/rzg2lc-hummingboard.dts
++++ b/arch/arm64/boot/dts/renesas/rzg2lc-hummingboard.dts
+@@ -132,3 +132,13 @@ &spi1 {
+ 	/delete-property/ pinctrl-names;
+ 	status = "disabled";
+ };
++
++&usb0_vbus_otg {
++	gpio = <&pinctrl RZG2L_GPIO(4, 0) GPIO_OPEN_DRAIN>;
++	gpio-open-drain;
++};
++
++&usb1_vbus {
++	gpio = <&pinctrl RZG2L_GPIO(5, 0) GPIO_OPEN_DRAIN>;
++	gpio-open-drain;
++};
+diff --git a/arch/arm64/boot/dts/renesas/rzg2lc-sr-pinfunction.dtsi b/arch/arm64/boot/dts/renesas/rzg2lc-sr-pinfunction.dtsi
+index d60cb2e0700d..fc06036e21d0 100644
+--- a/arch/arm64/boot/dts/renesas/rzg2lc-sr-pinfunction.dtsi
++++ b/arch/arm64/boot/dts/renesas/rzg2lc-sr-pinfunction.dtsi
+@@ -96,13 +96,4 @@ ssi0_pins: ssi0 {
+ 			 <RZG2L_PORT_PINMUX(45, 2, 1)>, /* TXD */
+ 			 <RZG2L_PORT_PINMUX(45, 3, 1)>; /* RXD */
+ 	};
+-
+-	usb0_pins: usb0 {
+-		pinmux = <RZG2L_PORT_PINMUX(4, 0, 1)>; /* VBUS */
+-	};
+-
+-	usb1_pins: usb1 {
+-		pinmux = <RZG2L_PORT_PINMUX(5, 0, 1)>; /* VBUS */
+-	};
+-
+ };
+diff --git a/arch/arm64/boot/dts/renesas/rzg2lc-sr-som.dtsi b/arch/arm64/boot/dts/renesas/rzg2lc-sr-som.dtsi
+index 1a454991e12f..45e6f0a7e8e4 100644
+--- a/arch/arm64/boot/dts/renesas/rzg2lc-sr-som.dtsi
++++ b/arch/arm64/boot/dts/renesas/rzg2lc-sr-som.dtsi
+@@ -104,13 +104,17 @@ usb0_vbus_otg: regulator-usb0-vbus-otg {
+     regulator-name = "USB0_VBUS_OTG";
+     regulator-min-microvolt = <5000000>;
+     regulator-max-microvolt = <5000000>;
++	gpio = <&pinctrl RZG2L_GPIO(4, 0) GPIO_ACTIVE_HIGH>;
++	enable-active-high;
+   };
+ 
+   usb1_vbus: regulator-usb1-vbus {
+-    compatible = "regulator-fixed";
+-    regulator-name = "USB1_VBUS";
+-    regulator-min-microvolt = <5000000>;
+-    regulator-max-microvolt = <5000000>;
++	compatible = "regulator-fixed";
++	regulator-name = "USB1_VBUS";
++	regulator-min-microvolt = <5000000>;
++	regulator-max-microvolt = <5000000>;
++	gpio = <&pinctrl RZG2L_GPIO(5, 0) GPIO_ACTIVE_HIGH>;
++	enable-active-high;
+   };
+ 
+   vccq_sdhi1: regulator-vccq-sdhi1 {
+@@ -506,17 +510,12 @@ &spi1 {
+ };
+ 
+ &usb2_phy0 {
+-	pinctrl-0 = <&usb0_pins>;
+-	pinctrl-names = "default";
+-
+ 	vbus-supply = <&usb0_vbus_otg>;
+ 	status = "okay";
+ };
+ 
+ &usb2_phy1 {
+-	pinctrl-0 = <&usb1_pins>;
+-	pinctrl-names = "default";
+-  vbus-supply = <&usb1_vbus>;
++	vbus-supply = <&usb1_vbus>;
+ 	status = "okay";
+ };
+ 
+-- 
+2.41.0
+

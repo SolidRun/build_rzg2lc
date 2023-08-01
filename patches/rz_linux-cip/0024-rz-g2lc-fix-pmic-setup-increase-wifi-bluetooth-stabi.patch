@@ -1,0 +1,156 @@
+From 3ae11ef32cdae183c55eee0d1255aa185ded9617 Mon Sep 17 00:00:00 2001
+From: Mikhail Anikin <mikhail.anikin@solid-run.com>
+Date: Tue, 1 Aug 2023 13:17:19 +0300
+Subject: [PATCH 1/2] rz/g2lc: fix pmic setup increase wifi/bluetooth stability
+
+---
+ .../arm64/boot/dts/renesas/rzg2lc-sr-som.dtsi | 50 ++++++++-----------
+ drivers/mfd/raa215300.c                       | 18 +++++++
+ 2 files changed, 38 insertions(+), 30 deletions(-)
+
+diff --git a/arch/arm64/boot/dts/renesas/rzg2lc-sr-som.dtsi b/arch/arm64/boot/dts/renesas/rzg2lc-sr-som.dtsi
+index e4de0542a0d0..1a454991e12f 100644
+--- a/arch/arm64/boot/dts/renesas/rzg2lc-sr-som.dtsi
++++ b/arch/arm64/boot/dts/renesas/rzg2lc-sr-som.dtsi
+@@ -114,12 +114,12 @@ usb1_vbus: regulator-usb1-vbus {
+   };
+ 
+   vccq_sdhi1: regulator-vccq-sdhi1 {
+-    compatible = "regulator-gpio";
+-    regulator-name = "SDHI1 VccQ";
+-    regulator-min-microvolt = <1800000>;
+-    regulator-max-microvolt = <3300000>;
+-    gpios-states = <1>;
+-    states = <3300000 1>, <1800000 0>;
++	compatible = "regulator-fixed";
++	regulator-name = "WL_REG_ON";
++	regulator-min-microvolt = <3300000>;
++	regulator-max-microvolt = <3300000>;
++	gpio = <&pinctrl RZG2L_GPIO(23, 0) GPIO_ACTIVE_HIGH>;
++	enable-active-high;
+   };
+ 
+   hdmi-out {
+@@ -384,6 +384,7 @@ pmic: raa215300@12 {
+ 		reg = <0x12>;
+ 
+ 		rtc-enable;
++		mpio2-32k-enable;
+ 	};
+ 
+ 	rtc: isl1208@6f {
+@@ -466,8 +467,8 @@ &scif2 {
+ 
+   bluetooth {
+     pinctrl-names = "default";
+-    max-speed = <460800>;
+-	compatible = "brcm,bcm4329-bt";
++    max-speed = <115200>;
++	compatible = "brcm,bcm4329-bt";
+ 	shutdown-gpios = <&pinctrl RZG2L_GPIO(23, 1) GPIO_ACTIVE_HIGH>;
+   };
+ };
+@@ -475,35 +476,24 @@ bluetooth {
+ 
+ /* WiFi - CYW43439 */
+ &sdhi1 {
+-  #address-cells = <1>;
+-  #size-cells = <0>;
++	#address-cells = <1>;
++	#size-cells = <0>;
+ 	pinctrl-0 = <&sdhi1_pins>;
+ 	pinctrl-1 = <&sdhi1_pins_uhs>;
+ 	pinctrl-names = "default", "state_uhs";
+-  status = "okay";
+-
+-  /*
+-  cap-power-off-card;
+-  pm-ignore-notify;
+-  keep-power-in-suspend;
+-  */
+-  non-removable;
++	status = "okay";
++	non-removable;
+ 	vmmc-supply = <&reg_3p3v>;
+ 	vqmmc-supply = <&vccq_sdhi1>;
++	
+ 	bus-width = <4>;
+-  max-frequency = <50000000>;
+-  fsl,delay-line = <12>;
+-  keep-power-in-suspend;
+-
+-  brcmf: wifi@1 {
+-          reg = <1>;
+-          compatible = "brcm,bcm4329-fmac";
+-  };
+-};
++	max-frequency = <50000000>;
++	keep-power-in-suspend;
+ 
+-&vccq_sdhi1 {
+-  /* WL_REG_ON (P23_0) */
+-  gpios = <&pinctrl RZG2L_GPIO(23, 0) GPIO_ACTIVE_HIGH>;
++	brcmf: wifi@1 {
++		reg = <1>;
++		compatible = "brcm,bcm4329-fmac";
++	};
+ };
+ 
+ &spi1 {
+diff --git a/drivers/mfd/raa215300.c b/drivers/mfd/raa215300.c
+index a77e4195d129..ca2f48253d8f 100644
+--- a/drivers/mfd/raa215300.c
++++ b/drivers/mfd/raa215300.c
+@@ -16,10 +16,14 @@
+ #define RAA215300_REG_BLOCK_EN		0x6C
+ #define RAA215300_RTC_EN		BIT(6)
+ 
++#define RAA215300_REG_MPIO2_COMFIG		0x8C
++#define RAA215300_MPIO2_32K_PP			0b00011001
++
+ struct raa215300 {
+ 	struct regmap		*regmap;
+ 	struct i2c_client	*client;
+ 	bool			rtc_enabled;
++	bool			mpio2_32k_enabled;
+ };
+ 
+ static bool raa215300_is_volatile_reg(struct device *dev, unsigned int reg)
+@@ -35,6 +39,10 @@ static const struct regmap_config raa215300_regmap_config = {
+ 	.cache_type = REGCACHE_FLAT,
+ };
+ 
++static int raa215300_set_32k_out(struct raa215300 *pmic) {
++	return regmap_update_bits(pmic->regmap, RAA215300_REG_MPIO2_COMFIG, 0xFF, RAA215300_MPIO2_32K_PP);
++}
++
+ static int raa215300_i2c_probe(struct i2c_client *client,
+ 			       const struct i2c_device_id *id)
+ {
+@@ -61,6 +69,8 @@ static int raa215300_i2c_probe(struct i2c_client *client,
+ 
+ 	pmic->rtc_enabled = of_property_read_bool(client->dev.of_node,
+ 						  "rtc-enable");
++	pmic->mpio2_32k_enabled = of_property_read_bool(client->dev.of_node,
++						  "mpio2-32k-enable");
+ 
+ 	if (pmic->rtc_enabled) {
+ 		regmap_update_bits(pmic->regmap, RAA215300_REG_BLOCK_EN,
+@@ -68,6 +78,14 @@ static int raa215300_i2c_probe(struct i2c_client *client,
+ 		dev_info(&client->dev, "RTC enabled\n");
+ 	}
+ 
++	if (pmic->mpio2_32k_enabled) {
++		ret = raa215300_set_32k_out(pmic);
++		if (ret) {
++			dev_err(&client->dev, "Failed to set MPIO2 as 32K_OUT: %d\n", ret);
++			return ret;
++		}
++	}
++	
+ 	dev_info(&client->dev, "RAA215300 initialized");
+ 
+ 	return 0;
+-- 
+2.41.0
+
