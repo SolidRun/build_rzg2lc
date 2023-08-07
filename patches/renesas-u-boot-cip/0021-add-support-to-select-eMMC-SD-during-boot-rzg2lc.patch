@@ -1,0 +1,713 @@
+From e213eafad6a29cef055066435b7b5ee6cafbf36d Mon Sep 17 00:00:00 2001
+From: Yazan Shhady <yazan.shhady@solid-run.com>
+Date: Mon, 7 Aug 2023 12:36:57 +0300
+Subject: [PATCH] add support to select eMMC/SD during boot - rzg2lc
+
+Set eMMC/SD based on SD0_DEV_SEL_SW signal for rzg2lc solidrun boards
+
+- Set SD0_DEV_SEL_SW (P22_1) GPIO to select eMMC/SD during boot
+- Patching Linux DTBs to set SDH0, select SD/eMMC based on the SD0_DEV_SEL_SW
+(P22_1) signal {Low: eMMC; High: uSD }
+
+Signed-off-by: Yazan Shhady <yazan.shhady@solid-run.com>
+---
+ arch/arm/dts/rzg2lc-solidrun.dts        |   1 -
+ board/solidrun/rzg2lc/rzg2lc-solidrun.c | 218 +++++++++++++-
+ configs/rzg2lc-solidrun_defconfig       |   1 +
+ rzg2lc-solidrun_board_7-8-23.c          | 384 ++++++++++++++++++++++++
+ 4 files changed, 593 insertions(+), 11 deletions(-)
+ create mode 100644 rzg2lc-solidrun_board_7-8-23.c
+
+diff --git a/arch/arm/dts/rzg2lc-solidrun.dts b/arch/arm/dts/rzg2lc-solidrun.dts
+index 75f8811a04..68797f2d19 100644
+--- a/arch/arm/dts/rzg2lc-solidrun.dts
++++ b/arch/arm/dts/rzg2lc-solidrun.dts
+@@ -40,7 +40,6 @@
+ 				<RZG2L_PINMUX(21, 0, 1)>,
+ 				<RZG2L_PINMUX(21, 1, 1)>,
+ 				<RZG2L_PINMUX(22, 0, 1)>,
+-				<RZG2L_PINMUX(22, 1, 1)>,
+ 				<RZG2L_PINMUX(23, 0, 1)>,
+ 				<RZG2L_PINMUX(23, 1, 1)>,
+ 				<RZG2L_PINMUX(24, 0, 1)>,
+diff --git a/board/solidrun/rzg2lc/rzg2lc-solidrun.c b/board/solidrun/rzg2lc/rzg2lc-solidrun.c
+index 6f3179c7c9..0b2dcf29d4 100644
+--- a/board/solidrun/rzg2lc/rzg2lc-solidrun.c
++++ b/board/solidrun/rzg2lc/rzg2lc-solidrun.c
+@@ -5,12 +5,14 @@
+ #include <malloc.h>
+ #include <netdev.h>
+ #include <dm.h>
++#include <linux/delay.h>
+ #include <dm/platform_data/serial_sh.h>
+ #include <asm/processor.h>
+ #include <asm/mach-types.h>
+ #include <asm/io.h>
+ #include <linux/bitops.h>
+ #include <linux/errno.h>
++#include <fdt_support.h>
+ #include <asm/arch/sys_proto.h>
+ #include <asm/gpio.h>
+ #include <asm/arch/gpio.h>
+@@ -19,6 +21,8 @@
+ #include <asm/arch/sh_sdhi.h>
+ #include <i2c.h>
+ #include <mmc.h>
++#include <env.h>
++#include <command.h>
+ 
+ DECLARE_GLOBAL_DATA_PTR;
+ 
+@@ -42,13 +46,35 @@ DECLARE_GLOBAL_DATA_PTR;
+ #define CPG_RST_USB				(CPG_BASE + 0x878)
+ #define CPG_CLKON_USB				(CPG_BASE + 0x578)
+ 
++/* PFC - Help
++ * [User Manual part 4.2 - 4.3] ->
++ * 41.2.1 Port Register (Pn) PORT REGISTER37 -> H’0037
++ * 	  Port Mode Register (PMn) PORT MODE REGISTER37 -> H’016E
++ * 	  PMC39 PORT MODE CONTROL REGISTER37 -> H’0237
++ * 41.3 Register Descriptions
++ * 41.3.1 Port Register (Pn) P37 —> 0 P39_2 P39_1 P39_0 (Correspondence between register and each terminal)
++ * 41.3.2 Port Mode Register (PMn) -> B'10 Output Mode...
++ * 41.3.3 Port Mode Control Register (PMCn) P37 —> 0 - mode for the multiplexed pins of GPIO / 1 function mode
++ * 41.3.4 Port Function Control Register (PFCm) select function mode
++ *
++ * */
+ /* PFC */
+ #define PFC_P37						(PFC_BASE + 0x037)
+ #define PFC_PM37					(PFC_BASE + 0x16E)
+ #define PFC_PMC37					(PFC_BASE + 0x237)
++#define PFC_P26     		(PFC_BASE + 0x026) /* PORT REGISTER26 */
++#define PFC_PM26    		(PFC_BASE + 0x14C) /* PORT MODE REGISTER26 */
++#define PFC_PMC26   		(PFC_BASE + 0x226) /* PORT MODE CONTROL REGISTER26 */
++#define PFC_PUPD26   		(PFC_BASE + 0x1d30) /* PULL UP/PULL DOWN SWITCHING REGISTER26 */
++#define FILONOFF26			(PFC_BASE + 0x2130) /* Digital Noise Filter Switching Register */
++#define FILNUM26			(PFC_BASE + 0x2530) /* DIGITAL NOISE FILTER NUMBER REGISTER26 */
+ #define PFC_PWPR					(PFC_BASE + 0x3014)
++#define PFC_P14 					(PFC_BASE + 0x0014)
++#define PFC_PM14 					(PFC_BASE + 0x0128)
+ #define PFC_PMC14					(PFC_BASE + 0x214)
+ #define PFC_PFC14					(PFC_BASE + 0x450)
++#define PFC_P15 					(PFC_BASE + 0x0015)
++#define PFC_PM15 					(PFC_BASE + 0x012A)
+ #define PFC_PMC15					(PFC_BASE + 0x215)
+ #define PFC_PFC15					(PFC_BASE + 0x454)
+ #define PFC_PMC3A					(PFC_BASE + 0x23a)
+@@ -75,17 +101,92 @@ DECLARE_GLOBAL_DATA_PTR;
+ #define WDTCNT_WDTEN				BIT(0)
+ #define WDTINT_INTDISP				BIT(0)
+ 
+-void s_init(void)
++/**
++ * The Hummingboard requires Open-Drain VBUS signals.
++ * Comment the line below to enable Push-Pull signals instead.
++ * TODO: remove this macro and change signal type based on TLV info.
++*/
++#define USB_VBUS_OD
++
++/* eMMC/SD Auto detecte*/
++#define EMMC_SD_AUTO 1
++/* force select eMMC*/
++#define SEL_EMMC 0
++/* force select uSD*/
++#define SEL_SD 1
++
++int check_sd_emmc_select(void)
+ {
+-	/* SD1 power control: P39_1 = 0; P39_2 = 1; */
+-	*(volatile u32 *)(PFC_PMC37) &= 0xFFFFFFF9; /* Port func mode 0b00 */
+-	*(volatile u32 *)(PFC_PM37) = (*(volatile u32 *)(PFC_PM37) & 0xFFFFFFC3) | 0x28; /* Port output mode 0b1010 */
+-#if CONFIG_TARGET_RZG2LC_SOLIDRUN
+-	*(volatile u32 *)(PFC_P37) = (*(volatile u32 *)(PFC_P37) & 0xFFFFFFF9) | 0x6;	/* Port 39[2:1] output value 0b11*/
+-#else
+-	*(volatile u32 *)(PFC_P37) = (*(volatile u32 *)(PFC_P37) & 0xFFFFFFF9) | 0x4;	/* Port 39[2:1] output value 0b10*/
+-#endif
++	int value=0;
++	/* Read SD0_DEV_SEL_SW value - P22_1 */
++	/* eMMC/uSD Device Select - SD0_DEV_SEL_SW (High: uSD ; Low: eMMC) */
++	*(volatile u32 *)(PFC_PMC26) &= 0xFFFFFFFD; /* Port func mode 0b0 (GPIO) */
++	*(volatile u32 *)(PFC_PM26) = (*(volatile u32 *)(PFC_PM26) & 0xFFFFFFF3) | 0x4; /* Port input mode 0b01xx */
++
++	/** The function should return 0 if eMMC is selected; 1 if uSD is selcted
++	*   TODO: Fix reading SD0_DEV_SEL_SW
++	*/
++	value=(u32)(((*(volatile u32 *)(PFC_P26)) & 0x2));  /* Port 22[1] read input value */
++
++	if ( value == 1 || SEL_SD == 1 )
++		return 1;
++
++	return 0;
++}
++
++static void board_sd_emmc_init(void)
++{
++	/* Select eMMC/uSD based on SD0_DEV_SEL_SW (P22_1) GPIO value {High: uSD ; Low: eMMC}*/
++	u32 value=0;
++	volatile u32 * p_p26=(void *)PFC_P26;
++	volatile u32 * p_pm26=(void *)PFC_PM26;
++	volatile u32 * p_pmc26=(void *)PFC_PMC26;
++	volatile u32 * p_p37=(void *)PFC_P37;
++	volatile u32 * p_pm37=(void *)PFC_PM37;
++	volatile u32 * p_pmc37=(void *)PFC_PMC37;
++	/* Read SD0_DEV_SEL_SW value - P22_1 */
++	#if 0
++	*p_pmc26 &= 0xFFFFFFFD; /* Port func mode 0b0 (GPIO) */
++	*p_pm26 = (*p_pm26 & 0xFFFFFFF3) | 0x4; /* Port input mode 0b01xx */
++	value=*p_p26 & 0x2; /* Port 22[1] read input value */
++	#else
++		value = check_sd_emmc_select();
++	#endif
++	printf("SD0_DEV_SEL_SW = %d; (P26=0x%x, PM26=0x%x, PMC26=0x%x\n", value,*p_p26,*p_pm26, *p_pmc26);
+ 
++	if ( value == 0 || SEL_EMMC == 1 )
++	{
++		printf("%s: select emmc.\n", __func__);
++		/* Enable eMMC */
++		 /** TODO: it should be enabled when check_sd_emmc_select is fixed*/
++		#if 1
++		/* Set SD0 VDD = 1.8v -> PFC-eMMC - LDO_SEL1 (High: 3.3v ; Low: 1.8v) */
++		*p_pmc37 &= 0xFFFFFFFE; /* Port func mode 0b0 P39_0 */
++		*p_pm37 = (*p_pm37 & 0xFFFFFFFC) | 0x2; /* Port output mode 0b10 (GPIO) */
++		*p_p37 = (*p_p37 & 0xFFFFFFFE) | 0x0;   /* Port 39[0] output value 0b0 */
++
++		/* Select eMMC */
++		*p_pm26 = (*p_pm26 & 0xFFFFFFF3) | 0xc;//0x8;   /* Port output mode 0b10xx */
++		*p_p26 = (*p_p26 & 0xFFFFFFFD) | 0x0;     /* eMMC -> Port 22[1] output value 0b0 */
++		#endif
++	}
++	if ( value != 0 || SEL_SD == 1 )
++	{
++		printf("%s: select uSD.\n", __func__);
++		/* Enable uSD */
++		/* Set SD0 VDD = 3.3v -> PFC-SD - LDO_SEL1 (High: 3.3v ; Low: 1.8v) */
++		*p_pmc37 &= 0xFFFFFFFE; /* Port func mode 0b0 P39_0 */
++		*p_pm37 = (*p_pm37 & 0xFFFFFFFC) | 0x2; /* Port output mode 0b10 (GPIO) */
++		*p_p37 = (*p_p37 & 0xFFFFFFFE) | 0x1;   /* Port 39[0] output value 0b0 */
++
++		/* Select uSD */
++		*p_pm26 = (*p_pm26 & 0xFFFFFFF3) | 0xc;//0x8;   /* Port output mode 0b10 */
++		*p_p26 = (*p_p26 & 0xFFFFFFFD) | 0x2;   /* SD   -> Port 22[1] output value 0b1 */
++	}
++}
++
++void s_init(void)
++{
+ 	/* can go in board_eht_init() once enabled */
+ 	*(volatile u32 *)(ETH_CH0) = (*(volatile u32 *)(ETH_CH0) & 0xFFFFFFFC) | ETH_PVDD_1800;
+ 	/* Enable RGMII for ETH0 */
+@@ -151,6 +252,101 @@ static void board_usb_init(void)
+ 	(*(volatile u32 *)(USB1_BASE + HcRhDescriptorA)) |= (0x1u << 12);	/* NOCP = 1 */
+ }
+ 
++#if defined(CONFIG_OF_LIBFDT) && defined(CONFIG_OF_BOARD_SETUP) && defined(CONFIG_OF_SYSTEM_SETUP)
++/*
++ * Configure the correct sdhi0 node (eMMC/SD) in device-tree:
++ *  Set up board-specific details in device tree before boot
++*/
++
++int ft_system_setup(void *blob, struct bd_info *bd)
++{
++#if EMMC_SD_AUTO
++	int ret, node_sdhi0, node, is_sd=0;
++	bool enable_sdhc = false;
++
++	ret = check_sd_emmc_select();
++	if ( ret == 1 )
++		is_sd = 1;
++
++	if (is_sd || SEL_SD)
++		enable_sdhc = true;
++
++	if (enable_sdhc)
++	{
++		printf("patching DTS | Select uSD...\n");
++		/* dts changes (
++		set | gpio-sd0-dev-sel-emmc-hog | replace output-low with output-high
++		set | gpio-sd0-vdd-18v-hog | replace output-low with output-high
++		------------------------------------------------
++		# sdhi0 ->
++		set | pinctrl-0 = <&sdhi0_pins>;
++		set | pinctrl-1 = <&sdhi0_pins_uhs>;
++		set | vqmmc-supply = <&vccq_sdhi0>;
++		set | bus-width = <4>;
++		add | max-frequency = <50000000>;
++		remove | mmc-hs200-1_8v;
++		remove | non-removable;
++		remove | fixed-emmc-driver-type = <1>;
++		*/
++
++		/* select uSD and set SD0_VDD=3.3V */
++		node = fdt_path_offset(blob, "/soc/pinctrl@11030000/gpio-sd0-dev-sel-emmc-hog");
++
++		ret = fdt_delprop(blob, node, "output-high");
++		if (ret < 0 && enable_sdhc)
++			pr_err("%s: failed to disable gpio-sd0-dev-sel-emmc-hog in dtb!\n", __func__);
++
++		ret = fdt_setprop_empty(blob, node, "output-low");
++		if (ret < 0 && enable_sdhc)
++			pr_err("%s: failed to set output-low -> gpio-sd0-dev-sel-emmc-hog in dtb!\n", __func__);
++
++		node = fdt_path_offset(blob, "/soc/pinctrl@11030000/gpio-sd0-vdd-18v-hog");
++		ret = fdt_delprop(blob, node, "output-high");
++		if (ret < 0 && enable_sdhc)
++			pr_err("%s: failed to delete output-high gpio-sd0-vdd-18v-hog in dtb!\n", __func__);
++
++		ret = fdt_setprop_empty(blob, node, "output-low");
++		if (ret < 0 && enable_sdhc)
++			pr_err("%s: failed to set output-low -> gpio-sd0-vdd-18v-hog in dtb!\n", __func__);
++
++		/* update sdhi0 settings (SD/eMMC) mmc@11c00000 */
++		node_sdhi0 = fdt_path_offset(blob, "/soc/mmc@11c00000");
++
++		ret = fdt_setprop_u32(blob, node_sdhi0, "bus-width", 4);
++		if (ret < 0 && enable_sdhc)
++			pr_err("%s : failed to set sdhi0 node at address mmc@11c00000 in dtb!\n", __func__);
++
++		ret = fdt_setprop_u32(blob, node_sdhi0, "max-frequency", 50000000);
++		if (ret < 0 && enable_sdhc)
++			pr_err("%s : failed to set sdhi0 node at address mmc@11c00000 in dtb!\n", __func__);
++
++		ret = fdt_delprop(blob, node_sdhi0, "mmc-hs200-1_8v");
++		if (ret < 0 && enable_sdhc)
++			pr_err("%s : failed to set sdhi0 node at address mmc@11c00000 in dtb!\n", __func__);
++
++		ret = fdt_delprop(blob, node_sdhi0, "non-removable");
++		if (ret < 0 && enable_sdhc)
++			pr_err("%s : failed to set sdhi0 node at address mmc@11c00000 in dtb!\n", __func__);
++
++		ret = fdt_delprop(blob, node_sdhi0, "ixed-emmc-driver-type");
++		if (ret < 0 && enable_sdhc)
++			pr_err("%s : failed to set sdhi0 node at address mmc@11c00000 in dtb!\n", __func__);
++	}
++	else
++	{
++		printf("patching DTS | keep default settings \n");
++	}
++#endif
++
++	return 0;
++}
++
++
++void ft_board_setup_ex(void *blob, struct bd_info *bd)
++{
++}
++
++#endif
+ 
+ int board_early_init_f(void)
+ {
+@@ -162,7 +358,9 @@ int board_init(void)
+ {
+ 	/* adress of boot parameters */
+ 	gd->bd->bi_boot_params = CONFIG_SYS_TEXT_BASE + 0x50000;
+-
++	#if EMMC_SD_AUTO
++		board_sd_emmc_init();
++	#endif
+ 	board_usb_init();
+ 
+ 	return 0;
+diff --git a/configs/rzg2lc-solidrun_defconfig b/configs/rzg2lc-solidrun_defconfig
+index 69a009a01d..a19ef0129b 100644
+--- a/configs/rzg2lc-solidrun_defconfig
++++ b/configs/rzg2lc-solidrun_defconfig
+@@ -86,3 +86,4 @@ CONFIG_CMD_SYSBOOT=y
+ CONFIG_CMD_PART=y
+ CONFIG_CMD_FS_UUID=y
+ CONFIG_PARTITION_UUIDS=y
++CONFIG_OF_SYSTEM_SETUP=y
+diff --git a/rzg2lc-solidrun_board_7-8-23.c b/rzg2lc-solidrun_board_7-8-23.c
+new file mode 100644
+index 0000000000..4a1da7e999
+--- /dev/null
++++ b/rzg2lc-solidrun_board_7-8-23.c
+@@ -0,0 +1,384 @@
++#include <common.h>
++#include <cpu_func.h>
++#include <image.h>
++#include <init.h>
++#include <malloc.h>
++#include <netdev.h>
++#include <dm.h>
++#include <linux/delay.h>
++#include <dm/platform_data/serial_sh.h>
++#include <asm/processor.h>
++#include <asm/mach-types.h>
++#include <asm/io.h>
++#include <linux/bitops.h>
++#include <linux/errno.h>
++#include <fdt_support.h>
++#include <asm/arch/sys_proto.h>
++#include <asm/gpio.h>
++#include <asm/arch/gpio.h>
++#include <asm/arch/rmobile.h>
++#include <asm/arch/rcar-mstp.h>
++#include <asm/arch/sh_sdhi.h>
++#include <i2c.h>
++#include <mmc.h>
++#include <env.h>
++#include <command.h>
++
++DECLARE_GLOBAL_DATA_PTR;
++
++#define PFC_BASE	0x11030000
++
++#define ETH_CH0		(PFC_BASE + 0x300c)
++#define I2C_CH1         (PFC_BASE + 0x1870)
++#define ETH_PVDD_3300	0x00
++#define ETH_PVDD_1800	0x01
++#define ETH_PVDD_2500	0x02
++#define ETH_MII_RGMII	(PFC_BASE + 0x3018)
++
++/* CPG */
++#define CPG_BASE					0x11010000
++#define CPG_CLKON_BASE				(CPG_BASE + 0x500)
++#define CPG_RESET_BASE				(CPG_BASE + 0x800)
++#define CPG_RESET_ETH				(CPG_RESET_BASE + 0x7C)
++#define CPG_RESET_I2C                           (CPG_RESET_BASE + 0x80)
++#define CPG_PL2_SDHI_DSEL                           (CPG_BASE + 0x218)
++#define CPG_CLK_STATUS                           (CPG_BASE + 0x280)
++#define CPG_RST_USB				(CPG_BASE + 0x878)
++#define CPG_CLKON_USB				(CPG_BASE + 0x578)
++
++/* PFC - Help
++ * [User Manual part 4.2 - 4.3] ->
++ * 41.2.1 Port Register (Pn) PORT REGISTER37 -> H’0037
++ * 	  Port Mode Register (PMn) PORT MODE REGISTER37 -> H’016E
++ * 	  PMC39 PORT MODE CONTROL REGISTER37 -> H’0237
++ * 41.3 Register Descriptions
++ * 41.3.1 Port Register (Pn) P37 —> 0 P39_2 P39_1 P39_0 (Correspondence between register and each terminal)
++ * 41.3.2 Port Mode Register (PMn) -> B'10 Output Mode...
++ * 41.3.3 Port Mode Control Register (PMCn) P37 —> 0 - mode for the multiplexed pins of GPIO / 1 function mode
++ * 41.3.4 Port Function Control Register (PFCm) select function mode
++ *
++ * */
++/* PFC */
++#define PFC_P37						(PFC_BASE + 0x037)
++#define PFC_PM37					(PFC_BASE + 0x16E)
++#define PFC_PMC37					(PFC_BASE + 0x237)
++#define PFC_P26     		(PFC_BASE + 0x026) /* PORT REGISTER26 */
++#define PFC_PM26    		(PFC_BASE + 0x14C) /* PORT MODE REGISTER26 */
++#define PFC_PMC26   		(PFC_BASE + 0x226) /* PORT MODE CONTROL REGISTER26 */
++#define PFC_PUPD26   		(PFC_BASE + 0x1d30) /* PULL UP/PULL DOWN SWITCHING REGISTER26 */
++#define FILONOFF26			(PFC_BASE + 0x2130) /* Digital Noise Filter Switching Register */
++#define FILNUM26			(PFC_BASE + 0x2530) /* DIGITAL NOISE FILTER NUMBER REGISTER26 */
++#define PFC_PWPR					(PFC_BASE + 0x3014)
++#define PFC_P14 					(PFC_BASE + 0x0014)
++#define PFC_PM14 					(PFC_BASE + 0x0128)
++#define PFC_PMC14					(PFC_BASE + 0x214)
++#define PFC_PFC14					(PFC_BASE + 0x450)
++#define PFC_P15 					(PFC_BASE + 0x0015)
++#define PFC_PM15 					(PFC_BASE + 0x012A)
++#define PFC_PMC15					(PFC_BASE + 0x215)
++#define PFC_PFC15					(PFC_BASE + 0x454)
++#define PFC_PMC3A					(PFC_BASE + 0x23a)
++#define PFC_PFC3A					(PFC_BASE + 0x4e8)
++
++#define USBPHY_BASE		(0x11c40000)
++#define USB0_BASE		(0x11c50000)
++#define USB1_BASE		(0x11c70000)
++#define USBF_BASE		(0x11c60000)
++#define USBPHY_RESET		(USBPHY_BASE + 0x000u)
++#define COMMCTRL		0x800
++#define HcRhDescriptorA		0x048
++#define LPSTS			0x102
++
++
++/* WDT */
++#define WDT_BASE 					0x12800800
++#define WDTCNT						0x00
++#define WDTSET						0x04
++#define WDTTIM						0x08
++#define WDTINT						0x0C
++#define PECR						0x10
++#define PEEN						0x14
++#define WDTCNT_WDTEN				BIT(0)
++#define WDTINT_INTDISP				BIT(0)
++
++/**
++ * The Hummingboard requires Open-Drain VBUS signals.
++ * Comment the line below to enable Push-Pull signals instead.
++ * TODO: remove this macro and change signal type based on TLV info.
++*/
++#define USB_VBUS_OD
++
++/* force select eMMC*/
++#define SEL_EMMC 0
++/* force select uSD*/
++#define SEL_SD 0
++
++static int check_sd_emmc_select(void)
++{
++	int value=0;
++	/* Read SD0_DEV_SEL_SW value - P22_1 */
++	/* eMMC/uSD Device Select - SD0_DEV_SEL_SW (High: uSD ; Low: eMMC) */
++	*(volatile u32 *)(PFC_PMC26) &= 0xFFFFFFFD; /* Port func mode 0b0 (GPIO) */
++	*(volatile u32 *)(PFC_PM26) = (*(volatile u32 *)(PFC_PM26) & 0xFFFFFFF3) | 0x4; /* Port input mode 0b01xx */
++
++	/** The function should return 0 if eMMC is selected; 1 if uSD is selcted
++	*   TODO: Fix reading SD0_DEV_SEL_SW
++	*/
++	value=(u32)(((*(volatile u32 *)(PFC_P26)) & 0x2));  /* Port 22[1] read input value */
++
++	if ( value == 1 || SEL_SD == 1 )
++		return 1;
++
++	return 0;
++}
++
++static void board_sd_emmc_init(void)
++{
++	/* Select eMMC/uSD based on SD0_DEV_SEL_SW (P22_1) GPIO value {High: uSD ; Low: eMMC}*/
++	u32 value=0;
++	volatile u32 * p_p26=(void *)PFC_P26;
++	volatile u32 * p_pm26=(void *)PFC_PM26;
++	volatile u32 * p_pmc26=(void *)PFC_PMC26;
++	volatile u32 * p_p37=(void *)PFC_P37;
++	volatile u32 * p_pm37=(void *)PFC_PM37;
++	volatile u32 * p_pmc37=(void *)PFC_PMC37;
++	/* Read SD0_DEV_SEL_SW value - P22_1 */
++	#if 0
++	*p_pmc26 &= 0xFFFFFFFD; /* Port func mode 0b0 (GPIO) */
++	*p_pm26 = (*p_pm26 & 0xFFFFFFF3) | 0x4; /* Port input mode 0b01xx */
++	value=*p_p26 & 0x2; /* Port 22[1] read input value */
++	#else
++		value = check_sd_emmc_select();
++	#endif
++	printf("SD0_DEV_SEL_SW = %d; (P26=0x%x, PM26=0x%x, PMC26=0x%x\n", value,*p_p26,*p_pm26, *p_pmc26);
++
++	if ( value == 0 || SEL_EMMC == 1 )
++	{
++		printf("%s: select emmc.\n", __func__);
++		/* Enable eMMC */
++		 /** TODO: it should be enabled when check_sd_emmc_select is fixed*/
++		#if 0
++		/* Set SD0 VDD = 1.8v -> PFC-eMMC - LDO_SEL1 (High: 3.3v ; Low: 1.8v) */
++		*p_pmc37 &= 0xFFFFFFFE; /* Port func mode 0b0 P39_0 */
++		*p_pm37 = (*p_pm37 & 0xFFFFFFFC) | 0x2; /* Port output mode 0b10 (GPIO) */
++		*p_p37 = (*p_p37 & 0xFFFFFFFE) | 0x0;   /* Port 39[0] output value 0b0 */
++
++		/* Select eMMC */
++		*p_pm26 = (*p_pm26 & 0xFFFFFFF3) | 0xc;//0x8;   /* Port output mode 0b10xx */
++		*p_p26 = (*p_p26 & 0xFFFFFFFD) | 0x0;     /* eMMC -> Port 22[1] output value 0b0 */
++		#endif
++	}
++	if ( value != 0 || SEL_SD == 1 )
++	{
++		printf("%s: select uSD.\n", __func__);
++		/* Enable uSD */
++		/* Set SD0 VDD = 3.3v -> PFC-SD - LDO_SEL1 (High: 3.3v ; Low: 1.8v) */
++		*p_pmc37 &= 0xFFFFFFFE; /* Port func mode 0b0 P39_0 */
++		*p_pm37 = (*p_pm37 & 0xFFFFFFFC) | 0x2; /* Port output mode 0b10 (GPIO) */
++		*p_p37 = (*p_p37 & 0xFFFFFFFE) | 0x1;   /* Port 39[0] output value 0b0 */
++
++		/* Select uSD */
++		*p_pm26 = (*p_pm26 & 0xFFFFFFF3) | 0xc;//0x8;   /* Port output mode 0b10 */
++		*p_p26 = (*p_p26 & 0xFFFFFFFD) | 0x2;   /* SD   -> Port 22[1] output value 0b1 */
++	}
++}
++
++void s_init(void)
++{
++	board_sd_emmc_init();
++	/* can go in board_eht_init() once enabled */
++	*(volatile u32 *)(ETH_CH0) = (*(volatile u32 *)(ETH_CH0) & 0xFFFFFFFC) | ETH_PVDD_1800;
++	/* Enable RGMII for ETH0 */
++	*(volatile u32 *)(ETH_MII_RGMII) = (*(volatile u32 *)(ETH_MII_RGMII) & 0xFFFFFFFC);
++	/* ETH CLK */
++	*(volatile u32 *)(CPG_RESET_ETH) = 0x30001;
++	/* I2C CLK */
++	*(volatile u32 *)(CPG_RESET_I2C) = 0xF000F;
++	/* I2C pin non GPIO enable */
++	*(volatile u32 *)(I2C_CH1) = 0x01010101;
++	/* SD CLK */
++	*(volatile u32 *)(CPG_PL2_SDHI_DSEL) = 0x00110011;
++	while (*(volatile u32 *)(CPG_CLK_STATUS) != 0)
++		;
++}
++
++static void board_usb_init(void)
++{
++        /*Enable USB*/
++        (*(volatile u32 *)CPG_RST_USB) = 0x000f000f;
++        (*(volatile u32 *)CPG_CLKON_USB) = 0x000f000f;
++
++        // /* Setup  */
++        // /* Disable GPIO Write Protect */
++        (*(volatile u32 *)PFC_PWPR) &= ~(0x1u << 7); /* PWPR.BOWI = 0 */
++        (*(volatile u32 *)PFC_PWPR) |= (0x1u << 6);      /* PWPR.PFCWE = 1 */
++
++#ifdef USB_VBUS_OD
++        /* Humming board has pulled up signals, enabled by default */
++        /* set P4_0 as GPIO Input */
++        (*(volatile u8 *)PFC_PM14) = 0;
++        /* set P5_0 as GPIO Input */
++        (*(volatile u8 *)PFC_PM15) = 0;
++#elif
++        /* set P4_0 as GPIO Output High VBUSEN */
++        (*(volatile u8 *)PFC_PM14) |= (0x1u << 1);
++        (*(volatile u8 *)PFC_P14) |= (0x1u << 0);
++        // /* set P5_0 as GPIO Output High */
++        (*(volatile u8 *)PFC_PM15) |= (0x1u << 1);
++        (*(volatile u8 *)PFC_P15) |= (0x1u << 0);
++
++#endif
++
++        // /* Enable write protect */
++        (*(volatile u32 *)PFC_PWPR) &= ~(0x1u << 6); /* PWPR.PFCWE = 0 */
++        (*(volatile u32 *)PFC_PWPR) |= (0x1u << 7);      /* PWPR.BOWI = 1 */
++
++        /*Enable 2 USB ports*/
++        (*(volatile u32 *)USBPHY_RESET) = 0x00001000u;
++        /*USB0 is HOST*/
++        (*(volatile u32 *)(USB0_BASE + COMMCTRL)) = 0;
++        /*USB1 is HOST*/
++        (*(volatile u32 *)(USB1_BASE + COMMCTRL)) = 0;
++        /* Set USBPHY normal operation (Function only) */
++        (*(volatile u16 *)(USBF_BASE + LPSTS)) |= (0x1u << 14); /* USBPHY.SUSPM = 1 (func only) */
++        /* Overcurrent is not supported */
++        (*(volatile u32 *)(USB0_BASE + HcRhDescriptorA)) |= (0x1u << 12); /* NOCP = 1 */
++        (*(volatile u32 *)(USB1_BASE + HcRhDescriptorA)) |= (0x1u << 12); /* NOCP = 1 */
++}
++
++#if defined(CONFIG_OF_LIBFDT) && defined(CONFIG_OF_BOARD_SETUP) && defined(CONFIG_OF_SYSTEM_SETUP)
++/*
++ * Configure the correct sdhi0 node (eMMC/SD) in device-tree:
++ *  Set up board-specific details in device tree before boot
++*/
++
++int ft_system_setup(void *blob, struct bd_info *bd)
++{
++	int ret, node_sdhi0, node, is_sd=0;
++	bool enable_sdhc = false;
++
++	ret = check_sd_emmc_select();
++	if ( ret == 1 )
++		is_sd = 1;
++
++	if (is_sd || SEL_SD)
++		enable_sdhc = true;
++
++	if (enable_sdhc)
++	{
++		printf("patching DTS | Select uSD...\n");
++		/* dts changes (
++		set | gpio-sd0-dev-sel-emmc-hog | replace output-low with output-high
++		set | gpio-sd0-vdd-18v-hog | replace output-low with output-high
++		------------------------------------------------
++		# sdhi0 ->
++		set | pinctrl-0 = <&sdhi0_pins>;
++		set | pinctrl-1 = <&sdhi0_pins_uhs>;
++		set | vqmmc-supply = <&vccq_sdhi0>;
++		set | bus-width = <4>;
++		add | max-frequency = <50000000>;
++		remove | mmc-hs200-1_8v;
++		remove | non-removable;
++		remove | fixed-emmc-driver-type = <1>;
++		*/
++
++		/* select uSD and set SD0_VDD=3.3V */
++		node = fdt_path_offset(blob, "/soc/pinctrl@11030000/gpio-sd0-dev-sel-emmc-hog");
++
++		ret = fdt_delprop(blob, node, "output-high");
++		if (ret < 0 && enable_sdhc)
++			pr_err("%s: failed to disable gpio-sd0-dev-sel-emmc-hog in dtb!\n", __func__);
++
++		ret = fdt_setprop_empty(blob, node, "output-low");
++		if (ret < 0 && enable_sdhc)
++			pr_err("%s: failed to set output-low -> gpio-sd0-dev-sel-emmc-hog in dtb!\n", __func__);
++
++		node = fdt_path_offset(blob, "/soc/pinctrl@11030000/gpio-sd0-vdd-18v-hog");
++		ret = fdt_delprop(blob, node, "output-high");
++		if (ret < 0 && enable_sdhc)
++			pr_err("%s: failed to delete output-high gpio-sd0-vdd-18v-hog in dtb!\n", __func__);
++
++		ret = fdt_setprop_empty(blob, node, "output-low");
++		if (ret < 0 && enable_sdhc)
++			pr_err("%s: failed to set output-low -> gpio-sd0-vdd-18v-hog in dtb!\n", __func__);
++
++		/* update sdhi0 settings (SD/eMMC) mmc@11c00000 */
++		node_sdhi0 = fdt_path_offset(blob, "/soc/mmc@11c00000");
++
++		ret = fdt_setprop_u32(blob, node_sdhi0, "bus-width", 4);
++		if (ret < 0 && enable_sdhc)
++			pr_err("%s : failed to set sdhi0 node at address mmc@11c00000 in dtb!\n", __func__);
++
++		ret = fdt_setprop_u32(blob, node_sdhi0, "max-frequency", 50000000);
++		if (ret < 0 && enable_sdhc)
++			pr_err("%s : failed to set sdhi0 node at address mmc@11c00000 in dtb!\n", __func__);
++
++		ret = fdt_delprop(blob, node_sdhi0, "mmc-hs200-1_8v");
++		if (ret < 0 && enable_sdhc)
++			pr_err("%s : failed to set sdhi0 node at address mmc@11c00000 in dtb!\n", __func__);
++
++		ret = fdt_delprop(blob, node_sdhi0, "non-removable");
++		if (ret < 0 && enable_sdhc)
++			pr_err("%s : failed to set sdhi0 node at address mmc@11c00000 in dtb!\n", __func__);
++
++		ret = fdt_delprop(blob, node_sdhi0, "ixed-emmc-driver-type");
++		if (ret < 0 && enable_sdhc)
++			pr_err("%s : failed to set sdhi0 node at address mmc@11c00000 in dtb!\n", __func__);
++	}
++	else
++	{
++		printf("patching DTS | keep default settings \n");
++	}
++
++	return 0;
++}
++
++void ft_board_setup_ex(void *blob, struct bd_info *bd)
++{
++}
++
++#endif
++
++int board_early_init_f(void)
++{
++	return 0;
++}
++
++int board_init(void)
++{
++	/* adress of boot parameters */
++	gd->bd->bi_boot_params = CONFIG_SYS_TEXT_BASE + 0x50000;
++	return 0;
++}
++
++int board_late_init(void)
++{
++	board_usb_init();
++	
++	return 0;
++}
++
++
++static void wdt_write(u32 val, unsigned int reg)
++{
++	writel(val, WDT_BASE + reg);
++}
++
++static int reset_wdt_start(void)
++{
++	/* Clear Lapsed Time Register and clear Interrupt */
++	wdt_write(WDTINT_INTDISP, WDTINT);
++	/* 2 consecutive overflow cycle needed to trigger reset */
++	wdt_write(0, WDTSET);
++	/* Initialize watchdog counter register */
++	wdt_write(0, WDTTIM);
++	/* Enable watchdog timer*/
++	wdt_write(WDTCNT_WDTEN, WDTCNT);
++
++	return 0;
++}
++
++void reset_cpu(void)
++{
++	reset_wdt_start();
++}
+-- 
+2.25.1
+
