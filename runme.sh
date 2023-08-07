@@ -272,7 +272,7 @@ do_build_buildroot() {
 	echo "*** Building Buildroot FS..."
 	echo "================================="
 	cd $ROOTDIR/build/buildroot
-	cp $ROOTDIR/configs/buildroot/rzg2lc-solidrun_defconfig $ROOTDIR/build/buildroot/configs
+	cp $ROOTDIR/configs/buildroot/${MACHINE}_defconfig $ROOTDIR/build/buildroot/configs
 	make ${BUILDROOT_DEFCONFIG}
 	make -j${PARALLEL}
 	cp $ROOTDIR/build/buildroot/output/images/rootfs* $ROOTDIR/images/tmp/
