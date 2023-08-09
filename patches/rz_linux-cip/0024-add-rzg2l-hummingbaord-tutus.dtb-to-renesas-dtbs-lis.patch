@@ -1,0 +1,30 @@
+From 367601b058e4e9c4e1cb00bec7a2c3d4b3dc5afa Mon Sep 17 00:00:00 2001
+From: Yazan Shhady <yazan.shhady@solid-run.com>
+Date: Wed, 9 Aug 2023 11:39:22 +0300
+Subject: [PATCH 3/3] add rzg2l-hummingbaord-tutus.dtb to renesas dtbs list
+
+---
+ arch/arm64/boot/dts/renesas/Makefile | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+diff --git a/arch/arm64/boot/dts/renesas/Makefile b/arch/arm64/boot/dts/renesas/Makefile
+index 137d3fb77ba0..f62c03e3cbc3 100644
+--- a/arch/arm64/boot/dts/renesas/Makefile
++++ b/arch/arm64/boot/dts/renesas/Makefile
+@@ -89,11 +89,12 @@ dtb-$(CONFIG_ARCH_R9A07G043) += r9a07g043u11-dev.dtb
+ 
+ dtb-$(CONFIG_ARCH_R9A07G044) += r9a07g044c2-smarc.dtb
+ dtb-$(CONFIG_ARCH_R9A07G044) += rzg2lc-hummingboard.dtb
+-dtb-$(CONFIG_ARCH_R9A07G044) += rzg2l-hummingboard-ripple.dtb
+ dtb-$(CONFIG_ARCH_R9A07G044) += rzg2lc-compact.dtb
+ dtb-$(CONFIG_ARCH_R9A07G044) += r9a07g044c2-dev.dtb
+ dtb-$(CONFIG_ARCH_R9A07G044) += r9a07g044l2-smarc.dtb
+ dtb-$(CONFIG_ARCH_R9A07G044) += r9a07g044l2-dev.dtb
++dtb-$(CONFIG_ARCH_R9A07G044) += rzg2l-hummingboard-ripple.dtb
++dtb-$(CONFIG_ARCH_R9A07G044) += rzg2l-hummingboard-tutus.dtb
+ 
+ dtb-$(CONFIG_ARCH_R9A07G054) += r9a07g054l2-smarc.dtb
+ dtb-$(CONFIG_ARCH_R9A07G054) += r9a07g054l2-dev.dtb
+-- 
+2.25.1
+
