@@ -1,0 +1,61 @@
+From 37779529e0f7f3cee1d09924fbf65d34f413dbd0 Mon Sep 17 00:00:00 2001
+From: Yazan Shhady <yazan.shhady@solid-run.com>
+Date: Thu, 10 Aug 2023 20:16:45 +0300
+Subject: [PATCH] fix rzg2l eeprom settings
+
+---
+ .../boot/dts/renesas/rzg2l-hummingboard-tutus.dts   |  6 ------
+ arch/arm64/boot/dts/renesas/rzg2l-sr-som.dtsi       | 13 ++++++-------
+ 2 files changed, 6 insertions(+), 13 deletions(-)
+
+diff --git a/arch/arm64/boot/dts/renesas/rzg2l-hummingboard-tutus.dts b/arch/arm64/boot/dts/renesas/rzg2l-hummingboard-tutus.dts
+index eee605795d11..108751b78c59 100644
+--- a/arch/arm64/boot/dts/renesas/rzg2l-hummingboard-tutus.dts
++++ b/arch/arm64/boot/dts/renesas/rzg2l-hummingboard-tutus.dts
+@@ -84,12 +84,6 @@ rtc@69 {
+ 		abracon,tc-diode = "schottky";
+ 		abracon,tc-resistor = <3>;
+ 	};
+-
+-	eeprom_carrier: eeprom@57 {
+-		compatible = "st,24c02", "atmel,24c02";
+-		reg = <0x57>;
+-		pagesize = <16>;
+-	};
+ };
+ 
+ &dsi0 {
+diff --git a/arch/arm64/boot/dts/renesas/rzg2l-sr-som.dtsi b/arch/arm64/boot/dts/renesas/rzg2l-sr-som.dtsi
+index 4aa0973f852c..5aea58b1d90c 100644
+--- a/arch/arm64/boot/dts/renesas/rzg2l-sr-som.dtsi
++++ b/arch/arm64/boot/dts/renesas/rzg2l-sr-som.dtsi
+@@ -437,6 +437,12 @@ &i2c0 {
+ 	pinctrl-0 = <&i2c0_pins>;
+ 	pinctrl-names = "default";
+ 	status = "okay";
++};
++
++&i2c1 {
++	pinctrl-0 = <&i2c1_pins>;
++	pinctrl-names = "default";
++	status = "okay";
+ 
+ 	/* EEPROM CAT24AA01TDI-GT3 1-kb (128 B x 8)  */
+ 	eeprom: eeprom@50 {
+@@ -444,13 +450,6 @@ eeprom: eeprom@50 {
+ 		reg = <0x50>;
+ 		pagesize = <16>;
+ 	};
+-
+-};
+-
+-&i2c1 {
+-	pinctrl-0 = <&i2c1_pins>;
+-	pinctrl-names = "default";
+-	status = "okay";
+ };
+ 
+ &i2c3 {
+-- 
+2.25.1
+

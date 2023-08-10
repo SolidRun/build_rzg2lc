@@ -1,0 +1,38 @@
+From eaec6a8b412866b91eaccf1739b62f8f0ee7d1b3 Mon Sep 17 00:00:00 2001
+From: Yazan Shhady <yazan.shhady@solid-run.com>
+Date: Thu, 10 Aug 2023 20:09:51 +0300
+Subject: [PATCH] rzg2l: add eeprom support to rzg2l-solidrun board
+
+---
+ arch/arm/dts/rzg2l-solidrun.dts | 17 +++++++++++++++++
+ 1 file changed, 17 insertions(+)
+
+diff --git a/arch/arm/dts/rzg2l-solidrun.dts b/arch/arm/dts/rzg2l-solidrun.dts
+index 47bb4cef77..cb94ee2c1f 100644
+--- a/arch/arm/dts/rzg2l-solidrun.dts
++++ b/arch/arm/dts/rzg2l-solidrun.dts
+@@ -136,4 +136,21 @@
+ 		compatible = "adi,adv7535";
+ 		reg = <0x3d>;
+ 	};
++
++	eeprom_carrier: eeprom@57 {
++		compatible = "st,24c02", "atmel,24c02";
++		reg = <0x57>;
++		pagesize = <8>;
++	};
++};
++
++&i2c1 {
++
++	pinctrl-names = "default";
++	status = "okay";
++
++	eeprom_som: m24c02@50 {
++		compatible = "atmel,24c02";
++		reg = <0x50>;
++	};
+ };
+-- 
+2.25.1
+
