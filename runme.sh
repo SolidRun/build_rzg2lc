@@ -10,6 +10,7 @@ UBOOT_COMMIT_HASH=83b2ea37f4b2dd52accce8491af86cbb280f6774
 : ${BOOTLOADER_MENU:=false}
 : ${SHALLOW:=false}
 : ${MACHINE:=rzg2l-solidrun}
+: ${RAMFS:=true}
 REPO_PREFIX=`git log -1 --pretty=format:%h`
 
 TFA_DIR_DEFAULT='rzg_trusted-firmware-a'
@@ -391,20 +392,42 @@ IMAGE_SIZE=$((IMAGE_BOOTPART_SIZE+IMAGE_ROOTPART_SIZE+2*1024*1024))  # additiona
 IMAGE_SIZE_MB=$(echo "$IMAGE_SIZE / (1024 * 1024)" | bc) # Convert bytes to megabytes
 dd if=/dev/zero of=${IMG} bs=1M count=${IMAGE_SIZE_MB}
 
+if [ "x$RAMFS" == "xtrue" ]; then
 # Make extlinux configuration file
 cat > $ROOTDIR/images/tmp/extlinux.conf << EOF
-	timeout 30
-	default linux
-	menu title RZ/G2* boot options
-	label primary
+timeout 3
+prompt 1
+default primary
+menu title RZ/G2* boot options
+label primary
 	menu label primary kernel
-		linux /boot/Image
-		fdtdir /boot/
-		APPEND console=serial0,115200 console=ttySC0 root=/dev/mmcblk0p2 rw rootwait
+	linux /boot/Image
+	fdtdir /boot/
+	initrd /boot/initrd.img
+	APPEND console=serial0,115200 console=ttySC0
+
+label secondary
+	menu label secondary kernel
+	linux /boot/Image
+	fdtdir /boot/
+	APPEND console=serial0,115200 console=ttySC0 root=/dev/mmcblk0p2 rw rootwait
 EOF
 
-# Boot Partion (FAT Partion)
-dd if=/dev/zero of=tmp/part1.fat32 bs=1M count=$((IMAGE_BOOTPART_SIZE_MB-2))
+else
+
+cat > $ROOTDIR/images/tmp/extlinux.conf << EOF
+timeout 3
+default primary
+label primary
+	menu label primary kernel
+	linux /boot/Image
+	fdtdir /boot/
+	APPEND console=serial0,115200 console=ttySC0 root=/dev/mmcblk0p2 rw rootwait
+EOF
+fi
+
+# FAT Partion
+dd if=/dev/zero of=tmp/part1.fat32 bs=1M count=148
 env PATH="$PATH:/sbin:/usr/sbin" mkdosfs tmp/part1.fat32
 mmd -i tmp/part1.fat32 ::/extlinux
 mmd -i tmp/part1.fat32 ::/boot
