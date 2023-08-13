@@ -217,7 +217,7 @@ else
 	./create_bl2_with_bootparam.sh
 	cd $ROOTDIR/build/${TFA_DIR_DEFAULT}
 	# Make the fip creation tool:
-	cd tools/fiptool && make -j$(nproc) plat=${PLATFORM} && cd -
+	cd tools/fiptool && make clean && make -j$(nproc) plat=${PLATFORM} && cd -
 	tools/fiptool/fiptool create --align 16 --soc-fw build/${PLATFORM}/release/bl31.bin --nt-fw u-boot.bin fip.bin
 	# Copy output files BL2|FIP|BOOTPARMS to ${OUTPUT_BOOTLOADER_DIR}
 	cp fip.bin ${OUTPUT_BOOTLOADER_DIR}/fip-${MACHINE}.bin
