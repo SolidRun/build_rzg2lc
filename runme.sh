@@ -29,7 +29,7 @@ KERNEL_DIR_DEFAULT='rz_linux-cip'
 ## Debian Options
 : ${DEBIAN_VERSION:=bullseye}
 : ${DEBIAN_ROOTFS_SIZE:=936M}
-
+: ${DEBIAN_PACKAGES:="apt-transport-https,busybox,ca-certificates,can-utils,command-not-found,chrony,curl,e2fsprogs,ethtool,fdisk,gpiod,haveged,i2c-tools,ifupdown,iputils-ping,isc-dhcp-client,initramfs-tools,libiio-utils,lm-sensors,locales,nano,net-tools,ntpdate,openssh-server,psmisc,rfkill,sudo,systemd,systemd-sysv,dbus,tio,usbutils,wget,xterm,xz-utils"}
 # Kernel Modules:
 : ${INCLUDE_KERNEL_MODULES:=true}
 
@@ -37,24 +37,10 @@ ROOTDIR=`pwd`
 #\rm -rf $ROOTDIR/images/tmp
 mkdir -p build images/tmp/boot
 PARALLEL=$(getconf _NPROCESSORS_ONLN) # Amount of parallel jobs for the builds
-TOOLS="tar git make 7z dd mkfs.ext4 parted mkdosfs mcopy dtc iasl mkimage e2cp truncate qemu-system-aarch64 cpio rsync bc bison flex python unzip pandoc meson ninja depmod"
-TOOLS_PACKAGES="build-essential git dosfstools e2fsprogs parted sudo mtools p7zip p7zip-full device-tree-compiler acpica-tools u-boot-tools e2tools qemu-system-arm libssl-dev cpio rsync bc bison flex python unzip pandoc meson ninja-build kmod"
 
 export PATH=$ROOTDIR/build/toolchain/gcc-arm-11.2-2022.02-x86_64-aarch64-none-elf/bin:$PATH
 export CROSS_COMPILE=aarch64-none-elf-
 export ARCH=arm64
-
-echo "Checking all required tools are installed"
-
-for i in $TOOLS; do
-	TOOL_PATH=`which $i`
-	if [ "x$TOOL_PATH" == "x" ]; then
-		echo "Tool $i is not installed"
-		echo "If running under apt based package management you can run -"
-		echo "sudo apt install $TOOLS_PACKAGES"
-		exit -1
-	fi
-done
 
 # Check if git is configured
 GIT_CONF=`git config user.name || true`
@@ -161,116 +147,109 @@ function error() {
 trap error ERR
 set -e
 
-###############################################################################
-# Building bootloader
-###############################################################################
-echo "================================="
-echo "*** Generating Bootloader...."
-echo "================================="
-cd $ROOTDIR/build/
-if [ "x$BOOTLOADER_MENU" == "xtrue" ]; then
-	# ================ Install build scripts ====== #
-	cp $ROOTDIR/build_scripts/*.sh $ROOTDIR/build/
-	chmod +x $ROOTDIR/build/*.sh
-	\rm -rf output_*
-	# Clean U-Boot Code
-	# cd $ROOTDIR/build/renesas-u-boot-cip && make mrproper && make -j$(nproc) O=.out && cd -
-	cd $ROOTDIR/build/*u-boot* && make mrproper && cd -
-	# Select toolchain that you have:
-	./build.sh s
-	# build u-boot:
-	./build.sh u
-	# build ATF
-	./build.sh t
-	# copy output files
-	\cp -r output_*/* $ROOTDIR/images/tmp/
-else
-	UBOOT_DEFCONFIG=rzg2lc-solidrun_defconfig
-	OUTPUT_BOOTLOADER_DIR=$ROOTDIR/build/output_${MACHINE}
-	\rm -rf ${OUTPUT_BOOTLOADER_DIR}
-	mkdir -p ${OUTPUT_BOOTLOADER_DIR}
-	echo "================================="
-	echo "Generating U-Boot...."
-	echo "================================="
-	# Generate U-Boot (u-boot.bin)
-	cd $ROOTDIR/build/${UBOOT_DIR_DEFAULT}
-	make mrproper
-	make O=.out $UBOOT_DEFCONFIG
-	make -j$(nproc) O=.out
-	# Generate ATF (BL2 & FIP & BOOTPARMS)
-	echo "================================="
-	echo "Generating ATF...."
-	echo "================================="
-	cd $ROOTDIR/build/${TFA_DIR_DEFAULT}
-	# create the fip file by combining the bl31.bin and u-boot.bin (copy the u-boot.bin in the ATF root folder)
-	# cp $ROOTDIR/build/${UBOOT_DIR_DEFAULT}/.out/u-boot.bin $ROOTDIR/build/${TFA_DIR_DEFAULT}
-	U_BOOT_BIN=$(find $ROOTDIR/build/${UBOOT_DIR_DEFAULT} -iname u-boot.bin)
-	cp $U_BOOT_BIN $ROOTDIR/build/${TFA_DIR_DEFAULT}/
-	PLATFORM=g2l
-	BOARD=sr_rzg2lc_1g
-	make -j32 bl2 bl31 PLAT=${PLATFORM} BOARD=${BOARD} RZG_DRAM_ECC_FULL=0 LOG_LEVEL=20 MBEDTLS_DIR=../mbedtls
-	# Binaries (bl2.bin and bl31.bin) are located in the build/g2l/release|debug folder.
-	cp create_bl2_with_bootparam.sh build/${PLATFORM}/release/
-	cd build/${PLATFORM}/release
-	chmod +x create_bl2_with_bootparam.sh
-	# We have to combine bl2.bin with boot parameters, we can use this simple bash script to do that:
-	./create_bl2_with_bootparam.sh
-	cd $ROOTDIR/build/${TFA_DIR_DEFAULT}
-	# Make the fip creation tool:
-	cd tools/fiptool && make clean && make -j$(nproc) plat=${PLATFORM} && cd -
-	tools/fiptool/fiptool create --align 16 --soc-fw build/${PLATFORM}/release/bl31.bin --nt-fw u-boot.bin fip.bin
-	# Copy output files BL2|FIP|BOOTPARMS to ${OUTPUT_BOOTLOADER_DIR}
-	cp fip.bin ${OUTPUT_BOOTLOADER_DIR}/fip-${MACHINE}.bin
-	cp build/${PLATFORM}/release/bl2.bin ${OUTPUT_BOOTLOADER_DIR}/bl2-${MACHINE}.bin
-	cp build/${PLATFORM}/release/bootparams.bin ${OUTPUT_BOOTLOADER_DIR}/bootparams-${MACHINE}.bin
-	cp build/${PLATFORM}/release/bl2_bp.bin ${OUTPUT_BOOTLOADER_DIR}/bl2_bp-${MACHINE}.bin
-	\cp -r ${OUTPUT_BOOTLOADER_DIR}/* $ROOTDIR/images/tmp/
-	echo "bootloader binaries are here ${OUTPUT_BOOTLOADER_DIR}... "
-	ls -la ${OUTPUT_BOOTLOADER_DIR}/
-fi
+# ###############################################################################
+# # Building bootloader
+# ###############################################################################
+ echo "================================="
+ echo "*** Generating Bootloader...."
+ echo "================================="
+ cd $ROOTDIR/build/
+ if [ "x$BOOTLOADER_MENU" == "xtrue" ]; then
+ 	# ================ Install build scripts ====== #
+ 	cp $ROOTDIR/build_scripts/*.sh $ROOTDIR/build/
+ 	chmod +x $ROOTDIR/build/*.sh
+ 	\rm -rf output_*
+ 	# Clean U-Boot Code
+ 	# cd $ROOTDIR/build/renesas-u-boot-cip && make mrproper && make -j$(nproc) O=.out && cd -
+ 	cd $ROOTDIR/build/*u-boot* && make mrproper && cd -
+ 	# Select toolchain that you have:
+ 	./build.sh s
+ 	# build u-boot:
+ 	./build.sh u
+ 	# build ATF
+ 	./build.sh t
+ 	# copy output files
+ 	\cp -r output_*/* $ROOTDIR/images/tmp/
+ else
+ 	UBOOT_DEFCONFIG=rzg2lc-solidrun_defconfig
+ 	OUTPUT_BOOTLOADER_DIR=$ROOTDIR/build/output_${MACHINE}
+ 	\rm -rf ${OUTPUT_BOOTLOADER_DIR}
+ 	mkdir -p ${OUTPUT_BOOTLOADER_DIR}
+ 	echo "================================="
+ 	echo "Generating U-Boot...."
+ 	echo "================================="
+ 	# Generate U-Boot (u-boot.bin)
+ 	cd $ROOTDIR/build/${UBOOT_DIR_DEFAULT}
+ 	# make mrproper
+ 	make O=.out $UBOOT_DEFCONFIG
+ 	make -j${PARALLEL} O=.out
+ 	# Generate ATF (BL2 & FIP & BOOTPARMS)
+ 	echo "================================="
+ 	echo "Generating ATF...."
+ 	echo "================================="
+ 	cd $ROOTDIR/build/${TFA_DIR_DEFAULT}
+ 	# create the fip file by combining the bl31.bin and u-boot.bin (copy the u-boot.bin in the ATF root folder)
+ 	# cp $ROOTDIR/build/${UBOOT_DIR_DEFAULT}/.out/u-boot.bin $ROOTDIR/build/${TFA_DIR_DEFAULT}
+ 	U_BOOT_BIN=$(find $ROOTDIR/build/${UBOOT_DIR_DEFAULT} -iname u-boot.bin)
+ 	cp $U_BOOT_BIN $ROOTDIR/build/${TFA_DIR_DEFAULT}/
+ 	PLATFORM=g2l
+ 	BOARD=sr_rzg2lc_1g
+ 	make -j${PARALLEL} bl2 bl31 PLAT=${PLATFORM} BOARD=${BOARD} RZG_DRAM_ECC_FULL=0 LOG_LEVEL=20 MBEDTLS_DIR=../mbedtls
+ 	# Binaries (bl2.bin and bl31.bin) are located in the build/g2l/release|debug folder.
+ 	cp create_bl2_with_bootparam.sh build/${PLATFORM}/release/
+ 	cd build/${PLATFORM}/release
+ 	chmod +x create_bl2_with_bootparam.sh
+ 	# We have to combine bl2.bin with boot parameters, we can use this simple bash script to do that:
+ 	./create_bl2_with_bootparam.sh
+ 	cd $ROOTDIR/build/${TFA_DIR_DEFAULT}
+ 	# Make the fip creation tool:
+ 	cd tools/fiptool && make clean && make -j${PARALLEL} plat=${PLATFORM} && cd -
+ 	tools/fiptool/fiptool create --align 16 --soc-fw build/${PLATFORM}/release/bl31.bin --nt-fw u-boot.bin fip.bin
+ 	# Copy output files BL2|FIP|BOOTPARMS to ${OUTPUT_BOOTLOADER_DIR}
+ 	cp fip.bin ${OUTPUT_BOOTLOADER_DIR}/fip-${MACHINE}.bin
+ 	cp build/${PLATFORM}/release/bl2.bin ${OUTPUT_BOOTLOADER_DIR}/bl2-${MACHINE}.bin
+ 	cp build/${PLATFORM}/release/bootparams.bin ${OUTPUT_BOOTLOADER_DIR}/bootparams-${MACHINE}.bin
+ 	cp build/${PLATFORM}/release/bl2_bp.bin ${OUTPUT_BOOTLOADER_DIR}/bl2_bp-${MACHINE}.bin
+ 	\cp -r ${OUTPUT_BOOTLOADER_DIR}/* $ROOTDIR/images/tmp/
+ 	echo "bootloader binaries are here ${OUTPUT_BOOTLOADER_DIR}... "
+ 	ls -la ${OUTPUT_BOOTLOADER_DIR}/
+ fi
 
-# make the SD-Image
-cd $ROOTDIR/images/
-BOOT_IMG=rzg2lc_solidrun-sd-bootloader-${REPO_PREFIX}.img
-rm -rf $ROOTDIR/images/${BOOT_IMG}
-dd if=/dev/zero of=${BOOT_IMG} bs=1M count=1
+ # make the SD-Image
+ cd $ROOTDIR/images/
+ BOOT_IMG=rzg2lc_solidrun-sd-bootloader-${REPO_PREFIX}.img
+ rm -rf $ROOTDIR/images/${BOOT_IMG}
+ dd if=/dev/zero of=${BOOT_IMG} bs=1M count=1
 
-# Boot loader
-if [ -f tmp/bootparams-rzg2lc-solidrun.bin ] && [ -f tmp/bl2-rzg2lc-solidrun.bin ] && [ -f tmp/fip-rzg2lc-solidrun.bin ]; then
-  echo "Find Solidrun boot files..."; sleep 1
-  dd if=$ROOTDIR/images/tmp/bootparams-rzg2lc-solidrun.bin of=$BOOT_IMG bs=512 seek=1 count=1 conv=notrunc
-  dd if=$ROOTDIR/images/tmp/bl2-rzg2lc-solidrun.bin of=$BOOT_IMG bs=512 seek=8 conv=notrunc
-  dd if=$ROOTDIR/images/tmp/fip-rzg2lc-solidrun.bin of=$BOOT_IMG bs=512 seek=128 conv=notrunc
-else
-  dd if=$ROOTDIR/images/tmp/bootparams-smarc-rzg2lc.bin of=$BOOT_IMG bs=512 seek=1 count=1 conv=notrunc
-  dd if=$ROOTDIR/images/tmp/bl2-smarc-rzg2lc.bin of=$BOOT_IMG bs=512 seek=8 conv=notrunc
-  dd if=$ROOTDIR/images/tmp/fip-smarc-rzg2lc.bin of=$BOOT_IMG bs=512 seek=128 conv=notrunc
-fi
-echo "SD booloader image ready -> images/$BOOT_IMG"
+ # Boot loader
+ if [ -f tmp/bootparams-rzg2lc-solidrun.bin ] && [ -f tmp/bl2-rzg2lc-solidrun.bin ] && [ -f tmp/fip-rzg2lc-solidrun.bin ]; then
+   echo "Find Solidrun boot files..."; sleep 1
+   dd if=$ROOTDIR/images/tmp/bootparams-rzg2lc-solidrun.bin of=$BOOT_IMG bs=512 seek=1 count=1 conv=notrunc
+   dd if=$ROOTDIR/images/tmp/bl2-rzg2lc-solidrun.bin of=$BOOT_IMG bs=512 seek=8 conv=notrunc
+   dd if=$ROOTDIR/images/tmp/fip-rzg2lc-solidrun.bin of=$BOOT_IMG bs=512 seek=128 conv=notrunc
+ else
+   dd if=$ROOTDIR/images/tmp/bootparams-smarc-rzg2lc.bin of=$BOOT_IMG bs=512 seek=1 count=1 conv=notrunc
+   dd if=$ROOTDIR/images/tmp/bl2-smarc-rzg2lc.bin of=$BOOT_IMG bs=512 seek=8 conv=notrunc
+   dd if=$ROOTDIR/images/tmp/fip-smarc-rzg2lc.bin of=$BOOT_IMG bs=512 seek=128 conv=notrunc
+ fi
+ echo "SD booloader image ready -> images/$BOOT_IMG"
 
-#exit 0
-###############################################################################
-# Building Linux
-###############################################################################
-echo "================================="
-echo "*** Building Linux kernel..."
-echo "================================="
-LINUX_DEFCONFIG="rzg2lc-solidrun_defconfig"
-cd $ROOTDIR/build/rz_linux-cip
-cp $ROOTDIR/configs/linux/$LINUX_DEFCONFIG arch/arm64/configs
-make $LINUX_DEFCONFIG
-make -j$PARALLEL Image dtbs modules
-cp $ROOTDIR/build/rz_linux-cip/arch/arm64/boot/Image $ROOTDIR/images/tmp/
-cp $ROOTDIR/build/rz_linux-cip/arch/arm64/boot/dts/renesas/*smarc.dtb $ROOTDIR/images/tmp/
-cp $ROOTDIR/build/rz_linux-cip/arch/arm64/boot/dts/renesas/rzg2l*.dtb $ROOTDIR/images/tmp/
-rm -rf ${ROOTDIR}/images/tmp/modules # remove old modules
-make -j${PARALLEL} INSTALL_MOD_PATH="${ROOTDIR}/images/tmp/modules" modules_install
-# ref -> r9a07g044c2-smarc.dtb-> (r9a07g044c2.dtsi -> r9a07g044.dtsi) &
-# (rzg2lc-smarc.dtsi ->
-# <dt-bindings/gpio/gpio.h>
-# <dt-bindings/pinctrl/rzg2l-pinctrl.h>#include "rzg2lc-smarc-som.dtsi"
-# "rzg2lc-smarc-pinfunction.dtsi"
-# "rz-smarc-common.dtsi")
+ ###############################################################################
+ # Building Linux
+ ###############################################################################
+ echo "================================="
+ echo "*** Building Linux kernel..."
+ echo "================================="
+ LINUX_DEFCONFIG="rzg2lc-solidrun_defconfig"
+ cd $ROOTDIR/build/rz_linux-cip
+ cp $ROOTDIR/configs/linux/$LINUX_DEFCONFIG arch/arm64/configs
+ make $LINUX_DEFCONFIG
+ make -j${PARALLEL} Image dtbs modules
+ cp $ROOTDIR/build/rz_linux-cip/arch/arm64/boot/Image $ROOTDIR/images/tmp/
+ cp $ROOTDIR/build/rz_linux-cip/arch/arm64/boot/dts/renesas/*smarc.dtb $ROOTDIR/images/tmp/
+ cp $ROOTDIR/build/rz_linux-cip/arch/arm64/boot/dts/renesas/rzg2l*.dtb $ROOTDIR/images/tmp/
+ rm -rf ${ROOTDIR}/images/tmp/modules # remove old modules
+ make -j${PARALLEL} INSTALL_MOD_PATH="${ROOTDIR}/images/tmp/modules" modules_install
 
 ###############################################################################
 # Building FS Builroot/Debian
@@ -283,7 +262,7 @@ do_build_buildroot() {
 	cd $ROOTDIR/build/buildroot
 	cp $ROOTDIR/configs/buildroot/rzg2lc-solidrun_defconfig $ROOTDIR/build/buildroot/configs
 	make ${BUILDROOT_DEFCONFIG}
-	make -j$PARALLEL
+	make -j${PARALLEL}
 	cp $ROOTDIR/build/buildroot/output/images/rootfs* $ROOTDIR/images/tmp/
 	# Preparing initrd
 	mkimage -A arm64 -O linux -T ramdisk -C gzip -d $ROOTDIR/images/tmp/rootfs.cpio.gz $ROOTDIR/images/tmp/initrd.img
@@ -305,7 +284,7 @@ do_build_debian() {
 		fakeroot debootstrap --variant=minbase \
 			--arch=arm64 --components=main,contrib,non-free \
 			--foreign \
-			--include=apt-transport-https,busybox,ca-certificates,can-utils,command-not-found,chrony,curl,e2fsprogs,ethtool,fdisk,gpiod,haveged,i2c-tools,ifupdown,iputils-ping,isc-dhcp-client,initramfs-tools,libiio-utils,lm-sensors,locales,nano,net-tools,ntpdate,openssh-server,psmisc,rfkill,sudo,systemd-sysv,tio,usbutils,wget,xterm,xz-utils \
+			--include=${DEBIAN_PACKAGES} \
 			${DEBIAN_VERSION} \
 			stage1 \
 			https://deb.debian.org/debian
@@ -317,25 +296,12 @@ do_build_debian() {
 # run second-stage bootstrap
 /debootstrap/debootstrap --second-stage
 
-# mount pseudo-filesystems
-mount -vt proc proc /proc
-mount -vt sysfs sysfs /sys
-
-# configure dns
-cat /proc/net/pnp > /etc/resolv.conf
-
 # set empty root password
 passwd -d root
 
-# update command-not-found db
-apt-file update
-update-command-not-found
-
-# enable optional system services
-# none yet ...
-
-# populate fstab
-printf "/dev/root / ext4 defaults 0 1\\n" > /etc/fstab
+#Set hosts
+echo "${MACHINE}" | sudo tee /etc/hostname
+echo "127.0.0.1 localhost ${MACHINE}" | sudo tee -a /etc/hosts
 
 # delete self
 rm -f /stage2.sh
