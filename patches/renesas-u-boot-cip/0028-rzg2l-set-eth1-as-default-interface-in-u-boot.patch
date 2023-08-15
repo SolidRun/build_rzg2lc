@@ -1,0 +1,24 @@
+From 3833558f820f6ca3c7173eec15438294d5b1b89d Mon Sep 17 00:00:00 2001
+From: Yazan Shhady <yazan.shhady@solid-run.com>
+Date: Mon, 14 Aug 2023 14:51:32 +0300
+Subject: [PATCH 2/2] rzg2l: set eth1 as default interface in u-boot
+
+---
+ include/configs/rzg2l-solidrun.h | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/include/configs/rzg2l-solidrun.h b/include/configs/rzg2l-solidrun.h
+index b5063a4cfb..b84c09d780 100644
+--- a/include/configs/rzg2l-solidrun.h
++++ b/include/configs/rzg2l-solidrun.h
+@@ -76,6 +76,7 @@
+         "ramdisk_addr_r=" RAMDISK_ADDR_R "\0" \
+         "scriptaddr=" SCRIPT_ADDR_R "\0" \
+         "pxefile_addr_r=" PXEFILE_ADDR_R "\0" \
++        "ethact=ethernet@11c30000\0" \
+         "fdt_high=0xffffffffffffffff\0" \
+         "initrd_high=0xffffffffffffffff\0" \
+         "fdtfile=" CONFIG_DEFAULT_FDT_FILE "\0" \
+-- 
+2.25.1
+
