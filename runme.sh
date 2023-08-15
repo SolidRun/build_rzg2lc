@@ -227,6 +227,7 @@ else
 	cp fip.bin ${OUTPUT_BOOTLOADER_DIR}/fip-${MACHINE}.bin
 	cp build/${PLATFORM}/release/bl2.bin ${OUTPUT_BOOTLOADER_DIR}/bl2-${MACHINE}.bin
 	cp build/${PLATFORM}/release/bootparams.bin ${OUTPUT_BOOTLOADER_DIR}/bootparams-${MACHINE}.bin
+	cp build/${PLATFORM}/release/bl2_bp.bin ${OUTPUT_BOOTLOADER_DIR}/bl2_bp-${MACHINE}.bin
 	\cp -r ${OUTPUT_BOOTLOADER_DIR}/* $ROOTDIR/images/tmp/
 	echo "bootloader binaries are here ${OUTPUT_BOOTLOADER_DIR}... "
 	ls -la ${OUTPUT_BOOTLOADER_DIR}/
@@ -371,9 +372,14 @@ echo "================================="
 echo "*** Building Flash Writer"
 echo "================================="
 cd $ROOTDIR/build/rzg2_flash_writer
+# RZ/G2LC
 FLASH_WRITER_BUILD_ARGS="DEVICE=RZG2LC DDR_TYPE=DDR4 DDR_SIZE=1GB_1PCS SWIZZLE=T3BC FILENAME_ADD=_RZG2LC_HUMMINGBOARD"
 make $FLASH_WRITER_BUILD_ARGS -f makefile.linaro
 cp ./AArch64_output/Flash_Writer_SCIF_RZG2LC_HUMMINGBOARD_DDR4_1GB_1PCS.mot $ROOTDIR/images
+# RZ/G2L
+FLASH_WRITER_BUILD_ARGS="DEVICE=RZG2L DDR_TYPE=DDR4 DDR_SIZE=1GB_1PCS SWIZZLE=T1BC FILENAME_ADD=_RZG2L_HUMMINGBOARD"
+make $FLASH_WRITER_BUILD_ARGS -f makefile.linaro
+cp ./AArch64_output/Flash_Writer_SCIF_RZG2L_HUMMINGBOARD_DDR4_1GB_1PCS.mot $ROOTDIR/images
 
 ###############################################################################
 # Assembling Boot Image
