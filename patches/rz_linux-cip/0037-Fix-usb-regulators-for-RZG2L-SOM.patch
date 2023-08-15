@@ -1,0 +1,313 @@
+From b9ec5a8e8f24bbad85d69e94fd5fcf47c258ed79 Mon Sep 17 00:00:00 2001
+From: Mikhail Anikin <mikhail.anikin@solid-run.com>
+Date: Tue, 15 Aug 2023 14:37:52 +0300
+Subject: [PATCH] Fix usb regulators for RZG2L SOM
+
+The USB VBUS gpio is set as push-pull output by default
+All hummingboards, including tutus and ripple, need open-drain vbus enable
+---
+ .../dts/renesas/rzg2l-hummingboard-ripple.dts |  10 ++
+ .../dts/renesas/rzg2l-hummingboard-tutus.dts  |  10 ++
+ .../dts/renesas/rzg2l-sr-pinfunction.dtsi     |   9 -
+ arch/arm64/boot/dts/renesas/rzg2l-sr-som.dtsi | 159 +++++++++---------
+ 4 files changed, 99 insertions(+), 89 deletions(-)
+
+diff --git a/arch/arm64/boot/dts/renesas/rzg2l-hummingboard-ripple.dts b/arch/arm64/boot/dts/renesas/rzg2l-hummingboard-ripple.dts
+index d18499cd71f9..fd3760234fee 100644
+--- a/arch/arm64/boot/dts/renesas/rzg2l-hummingboard-ripple.dts
++++ b/arch/arm64/boot/dts/renesas/rzg2l-hummingboard-ripple.dts
+@@ -176,3 +176,13 @@ &spi1 {
+ 	/delete-property/ pinctrl-names;
+ 	status = "disabled";
+ };
++
++&usb0_vbus_otg {
++	gpio = <&pinctrl RZG2L_GPIO(4, 0) GPIO_OPEN_DRAIN>;
++	gpio-open-drain;
++};
++
++&usb1_vbus {
++	gpio = <&pinctrl RZG2L_GPIO(42, 0) GPIO_OPEN_DRAIN>;
++	gpio-open-drain;
++};
+diff --git a/arch/arm64/boot/dts/renesas/rzg2l-hummingboard-tutus.dts b/arch/arm64/boot/dts/renesas/rzg2l-hummingboard-tutus.dts
+index 6dacd4c29312..0641cf527ab7 100644
+--- a/arch/arm64/boot/dts/renesas/rzg2l-hummingboard-tutus.dts
++++ b/arch/arm64/boot/dts/renesas/rzg2l-hummingboard-tutus.dts
+@@ -97,3 +97,13 @@ &spi1 {
+ 	/delete-property/ pinctrl-names;
+ 	status = "disabled";
+ };
++
++&usb0_vbus_otg {
++	gpio = <&pinctrl RZG2L_GPIO(4, 0) GPIO_OPEN_DRAIN>;
++	gpio-open-drain;
++};
++
++&usb1_vbus {
++	gpio = <&pinctrl RZG2L_GPIO(42, 0) GPIO_OPEN_DRAIN>;
++	gpio-open-drain;
++};
+diff --git a/arch/arm64/boot/dts/renesas/rzg2l-sr-pinfunction.dtsi b/arch/arm64/boot/dts/renesas/rzg2l-sr-pinfunction.dtsi
+index b202f08229c0..9dd647f095dc 100644
+--- a/arch/arm64/boot/dts/renesas/rzg2l-sr-pinfunction.dtsi
++++ b/arch/arm64/boot/dts/renesas/rzg2l-sr-pinfunction.dtsi
+@@ -103,13 +103,4 @@ ssi1_pins: ssi1 {
+ 			 <RZG2L_PORT_PINMUX(46, 2, 1)>, /* TXD */
+ 			 <RZG2L_PORT_PINMUX(46, 3, 1)>; /* RXD */
+ 	};
+-
+-	usb0_pins: usb0 {
+-		pinmux = <RZG2L_PORT_PINMUX(4, 0, 1)>; /* VBUS */
+-	};
+-
+-	usb1_pins: usb1 {
+-		pinmux = <RZG2L_PORT_PINMUX(42, 0, 1)>;/* VBUS */
+-	};
+-
+ };
+diff --git a/arch/arm64/boot/dts/renesas/rzg2l-sr-som.dtsi b/arch/arm64/boot/dts/renesas/rzg2l-sr-som.dtsi
+index 5aea58b1d90c..95f277cf7bc4 100644
+--- a/arch/arm64/boot/dts/renesas/rzg2l-sr-som.dtsi
++++ b/arch/arm64/boot/dts/renesas/rzg2l-sr-som.dtsi
+@@ -14,17 +14,17 @@
+ 
+ / {
+ 	aliases {
+-    serial0 = &scif0;
+-    serial1 = &scif1;
+-    serial2 = &scif2;
+-    serial3 = &scif3;
+-    i2c0 = &i2c0;
+-    i2c1 = &i2c1;
+-    i2c3 = &i2c3;
+-    mmc0 = &sdhi0;
+-    mmc1 = &sdhi1;
+-    ethernet0 = &eth0;
+-    ethernet1 = &eth1;
++	serial0 = &scif0;
++	serial1 = &scif1;
++	serial2 = &scif2;
++	serial3 = &scif3;
++	i2c0 = &i2c0;
++	i2c1 = &i2c1;
++	i2c3 = &i2c3;
++	mmc0 = &sdhi0;
++	mmc1 = &sdhi1;
++	ethernet0 = &eth0;
++	ethernet1 = &eth1;
+ 	};
+ 
+ 	chosen {
+@@ -86,7 +86,7 @@ reg_3p3v: regulator1 {
+ 		regulator-always-on;
+ 	};
+ 
+-  reg_1p1v: regulator-vdd-core {
++	reg_1p1v: regulator-vdd-core {
+   		compatible = "regulator-fixed";
+   		regulator-name = "fixed-1.1V";
+   		regulator-min-microvolt = <1100000>;
+@@ -106,33 +106,36 @@ vccq_sdhi0: regulator-vccq-sdhi0 {
+ 		regulator-always-on;
+ 	};
+ 
+-  chosen {
+-    stdout-path = "serial0:115200n8";
+-  };
+-
+-  usb0_vbus_otg: regulator-usb0-vbus-otg {
+-    compatible = "regulator-fixed";
+-    regulator-name = "USB0_VBUS_OTG";
+-    regulator-min-microvolt = <5000000>;
+-    regulator-max-microvolt = <5000000>;
+-  };
++	chosen {
++		stdout-path = "serial0:115200n8";
++	};
+ 
+-  usb1_vbus: regulator-usb1-vbus {
+-    compatible = "regulator-fixed";
+-    regulator-name = "USB1_VBUS";
+-    regulator-min-microvolt = <5000000>;
+-    regulator-max-microvolt = <5000000>;
+-  };
++	usb0_vbus_otg: regulator-usb0-vbus-otg {
++		compatible = "regulator-fixed";
++		regulator-name = "USB0_VBUS_OTG";
++		regulator-min-microvolt = <5000000>;
++		regulator-max-microvolt = <5000000>;
++		gpio = <&pinctrl RZG2L_GPIO(4, 0) GPIO_ACTIVE_HIGH>;
++		enable-active-high;
++	};
+ 
+-  vccq_sdhi1: regulator-vccq-sdhi1 {
+-    compatible = "regulator-gpio";
+-    regulator-name = "SDHI1 VccQ";
+-    regulator-min-microvolt = <1800000>;
+-    regulator-max-microvolt = <3300000>;
+-    gpios-states = <1>;
+-    states = <3300000 1>, <1800000 0>;
+-  };
++	usb1_vbus: regulator-usb1-vbus {
++		compatible = "regulator-fixed";
++		regulator-name = "USB1_VBUS";
++		regulator-min-microvolt = <5000000>;
++		regulator-max-microvolt = <5000000>;
++		gpio = <&pinctrl RZG2L_GPIO(42, 0) GPIO_ACTIVE_HIGH>;
++		enable-active-high;
++	};
+ 
++	vccq_sdhi1: regulator-vccq-sdhi1 {
++		compatible = "regulator-gpio";
++		regulator-name = "SDHI1 VccQ";
++		regulator-min-microvolt = <1800000>;
++		regulator-max-microvolt = <3300000>;
++		gpios-states = <1>;
++		states = <3300000 1>, <1800000 0>;
++	};
+ };
+ 
+ &eth0 {
+@@ -179,39 +182,39 @@ &ostm2 {
+ 
+ &pinctrl {
+   eth0_pins: eth0 {
+-    pinmux = <RZG2L_PORT_PINMUX(28, 1, 1)>, /* ET0_LINKSTA */
+-       <RZG2L_PORT_PINMUX(27, 1, 1)>, /* ET0_MDC */
+-       <RZG2L_PORT_PINMUX(28, 0, 1)>, /* ET0_MDIO */
+-       <RZG2L_PORT_PINMUX(20, 0, 1)>, /* ET0_TXC */
+-       <RZG2L_PORT_PINMUX(20, 1, 1)>, /* ET0_TX_CTL */
+-       <RZG2L_PORT_PINMUX(20, 2, 1)>, /* ET0_TXD0 */
+-       <RZG2L_PORT_PINMUX(21, 0, 1)>, /* ET0_TXD1 */
+-       <RZG2L_PORT_PINMUX(21, 1, 1)>, /* ET0_TXD2 */
+-       <RZG2L_PORT_PINMUX(22, 0, 1)>, /* ET0_TXD3 */
+-       <RZG2L_PORT_PINMUX(24, 0, 1)>, /* ET0_RXC */
+-       <RZG2L_PORT_PINMUX(24, 1, 1)>, /* ET0_RX_CTL */
+-       <RZG2L_PORT_PINMUX(25, 0, 1)>, /* ET0_RXD0 */
+-       <RZG2L_PORT_PINMUX(25, 1, 1)>, /* ET0_RXD1 */
+-       <RZG2L_PORT_PINMUX(26, 0, 1)>, /* ET0_RXD2 */
+-       <RZG2L_PORT_PINMUX(26, 1, 1)>; /* ET0_RXD3 */
++	pinmux = <RZG2L_PORT_PINMUX(28, 1, 1)>, /* ET0_LINKSTA */
++		<RZG2L_PORT_PINMUX(27, 1, 1)>, /* ET0_MDC */
++		<RZG2L_PORT_PINMUX(28, 0, 1)>, /* ET0_MDIO */
++		<RZG2L_PORT_PINMUX(20, 0, 1)>, /* ET0_TXC */
++		<RZG2L_PORT_PINMUX(20, 1, 1)>, /* ET0_TX_CTL */
++		<RZG2L_PORT_PINMUX(20, 2, 1)>, /* ET0_TXD0 */
++		<RZG2L_PORT_PINMUX(21, 0, 1)>, /* ET0_TXD1 */
++		<RZG2L_PORT_PINMUX(21, 1, 1)>, /* ET0_TXD2 */
++		<RZG2L_PORT_PINMUX(22, 0, 1)>, /* ET0_TXD3 */
++		<RZG2L_PORT_PINMUX(24, 0, 1)>, /* ET0_RXC */
++		<RZG2L_PORT_PINMUX(24, 1, 1)>, /* ET0_RX_CTL */
++		<RZG2L_PORT_PINMUX(25, 0, 1)>, /* ET0_RXD0 */
++		<RZG2L_PORT_PINMUX(25, 1, 1)>, /* ET0_RXD1 */
++		<RZG2L_PORT_PINMUX(26, 0, 1)>, /* ET0_RXD2 */
++		<RZG2L_PORT_PINMUX(26, 1, 1)>; /* ET0_RXD3 */
+   };
+ 
+   eth1_pins: eth1 {
+-    pinmux = <RZG2L_PORT_PINMUX(37, 2, 1)>, /* ET1_LINKSTA */
+-       <RZG2L_PORT_PINMUX(37, 0, 1)>, /* ET1_MDC */
+-       <RZG2L_PORT_PINMUX(37, 1, 1)>, /* ET1_MDIO */
+-       <RZG2L_PORT_PINMUX(29, 0, 1)>, /* ET1_TXC */
+-       <RZG2L_PORT_PINMUX(29, 1, 1)>, /* ET1_TX_CTL */
+-       <RZG2L_PORT_PINMUX(30, 0, 1)>, /* ET1_TXD0 */
+-       <RZG2L_PORT_PINMUX(30, 1, 1)>, /* ET1_TXD1 */
+-       <RZG2L_PORT_PINMUX(31, 0, 1)>, /* ET1_TXD2 */
+-       <RZG2L_PORT_PINMUX(31, 1, 1)>, /* ET1_TXD3 */
+-       <RZG2L_PORT_PINMUX(33, 1, 1)>, /* ET1_RXC */
+-       <RZG2L_PORT_PINMUX(34, 0, 1)>, /* ET1_RX_CTL */
+-       <RZG2L_PORT_PINMUX(34, 1, 1)>, /* ET1_RXD0 */
+-       <RZG2L_PORT_PINMUX(35, 0, 1)>, /* ET1_RXD1 */
+-       <RZG2L_PORT_PINMUX(35, 1, 1)>, /* ET1_RXD2 */
+-       <RZG2L_PORT_PINMUX(36, 0, 1)>; /* ET1_RXD3 */
++	pinmux = <RZG2L_PORT_PINMUX(37, 2, 1)>, /* ET1_LINKSTA */
++		<RZG2L_PORT_PINMUX(37, 0, 1)>, /* ET1_MDC */
++		<RZG2L_PORT_PINMUX(37, 1, 1)>, /* ET1_MDIO */
++		<RZG2L_PORT_PINMUX(29, 0, 1)>, /* ET1_TXC */
++		<RZG2L_PORT_PINMUX(29, 1, 1)>, /* ET1_TX_CTL */
++		<RZG2L_PORT_PINMUX(30, 0, 1)>, /* ET1_TXD0 */
++		<RZG2L_PORT_PINMUX(30, 1, 1)>, /* ET1_TXD1 */
++		<RZG2L_PORT_PINMUX(31, 0, 1)>, /* ET1_TXD2 */
++		<RZG2L_PORT_PINMUX(31, 1, 1)>, /* ET1_TXD3 */
++		<RZG2L_PORT_PINMUX(33, 1, 1)>, /* ET1_RXC */
++		<RZG2L_PORT_PINMUX(34, 0, 1)>, /* ET1_RX_CTL */
++		<RZG2L_PORT_PINMUX(34, 1, 1)>, /* ET1_RXD0 */
++		<RZG2L_PORT_PINMUX(35, 0, 1)>, /* ET1_RXD1 */
++		<RZG2L_PORT_PINMUX(35, 1, 1)>, /* ET1_RXD2 */
++		<RZG2L_PORT_PINMUX(36, 0, 1)>; /* ET1_RXD3 */
+   };
+ 
+ 	qspi0_pins: qspi0 {
+@@ -258,17 +261,17 @@ gpio-sd0-vdd-18v-hog {
+ #endif
+ 
+   /* BT_REG_ON*/
+-    gpio-sd1-bt_reg_on {
+-    gpio-hog;
+-    gpios = <RZG2L_GPIO(23, 0) GPIO_ACTIVE_HIGH>;
+-    output-high;
+-    line-name = "gpio_sd1_bt_reg_on";
++	gpio-sd1-bt_reg_on {
++	gpio-hog;
++	gpios = <RZG2L_GPIO(23, 0) GPIO_ACTIVE_HIGH>;
++	output-high;
++	line-name = "gpio_sd1_bt_reg_on";
+   };
+ 
+ 	sdhi0_emmc_pins: sd0emmc {
+ 		sd0_emmc_data {
+ 			pins = "SD0_DATA0", "SD0_DATA1", "SD0_DATA2", "SD0_DATA3",
+-			       "SD0_DATA4", "SD0_DATA5", "SD0_DATA6", "SD0_DATA7";
++				   "SD0_DATA4", "SD0_DATA5", "SD0_DATA6", "SD0_DATA7";
+ 			power-source = <1800>;
+ 		};
+ 
+@@ -311,7 +314,7 @@ sd0_ctrl_uhs {
+ 		};
+ 
+ 		sd0_mux_uhs {
+-      pinmux = <RZG2L_PORT_PINMUX(47, 0, 2)>; /* SD0_CD */
++			pinmux = <RZG2L_PORT_PINMUX(47, 0, 2)>; /* SD0_CD */
+ 		};
+ 	};
+ };
+@@ -357,8 +360,8 @@ &sdhi0 {
+ #endif
+ 
+ &vccq_sdhi1 {
+-  /* WL_REG_ON (P23_1) */
+-  gpios = <&pinctrl RZG2L_GPIO(23, 1) GPIO_ACTIVE_HIGH>;
++	/* WL_REG_ON (P23_1) */
++	gpios = <&pinctrl RZG2L_GPIO(23, 1) GPIO_ACTIVE_HIGH>;
+ };
+ 
+ /* WiFi - CYW43439 */
+@@ -507,7 +510,7 @@ &scif2 {
+ 	status = "okay";
+ 
+   bluetooth {
+-    pinctrl-names = "default";
++	pinctrl-names = "default";
+ 	max-speed = <115200>;
+ 	compatible = "brcm,bcm4330-bt";
+   };
+@@ -523,15 +526,11 @@ &spi1 {
+ };
+ 
+ &usb2_phy0 {
+-	pinctrl-0 = <&usb0_pins>;
+-	pinctrl-names = "default";
+ 	vbus-supply = <&usb0_vbus_otg>;
+ 	status = "okay";
+ };
+ 
+ &usb2_phy1 {
+-	pinctrl-0 = <&usb1_pins>;
+-	pinctrl-names = "default";
+   	vbus-supply = <&usb1_vbus>;
+ 	status = "okay";
+ };
+-- 
+2.41.0
+
