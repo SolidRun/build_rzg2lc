@@ -1,0 +1,384 @@
+From 8aa468dca851341e0b5000b7f1a9b18d6b284904 Mon Sep 17 00:00:00 2001
+From: Mikhail Anikin <mikhail.anikin@solid-run.com>
+Date: Tue, 15 Aug 2023 15:09:28 +0300
+Subject: [PATCH] rzg2l solidrun som usb support
+
+---
+ arch/arm/dts/rzg2l-solidrun.dts       |  81 +++++++-----
+ board/solidrun/rzg2l/rzg2l-solidrun.c | 178 ++++++++++++++------------
+ configs/rzg2l-solidrun_defconfig      |   1 +
+ 3 files changed, 145 insertions(+), 115 deletions(-)
+
+diff --git a/arch/arm/dts/rzg2l-solidrun.dts b/arch/arm/dts/rzg2l-solidrun.dts
+index cb94ee2c1f..814c7414c0 100644
+--- a/arch/arm/dts/rzg2l-solidrun.dts
++++ b/arch/arm/dts/rzg2l-solidrun.dts
+@@ -44,44 +44,44 @@
+ 
+ 	eth0_pins: eth0 {
+ 		pinmux = <RZG2L_PINMUX(20, 0, 1)>, //ET0_TXC_TX_CLK
+-				<RZG2L_PINMUX(20, 1, 1)>, // ET0_TX_CTL_TX_EN
+-				<RZG2L_PINMUX(20, 2, 1)>, // ET0_TXD0
+-				<RZG2L_PINMUX(21, 0, 1)>, // ET0_TXD1
+-				<RZG2L_PINMUX(21, 1, 1)>, // ET0_TXD2
+-				<RZG2L_PINMUX(22, 0, 1)>, // ET0_TXD3			
+-				<RZG2L_PINMUX(24, 0, 1)>, // ET0_RXC_RX_CLK
+-				<RZG2L_PINMUX(24, 1, 1)>, // ET0_RX_CTL_RX_DV
+-				<RZG2L_PINMUX(25, 0, 1)>, // ET0_RXD 
+-				<RZG2L_PINMUX(25, 1, 1)>, // ET0_RXD1
+-				<RZG2L_PINMUX(26, 0, 1)>, // ET0_RXD2
+-				<RZG2L_PINMUX(26, 1, 1)>, // ET0_RXD3				
+-				<RZG2L_PINMUX(27, 1, 1)>, // ET0_MDC
+-				<RZG2L_PINMUX(28, 0, 1)>, // ET0_MDIO
+-				<RZG2L_PINMUX(28, 1, 1)>; // ET0_LINKSTA
++			<RZG2L_PINMUX(20, 1, 1)>, // ET0_TX_CTL_TX_EN
++			<RZG2L_PINMUX(20, 2, 1)>, // ET0_TXD0
++			<RZG2L_PINMUX(21, 0, 1)>, // ET0_TXD1
++			<RZG2L_PINMUX(21, 1, 1)>, // ET0_TXD2
++			<RZG2L_PINMUX(22, 0, 1)>, // ET0_TXD3			
++			<RZG2L_PINMUX(24, 0, 1)>, // ET0_RXC_RX_CLK
++			<RZG2L_PINMUX(24, 1, 1)>, // ET0_RX_CTL_RX_DV
++			<RZG2L_PINMUX(25, 0, 1)>, // ET0_RXD 
++			<RZG2L_PINMUX(25, 1, 1)>, // ET0_RXD1
++			<RZG2L_PINMUX(26, 0, 1)>, // ET0_RXD2
++			<RZG2L_PINMUX(26, 1, 1)>, // ET0_RXD3				
++			<RZG2L_PINMUX(27, 1, 1)>, // ET0_MDC
++			<RZG2L_PINMUX(28, 0, 1)>, // ET0_MDIO
++			<RZG2L_PINMUX(28, 1, 1)>; // ET0_LINKSTA
+ 	};
+ 
+-  eth1_pins: eth1 {
+-    pinmux = <RZG2L_PINMUX(37, 2, 1)>, /* ET1_LINKSTA */
+-       <RZG2L_PINMUX(37, 0, 1)>, /* ET1_MDC */
+-       <RZG2L_PINMUX(37, 1, 1)>, /* ET1_MDIO */
+-       <RZG2L_PINMUX(29, 0, 1)>, /* ET1_TXC */
+-       <RZG2L_PINMUX(29, 1, 1)>, /* ET1_TX_CTL */
+-       <RZG2L_PINMUX(30, 0, 1)>, /* ET1_TXD0 */
+-       <RZG2L_PINMUX(30, 1, 1)>, /* ET1_TXD1 */
+-       <RZG2L_PINMUX(31, 0, 1)>, /* ET1_TXD2 */
+-       <RZG2L_PINMUX(31, 1, 1)>, /* ET1_TXD3 */
+-       <RZG2L_PINMUX(33, 1, 1)>, /* ET1_RXC */
+-       <RZG2L_PINMUX(34, 0, 1)>, /* ET1_RX_CTL */
+-       <RZG2L_PINMUX(34, 1, 1)>, /* ET1_RXD0 */
+-       <RZG2L_PINMUX(35, 0, 1)>, /* ET1_RXD1 */
+-       <RZG2L_PINMUX(35, 1, 1)>, /* ET1_RXD2 */
+-       <RZG2L_PINMUX(36, 0, 1)>; /* ET1_RXD3 */
++	eth1_pins: eth1 {
++		pinmux = <RZG2L_PINMUX(37, 2, 1)>, /* ET1_LINKSTA */
++			<RZG2L_PINMUX(37, 0, 1)>, /* ET1_MDC */
++			<RZG2L_PINMUX(37, 1, 1)>, /* ET1_MDIO */
++			<RZG2L_PINMUX(29, 0, 1)>, /* ET1_TXC */
++			<RZG2L_PINMUX(29, 1, 1)>, /* ET1_TX_CTL */
++			<RZG2L_PINMUX(30, 0, 1)>, /* ET1_TXD0 */
++			<RZG2L_PINMUX(30, 1, 1)>, /* ET1_TXD1 */
++			<RZG2L_PINMUX(31, 0, 1)>, /* ET1_TXD2 */
++			<RZG2L_PINMUX(31, 1, 1)>, /* ET1_TXD3 */
++			<RZG2L_PINMUX(33, 1, 1)>, /* ET1_RXC */
++			<RZG2L_PINMUX(34, 0, 1)>, /* ET1_RX_CTL */
++			<RZG2L_PINMUX(34, 1, 1)>, /* ET1_RXD0 */
++			<RZG2L_PINMUX(35, 0, 1)>, /* ET1_RXD1 */
++			<RZG2L_PINMUX(35, 1, 1)>, /* ET1_RXD2 */
++			<RZG2L_PINMUX(36, 0, 1)>; /* ET1_RXD3 */
+   };
+ 
+ };
+ 
+ &xinclk {
+-        clock-frequency = <24000000>;
++		clock-frequency = <24000000>;
+ };
+ 
+ &scif0 {
+@@ -154,3 +154,22 @@
+ 		reg = <0x50>;
+ 	};
+ };
++
++&usb2_phy0 {
++	status = "okay";
++};
++
++&usb2_phy1 {
++	status = "okay";
++};
++
++
++&ehci0 {
++	status = "okay";
++	phys = <&usb2_phy0>;
++};
++
++&ehci1 {
++	status = "okay";
++	phys = <&usb2_phy1>;
++};
+diff --git a/board/solidrun/rzg2l/rzg2l-solidrun.c b/board/solidrun/rzg2l/rzg2l-solidrun.c
+index 7a25927cde..4aa78e6e0a 100644
+--- a/board/solidrun/rzg2l/rzg2l-solidrun.c
++++ b/board/solidrun/rzg2l/rzg2l-solidrun.c
+@@ -22,75 +22,85 @@
+ 
+ DECLARE_GLOBAL_DATA_PTR;
+ 
+-#define PFC_BASE	0x11030000
++#define PFC_BASE 0x11030000
+ 
+-#define ETH_CH0		(PFC_BASE + 0x300c)
+-#define ETH_CH1		(PFC_BASE + 0x3010)
+-#define I2C_CH1 	(PFC_BASE + 0x1870)
+-#define ETH_PVDD_3300	0x00
+-#define ETH_PVDD_1800	0x01
+-#define ETH_PVDD_2500	0x02
+-#define ETH_MII_RGMII	(PFC_BASE + 0x3018)
++#define ETH_CH0 (PFC_BASE + 0x300c)
++#define ETH_CH1 (PFC_BASE + 0x3010)
++#define I2C_CH1 (PFC_BASE + 0x1870)
++#define ETH_PVDD_3300 0x00
++#define ETH_PVDD_1800 0x01
++#define ETH_PVDD_2500 0x02
++#define ETH_MII_RGMII (PFC_BASE + 0x3018)
+ 
+ /* CPG */
+-#define CPG_BASE					0x11010000
+-#define CPG_CLKON_BASE				(CPG_BASE + 0x500)
+-#define CPG_RESET_BASE				(CPG_BASE + 0x800)
+-#define CPG_RESET_ETH				(CPG_RESET_BASE + 0x7C)
+-#define CPG_RESET_I2C                           (CPG_RESET_BASE + 0x80)
+-#define CPG_RST_USB				(CPG_BASE + 0x878)
+-#define CPG_CLKON_USB				(CPG_BASE + 0x578)
++#define CPG_BASE 0x11010000
++#define CPG_CLKON_BASE (CPG_BASE + 0x500)
++#define CPG_RESET_BASE (CPG_BASE + 0x800)
++#define CPG_RESET_ETH (CPG_RESET_BASE + 0x7C)
++#define CPG_RESET_I2C (CPG_RESET_BASE + 0x80)
++#define CPG_RST_USB (CPG_BASE + 0x878)
++#define CPG_CLKON_USB (CPG_BASE + 0x578)
+ 
+ /* PFC */
+-#define PFC_P37						(PFC_BASE + 0x037)
+-#define PFC_PM37					(PFC_BASE + 0x16E)
+-#define PFC_PMC37					(PFC_BASE + 0x237)
+-#define PFC_PWPR					(PFC_BASE + 0x3014)
+-#define PFC_PMC14					(PFC_BASE + 0x214)
+-#define PFC_PFC14					(PFC_BASE + 0x450)
+-#define PFC_PMC15					(PFC_BASE + 0x215)
+-#define PFC_PFC15					(PFC_BASE + 0x454)
+-#define PFC_PMC3A					(PFC_BASE + 0x23a)
+-#define PFC_PFC3A					(PFC_BASE + 0x4e8)
+-
+-#define USBPHY_BASE		(0x11c40000)
+-#define USB0_BASE		(0x11c50000)
+-#define USB1_BASE		(0x11c70000)
+-#define USBF_BASE		(0x11c60000)
+-#define USBPHY_RESET		(USBPHY_BASE + 0x000u)
+-#define COMMCTRL		0x800
+-#define HcRhDescriptorA		0x048
+-#define LPSTS			0x102
++#define PFC_P37 (PFC_BASE + 0x037)
++#define PFC_PM37 (PFC_BASE + 0x16E)
++#define PFC_PMC37 (PFC_BASE + 0x237)
++#define PFC_PWPR (PFC_BASE + 0x3014)
++
++#define PFC_P14 (PFC_BASE + 0x0014)
++#define PFC_PM14 (PFC_BASE + 0x0128)
++#define PFC_PMC14 (PFC_BASE + 0x214)
++#define PFC_PFC14 (PFC_BASE + 0x450)
++
++#define PFC_P3A (PFC_BASE + 0x003A)
++#define PFC_PM3A (PFC_BASE + 0x0174)
++#define PFC_PMC3A (PFC_BASE + 0x23A)
++#define PFC_PFC3A (PFC_BASE + 0x4E8)
++
++#define USBPHY_BASE (0x11c40000)
++#define USB0_BASE (0x11c50000)
++#define USB1_BASE (0x11c70000)
++#define USBF_BASE (0x11c60000)
++#define USBPHY_RESET (USBPHY_BASE + 0x000u)
++#define COMMCTRL 0x800
++#define HcRhDescriptorA 0x048
++#define LPSTS 0x102
+ 
+ /* WDT */
+-#define WDT_BASE 					0x12800800
+-#define WDTCNT						0x00
+-#define WDTSET						0x04
+-#define WDTTIM						0x08
+-#define WDTINT						0x0C
+-#define PECR						0x10
+-#define PEEN						0x14
+-#define WDTCNT_WDTEN					BIT(0)
+-#define WDTINT_INTDISP					BIT(0)
+-
++#define WDT_BASE 0x12800800
++#define WDTCNT 0x00
++#define WDTSET 0x04
++#define WDTTIM 0x08
++#define WDTINT 0x0C
++#define PECR 0x10
++#define PEEN 0x14
++#define WDTCNT_WDTEN BIT(0)
++#define WDTINT_INTDISP BIT(0)
++
++/**
++ * The Hummingboard requires Open-Drain VBUS signals.
++ * Comment the line below to enable Push-Pull signals instead.
++ * TODO: remove this macro and change signal type based on TLV info.
++ */
++#define USB_VBUS_OD
+ 
+ void s_init(void)
+ {
+ 	/* SD1 power control: P39_1 = 0; P39_2 = 1; */
+-	*(volatile u32 *)(PFC_PMC37) &= 0xFFFFFFF9; /* Port func mode 0b00 */
+-	*(volatile u32 *)(PFC_PM37) = (*(volatile u32 *)(PFC_PM37) & 0xFFFFFFC3) | 0x28; /* Port output mode 0b1010 */
++	*(volatile u32 *)(PFC_PMC37) &= 0xFFFFFFF9;									   /* Port func mode 0b00 */
++	*(volatile u32 *)(PFC_PM37) = (*(volatile u32 *)(PFC_PM37)&0xFFFFFFC3) | 0x28; /* Port output mode 0b1010 */
+ #if CONFIG_TARGET_RZG2L_SOLIDRUN
+-	*(volatile u32 *)(PFC_P37) = (*(volatile u32 *)(PFC_P37) & 0xFFFFFFF9) | 0x6;	/* Port 39[2:1] output value 0b11*/
++	*(volatile u32 *)(PFC_P37) = (*(volatile u32 *)(PFC_P37)&0xFFFFFFF9) | 0x6; /* Port 39[2:1] output value 0b11*/
+ #else
+ 
+-	*(volatile u32 *)(PFC_P37) = (*(volatile u32 *)(PFC_P37) & 0xFFFFFFF9) | 0x4;	/* Port 39[2:1] output value 0b10*/
++	*(volatile u32 *)(PFC_P37) = (*(volatile u32 *)(PFC_P37)&0xFFFFFFF9) | 0x4; /* Port 39[2:1] output value 0b10*/
+ #endif
+ 
+ 	/* can go in board_eht_init() once enabled */
+-	*(volatile u32 *)(ETH_CH0) = (*(volatile u32 *)(ETH_CH0) & 0xFFFFFFFC) | ETH_PVDD_1800;
+-	*(volatile u32 *)(ETH_CH1) = (*(volatile u32 *)(ETH_CH1) & 0xFFFFFFFC) | ETH_PVDD_1800;
++	*(volatile u32 *)(ETH_CH0) = (*(volatile u32 *)(ETH_CH0)&0xFFFFFFFC) | ETH_PVDD_1800;
++	*(volatile u32 *)(ETH_CH1) = (*(volatile u32 *)(ETH_CH1)&0xFFFFFFFC) | ETH_PVDD_1800;
+ 	/* Enable RGMII for both ETH{0,1} */
+-	*(volatile u32 *)(ETH_MII_RGMII) = (*(volatile u32 *)(ETH_MII_RGMII) & 0xFFFFFFFC);
++	*(volatile u32 *)(ETH_MII_RGMII) = (*(volatile u32 *)(ETH_MII_RGMII)&0xFFFFFFFC);
+ 	/* ETH CLK */
+ 	*(volatile u32 *)(CPG_RESET_ETH) = 0x30003;
+ 	/* I2C CLK */
+@@ -99,40 +109,37 @@ void s_init(void)
+ 	*(volatile u32 *)(I2C_CH1) = 0x01010101;
+ }
+ 
++// VBUS: P4_0 and P42_0
+ static void board_usb_init(void)
+ {
+ 	/*Enable USB*/
+ 	(*(volatile u32 *)CPG_RST_USB) = 0x000f000f;
+ 	(*(volatile u32 *)CPG_CLKON_USB) = 0x000f000f;
+ 
+-	/* Setup  */
+-	/* Disable GPIO Write Protect */
+-	(*(volatile u32 *)PFC_PWPR) &= ~(0x1u << 7);	/* PWPR.BOWI = 0 */
+-	(*(volatile u32 *)PFC_PWPR) |= (0x1u << 6);	/* PWPR.PFCWE = 1 */
+-
+-	/* set P4_0 as Func.1 for VBUSEN */
+-	(*(volatile u8 *)PFC_PMC14) |= (0x1u << 0);	/* PMC14.b0 = 1 */
+-	(*(volatile u8 *)PFC_PFC14) &= ~(0x7u << 0);	/* PFC14.PFC0 = 0 */
+-	(*(volatile u8 *)PFC_PFC14) |= (0x1u << 0);
+-
+-	/* set P5_0 as Func.1 for OVERCUR */
+-	(*(volatile u8 *)PFC_PMC15) |= (0x1u << 0);	/* PMC15.b0 = 1 */
+-	(*(volatile u8 *)PFC_PFC15) &= ~(0x7u << 0);	/* PFC15.PFC0 = 0 */
+-	(*(volatile u8 *)PFC_PFC15) |= (0x1u << 0);
++	// /* Setup  */
++	// /* Disable GPIO Write Protect */
++	(*(volatile u32 *)PFC_PWPR) &= ~(0x1u << 7); /* PWPR.BOWI = 0 */
++	(*(volatile u32 *)PFC_PWPR) |= (0x1u << 6);	 /* PWPR.PFCWE = 1 */
++
++#ifdef USB_VBUS_OD
++	/* Humming board has pulled up signals, enabled by default */
++	/* set P4_0 as GPIO Input */
++	(*(volatile u8 *)PFC_PM14) = 0;
++	/* set P42_0 as GPIO Input */
++	(*(volatile u8 *)PFC_PM3A) = 0;
++#elif
++	/* set P4_0 as GPIO Output High VBUSEN */
++	(*(volatile u8 *)PFC_PM14) |= (0x1u << 1);
++	(*(volatile u8 *)PFC_P14) |= (0x1u << 0);
++	// /* set P42_0 as GPIO Output High */
++	(*(volatile u8 *)PFC_PM3A) |= (0x1u << 1);
++	(*(volatile u8 *)PFC_P3A) |= (0x1u << 0);
+ 
+-	/* set P42_0 as Func.1 for VBUSEN */
+-	(*(volatile u8 *)PFC_PMC3A) |= (0x1u << 0);	/* PMC14.b0 = 1 */
+-	(*(volatile u8 *)PFC_PFC3A) &= ~(0xfu << 0);	/* PFC15.PFC0 = 0 */
+-	(*(volatile u8 *)PFC_PFC3A) |= (0x1u << 0);
+-
+-	/* set P42_1 as Func.1 for OVERCUR */
+-	(*(volatile u8 *)PFC_PMC3A) |= (0x1u << 0);	/* PMC14.b1 = 1 */
+-	(*(volatile u8 *)PFC_PFC3A) &= ~(0xfu << 4);	/* PFC15.PFC1 = 0 */
+-	(*(volatile u8 *)PFC_PFC3A) |= (0x1u << 4);
++#endif
+ 
+-	/* Enable write protect */
+-	(*(volatile u32 *)PFC_PWPR) &= ~(0x1u << 6);	/* PWPR.PFCWE = 0 */
+-	(*(volatile u32 *)PFC_PWPR) |= (0x1u << 7);	/* PWPR.BOWI = 1 */
++	// /* Enable write protect */
++	(*(volatile u32 *)PFC_PWPR) &= ~(0x1u << 6); /* PWPR.PFCWE = 0 */
++	(*(volatile u32 *)PFC_PWPR) |= (0x1u << 7);	 /* PWPR.BOWI = 1 */
+ 
+ 	/*Enable 2 USB ports*/
+ 	(*(volatile u32 *)USBPHY_RESET) = 0x00001000u;
+@@ -141,10 +148,10 @@ static void board_usb_init(void)
+ 	/*USB1 is HOST*/
+ 	(*(volatile u32 *)(USB1_BASE + COMMCTRL)) = 0;
+ 	/* Set USBPHY normal operation (Function only) */
+-	(*(volatile u16 *)(USBF_BASE + LPSTS)) |= (0x1u << 14);		/* USBPHY.SUSPM = 1 (func only) */
++	(*(volatile u16 *)(USBF_BASE + LPSTS)) |= (0x1u << 14); /* USBPHY.SUSPM = 1 (func only) */
+ 	/* Overcurrent is not supported */
+-	(*(volatile u32 *)(USB0_BASE + HcRhDescriptorA)) |= (0x1u << 12);	/* NOCP = 1 */
+-	(*(volatile u32 *)(USB1_BASE + HcRhDescriptorA)) |= (0x1u << 12);	/* NOCP = 1 */
++	(*(volatile u32 *)(USB0_BASE + HcRhDescriptorA)) |= (0x1u << 12); /* NOCP = 1 */
++	(*(volatile u32 *)(USB1_BASE + HcRhDescriptorA)) |= (0x1u << 12); /* NOCP = 1 */
+ }
+ 
+ int board_early_init_f(void)
+@@ -157,8 +164,12 @@ int board_init(void)
+ {
+ 	/* adress of boot parameters */
+ 	gd->bd->bi_boot_params = CONFIG_SYS_TEXT_BASE + 0x50000;
+-	board_usb_init();
++	return 0;
++}
+ 
++int board_late_init(void)
++{
++	board_usb_init();
+ 	return 0;
+ }
+ 
+@@ -168,7 +179,7 @@ static void wdt_write(u32 val, unsigned int reg)
+ }
+ 
+ static int reset_wdt_start()
+- {
++{
+ 	/* Clear Lapsed Time Register and clear Interrupt */
+ 	wdt_write(WDTINT_INTDISP, WDTINT);
+ 	/* 2 consecutive overflow cycle needed to trigger reset */
+@@ -177,11 +188,10 @@ static int reset_wdt_start()
+ 	wdt_write(0, WDTTIM);
+ 	/* Enable watchdog timer*/
+ 	wdt_write(WDTCNT_WDTEN, WDTCNT);
+- 
+ 	return 0;
+ }
+ 
+ void reset_cpu(void)
+ {
+-	reset_wdt_start();	
++	reset_wdt_start();
+ }
+diff --git a/configs/rzg2l-solidrun_defconfig b/configs/rzg2l-solidrun_defconfig
+index 18413dcea7..52e3f8fd72 100644
+--- a/configs/rzg2l-solidrun_defconfig
++++ b/configs/rzg2l-solidrun_defconfig
+@@ -15,6 +15,7 @@ CONFIG_SMBIOS_PRODUCT_NAME=""
+ CONFIG_SPL=n
+ CONFIG_FIT=y
+ CONFIG_USE_BOOTARGS=y
++CONFIG_BOARD_LATE_INIT=y
+ CONFIG_BOOTARGS="root=/dev/mmcblk0p2 rw rootwait"
+ CONFIG_SUPPORT_RAW_INITRD=y
+ CONFIG_DEFAULT_FDT_FILE="rzg2l-hummingboard-ripple.dtb"
+-- 
+2.41.0
+
