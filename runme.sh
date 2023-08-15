@@ -400,14 +400,14 @@ prompt 1
 default primary
 menu title RZ/G2* boot options
 label primary
-	menu label primary kernel
+	menu label initrd boot
 	linux /boot/Image
 	fdtdir /boot/
 	initrd /boot/initrd.img
 	APPEND console=serial0,115200 console=ttySC0
 
 label secondary
-	menu label secondary kernel
+	menu label mmc boot
 	linux /boot/Image
 	fdtdir /boot/
 	APPEND console=serial0,115200 console=ttySC0 root=/dev/mmcblk0p2 rw rootwait
