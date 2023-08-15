@@ -1,10 +1,10 @@
-# build_rzg2lc
-# SolidRun's RZ/G2LC based build scripts
+# build_rzg2l
+# SolidRun's RZ/G2L & RZ/G2LC based build scripts
 
 ## Introduction
 
-Main intention of this repository is to produce a reference system for RZ/G2LC based products.
-Automatic binary releases are available on [our website](https://images.solid-run.com/RZG2LC/rzg2lc_build) for download.
+Main intention of this repository is to produce a reference system for RZ/G2L & RZ/G2LC based products.
+Automatic binary releases are available on our website [RZ/G2LC](https://images.solid-run.com/RZG2LC) & [RZ/G2L](https://images.solid-run.com/RZG2L) for download.
 
 The build script can support two Linux distrebutions **Debian/Buildroot**.
 
@@ -17,7 +17,7 @@ Plug in a micro SD into your machine and run the following, where sdX is the loc
 
 ```
 umount /media/<relevant directory>
-sudo dd if=images/rzg2lc*-<hash>.img of=/dev/sdX
+sudo dd if=images/rzg2l*-<hash>.img of=/dev/sdX
 ```
 
 ### Login
@@ -27,7 +27,7 @@ sudo dd if=images/rzg2lc*-<hash>.img of=/dev/sdX
 ---
 ### Boot from SD and flash eMMC
 If you use **HummingBoard** Carrier board:
-- set the dip switch to boot from SD (In order to configure the boot media, please refer to [HummingBoard RZ/G2LC Boot Select]( https://solidrun.atlassian.net/wiki/spaces/developer/pages/411861143).)
+- set the dip switch to boot from SD (In order to configure the boot media, please refer to [HummingBoard RZ/G2L Boot Select]( https://solidrun.atlassian.net/wiki/spaces/developer/pages/411861143).)
 - install same above image on USB-DISK (for mounting the Root-FS)
 - connect the USB-DISJ t the lower USB interface
 - stop it in U-Boot and run the commands below:
@@ -167,14 +167,30 @@ The build script supports several customisation options that can be applied thro
   - debian
 - BUILDROOT_VERSION
   - 2020.02.4 (default)
+- MACHINE: Choose specific cmachine name
+  - rzg2lc-solidrun (default)
+  - rzg2l-solidrun
 - BUILDROOT_DEFCONFIG: Choose specific config file name from `config/` folder
   - rzg2lc-solidrun_defconfig (default)
+  - rzg2l-solidrun_defconfig
 - BR2_PRIMARY_SITE: Use specific (local) buildroot mirror
 - DEBIAN_VERSION
   - bullseye (default)
 - DEBIAN_ROOTFS_SIZE
   - 936M (default)
-    
+- RAMFS: Choose RAMFS or normal FS
+   - true (default)
+   - false
+#### Example
+   generating buildroot image for RZ/G2L Based platform 
+   ```
+   MACHINE=rzg2l-solidrun ./runme.sh
+   ```
+   generating debian image for RZ/G2L Based platform 
+   ```
+   MACHINE=rzg2l-solidrun DISTRO=debian ./runme.sh
+   ```
+
 ### Build with Docker
 A docker image providing a consistent build environment can be used as below:
 
