@@ -9,7 +9,7 @@ set -o pipefail
 UBOOT_COMMIT_HASH=83b2ea37f4b2dd52accce8491af86cbb280f6774
 : ${BOOTLOADER_MENU:=false}
 : ${SHALLOW:=false}
-: ${MACHINE:=rzg2l-solidrun}
+: ${MACHINE:=rzg2lc-solidrun}
 : ${RAMFS:=true}
 REPO_PREFIX=`git log -1 --pretty=format:%h`
 
@@ -24,7 +24,7 @@ KERNEL_DIR_DEFAULT='rz_linux-cip'
 
 ## Buildroot Options
 : ${BUILDROOT_VERSION:=2022.02.4}
-: ${BUILDROOT_DEFCONFIG:=rzg2lc-solidrun_defconfig}
+: ${BUILDROOT_DEFCONFIG:=${MACHINE}_defconfig}
 : ${BR2_PRIMARY_SITE:=} # custom buildroot mirror
 
 ## Debian Options
@@ -254,7 +254,7 @@ echo "SD booloader image ready -> images/$BOOT_IMG"
  echo "================================="
  echo "*** Building Linux kernel..."
  echo "================================="
- LINUX_DEFCONFIG="rzg2lc-solidrun_defconfig"
+ LINUX_DEFCONFIG="${MACHINE}_defconfig"
  cd $ROOTDIR/build/rz_linux-cip
  cp $ROOTDIR/configs/linux/$LINUX_DEFCONFIG arch/arm64/configs
  make $LINUX_DEFCONFIG
