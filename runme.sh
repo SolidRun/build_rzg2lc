@@ -9,6 +9,7 @@ set -o pipefail
 UBOOT_COMMIT_HASH=83b2ea37f4b2dd52accce8491af86cbb280f6774
 : ${BOOTLOADER_MENU:=false}
 : ${SHALLOW:=false}
+# Choose machine RZ/G2LC rzg2lc-solidrun | rzg2l-solidrun
 : ${MACHINE:=rzg2lc-solidrun}
 : ${RAMFS:=true}
 REPO_PREFIX=`git log -1 --pretty=format:%h`
