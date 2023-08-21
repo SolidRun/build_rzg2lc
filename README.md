@@ -179,8 +179,8 @@ The build script supports several customisation options that can be applied thro
 - DEBIAN_ROOTFS_SIZE
   - 936M (default)
 - RAMFS: Choose RAMFS or normal FS
-   - true (default)
-   - false
+   - true
+   - false (default)
 #### Example
    generating buildroot image for RZ/G2L Based platform 
    ```
@@ -189,6 +189,10 @@ The build script supports several customisation options that can be applied thro
    generating debian image for RZ/G2L Based platform 
    ```
    MACHINE=rzg2l-solidrun DISTRO=debian ./runme.sh
+   ```
+   generating buildroot image for RZ/G2LC Based platform with RAMFS
+   ```
+   MACHINE=rzg2lc-solidrun RAMFS=true ./runme.sh
    ```
 
 ### Build with Docker

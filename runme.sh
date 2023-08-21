@@ -11,7 +11,7 @@ UBOOT_COMMIT_HASH=83b2ea37f4b2dd52accce8491af86cbb280f6774
 : ${SHALLOW:=false}
 # Choose machine RZ/G2LC rzg2lc-solidrun | rzg2l-solidrun
 : ${MACHINE:=rzg2lc-solidrun}
-: ${RAMFS:=true}
+: ${RAMFS:=false}
 REPO_PREFIX=`git log -1 --pretty=format:%h`
 
 TFA_DIR_DEFAULT='rzg_trusted-firmware-a'
@@ -389,7 +389,7 @@ echo "================================="
 echo "Assembling Boot Image"
 echo "================================="
 cd $ROOTDIR/images/
-IMG=${MACHINE}-sd-${REPO_PREFIX}.img
+IMG=${MACHINE}-sd-${DISTRO}-${REPO_PREFIX}.img
 rm -rf $ROOTDIR/images/${IMG}
 IMAGE_BOOTPART_SIZE_MB=150 # bootpart size = 150MiB
 IMAGE_BOOTPART_SIZE=$((IMAGE_BOOTPART_SIZE_MB*1024*1024)) # Convert megabytes to bytes 
