@@ -1,0 +1,25 @@
+From 8685357c30801625cbb1987b1b94efd6028dc42e Mon Sep 17 00:00:00 2001
+From: Yazan Shhady <yazan.shhady@solid-run.com>
+Date: Mon, 21 Aug 2023 12:18:40 +0300
+Subject: [PATCH] rzg2l: hummingboard-ripple: disable eth1
+
+---
+ arch/arm64/boot/dts/renesas/rzg2l-hummingboard-ripple.dts | 4 ++++
+ 1 file changed, 4 insertions(+)
+
+diff --git a/arch/arm64/boot/dts/renesas/rzg2l-hummingboard-ripple.dts b/arch/arm64/boot/dts/renesas/rzg2l-hummingboard-ripple.dts
+index fd3760234fee..6e255bc29003 100644
+--- a/arch/arm64/boot/dts/renesas/rzg2l-hummingboard-ripple.dts
++++ b/arch/arm64/boot/dts/renesas/rzg2l-hummingboard-ripple.dts
+@@ -186,3 +186,7 @@ &usb1_vbus {
+ 	gpio = <&pinctrl RZG2L_GPIO(42, 0) GPIO_OPEN_DRAIN>;
+ 	gpio-open-drain;
+ };
++
++&eth1 {
++	status = "disabled";
++};
+\ No newline at end of file
+-- 
+2.25.1
+
