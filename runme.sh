@@ -35,6 +35,8 @@ KERNEL_DIR_DEFAULT='rz_linux-cip'
 # Kernel Modules:
 : ${INCLUDE_KERNEL_MODULES:=true}
 
+: ${USE_CCACHE:=false}
+
 ROOTDIR=`pwd`
 #\rm -rf $ROOTDIR/images/tmp
 mkdir -p build images/tmp/boot
@@ -61,6 +63,15 @@ if [[ ! -d $ROOTDIR/build/toolchain ]]; then
 	tar -xvf gcc-arm-11.2-2022.02-x86_64-aarch64-none-elf.tar.xz
 fi
 
+if [ "x$USE_CCACHE" == "xtrue" ]; then
+	mkdir -p $ROOTDIR/ccache
+	export CCACHE_DIR=$ROOTDIR/ccache
+	mkdir -p $ROOTDIR/build/ccache_symlinks
+	ln -s $(which ccache) $ROOTDIR/build/ccache_symlinks/aarch64-none-elf-gcc
+	ln -s $(which ccache) $ROOTDIR/build/ccache_symlinks/aarch64-none-elf-g++
+	export PATH="$ROOTDIR/build/ccache_symlinks:$PATH"
+fi
+
 cd $ROOTDIR
 ###############################################################################
 # Source code clonig
@@ -84,7 +95,7 @@ FLASH_WRITER_REPO='https://github.com/renesas-rz/rzg2_flash_writer -b rz_g2l'
 #│   ├── build_xxxx.sh
 
 if [ "x$SHALLOW" == "xtrue" ]; then
-	SHALLOW_FLAG="--depth 1000"
+	SHALLOW_FLAG="--depth 100"
 fi
 
 for i in $QORIQ_COMPONENTS; do
@@ -182,11 +193,11 @@ else
 			;;
 		"rzg2l-humminboard" | "rzg2l-solidrun")
 			UBOOT_DEFCONFIG=rzg2l-solidrun_defconfig
-                        PLATFORM=g2l
-                        BOARD=sr_rzg2l_1g
+            PLATFORM=g2l
+            BOARD=sr_rzg2l_1g
 			;;
 		*)
-			echo "Unknown Machine=$MACHINE -> defualt=rzg2lc-solidrun"
+			echo "Unknown Machine=$MACHINE -> default=rzg2lc-solidrun"
 			UBOOT_DEFCONFIG=rzg2lc-solidrun_defconfig
 			PLATFORM=g2l
 			BOARD=sr_rzg2lc_1g
@@ -194,16 +205,15 @@ else
 	esac
 
 	OUTPUT_BOOTLOADER_DIR=$ROOTDIR/build/output_${MACHINE}
-	\rm -rf ${OUTPUT_BOOTLOADER_DIR}
+	rm -rf ${OUTPUT_BOOTLOADER_DIR}
 	mkdir -p ${OUTPUT_BOOTLOADER_DIR}
 	echo "================================="
 	echo "Generating U-Boot...."
 	echo "================================="
 	# Generate U-Boot (u-boot.bin)
 	cd $ROOTDIR/build/${UBOOT_DIR_DEFAULT}
-	make mrproper
 	make O=.out $UBOOT_DEFCONFIG
-	make -j$(nproc) O=.out
+	make -j${PARALLEL} O=.out
 	# Generate ATF (BL2 & FIP & BOOTPARMS)
 	echo "================================="
 	echo "Generating ATF...."
@@ -213,7 +223,7 @@ else
 	# cp $ROOTDIR/build/${UBOOT_DIR_DEFAULT}/.out/u-boot.bin $ROOTDIR/build/${TFA_DIR_DEFAULT}
 	U_BOOT_BIN=$(find $ROOTDIR/build/${UBOOT_DIR_DEFAULT} -iname u-boot.bin)
 	cp $U_BOOT_BIN $ROOTDIR/build/${TFA_DIR_DEFAULT}/
-	make -j32 bl2 bl31 PLAT=${PLATFORM} BOARD=${BOARD} RZG_DRAM_ECC_FULL=0 LOG_LEVEL=20 MBEDTLS_DIR=../mbedtls
+	make -j${PARALLEL} bl2 bl31 PLAT=${PLATFORM} BOARD=${BOARD} RZG_DRAM_ECC_FULL=0 LOG_LEVEL=20 MBEDTLS_DIR=../mbedtls
 	# Binaries (bl2.bin and bl31.bin) are located in the build/g2l/release|debug folder.
 	cp create_bl2_with_bootparam.sh build/${PLATFORM}/release/
 	cd build/${PLATFORM}/release
@@ -222,7 +232,7 @@ else
 	./create_bl2_with_bootparam.sh
 	cd $ROOTDIR/build/${TFA_DIR_DEFAULT}
 	# Make the fip creation tool:
-	cd tools/fiptool && make -j$(nproc) plat=${PLATFORM} && cd -
+	cd tools/fiptool && make clean && make -j${PARALLEL} plat=${PLATFORM} && cd -
 	tools/fiptool/fiptool create --align 16 --soc-fw build/${PLATFORM}/release/bl31.bin --nt-fw u-boot.bin fip.bin
 	# Copy output files BL2|FIP|BOOTPARMS to ${OUTPUT_BOOTLOADER_DIR}
 	cp fip.bin ${OUTPUT_BOOTLOADER_DIR}/fip-${MACHINE}.bin
@@ -276,7 +286,11 @@ do_build_buildroot() {
 	echo "================================="
 	cd $ROOTDIR/build/buildroot
 	cp $ROOTDIR/configs/buildroot/${MACHINE}_defconfig $ROOTDIR/build/buildroot/configs
-	make ${BUILDROOT_DEFCONFIG}
+	if [ "x$USE_CCACHE" == "xtrue" ]; then
+		echo "BR2_CCACHE=y" >> $ROOTDIR/build/buildroot/configs/${MACHINE}_defconfig
+		echo "BR2_CCACHE_DIR=$ROOTDIR/ccache" >> $ROOTDIR/build/buildroot/configs/${MACHINE}_defconfig
+	fi
+	make ${MACHINE}_defconfig
 	make -j${PARALLEL}
 	cp $ROOTDIR/build/buildroot/output/images/rootfs* $ROOTDIR/images/tmp/
 	# Preparing initrd
@@ -381,6 +395,10 @@ cp ./AArch64_output/Flash_Writer_SCIF_RZG2LC_HUMMINGBOARD_DDR4_1GB_1PCS.mot $ROO
 FLASH_WRITER_BUILD_ARGS="DEVICE=RZG2L DDR_TYPE=DDR4 DDR_SIZE=1GB_1PCS SWIZZLE=T1BC FILENAME_ADD=_RZG2L_HUMMINGBOARD"
 make $FLASH_WRITER_BUILD_ARGS -f makefile.linaro
 cp ./AArch64_output/Flash_Writer_SCIF_RZG2L_HUMMINGBOARD_DDR4_1GB_1PCS.mot $ROOTDIR/images
+
+if [ "x$USE_CCACHE" == "xtrue" ]; then
+	ccache --show-stats
+fi
 
 ###############################################################################
 # Assembling Boot Image

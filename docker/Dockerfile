@@ -19,7 +19,7 @@ RUN set -e; \
 
 RUN set -e; \
 	apt-get update; \
-	apt-get --no-install-recommends -y install bash bc binutils bison build-essential chrpath coreutils cpio device-tree-compiler diffstat dosfstools e2fsprogs e2tools file flex g++ gawk gcc git kmod libncurses5-dev libncursesw5-dev libssl-dev make meson mtools ninja-build p7zip p7zip-full parted patch python python2 python3 python3-pip python3-pyelftools rsync sed sudo tar texinfo u-boot-tools udev unzip util-linux wget genext2fs debootstrap fakeroot qemu-system-aarch64; \
+	apt-get --no-install-recommends -y install bash bc binutils bison build-essential chrpath coreutils cpio device-tree-compiler diffstat dosfstools e2fsprogs e2tools file flex g++ gawk gcc git kmod libncurses5-dev libncursesw5-dev libssl-dev make meson mtools ninja-build p7zip p7zip-full parted patch python python2 python3 python3-pip python3-pyelftools rsync sed sudo tar texinfo u-boot-tools udev unzip util-linux wget genext2fs debootstrap fakeroot qemu-system-aarch64 ccache; \
 	:
 
 # build environment
