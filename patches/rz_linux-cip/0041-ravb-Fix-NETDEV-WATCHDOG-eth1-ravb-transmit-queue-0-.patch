@@ -1,0 +1,33 @@
+From d8dc0b2b92c5deaeaff5e7ed7d59865d78167d75 Mon Sep 17 00:00:00 2001
+From: Yazan Shhady <yazan.shhady@solid-run.com>
+Date: Mon, 21 Aug 2023 18:50:25 +0300
+Subject: [PATCH 1/2] ravb: Fix NETDEV WATCHDOG: eth1 (ravb): transmit queue 0
+ timed out
+
+This commit enables bit ECSIPR.ECSIPR_LCHNGIP.
+
+Without it, RAVB driver will disable both TX and RX in
+ravb_emac_interrupt_unlocked() when ECSR.ECSR_ICD, which indicates
+an invalid carrier was detected in the PHY chip, is set.
+
+Signed-off-by: Yazan Shhady <yazan.shhady@solid-run.com>
+---
+ drivers/net/ethernet/renesas/ravb_main.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/drivers/net/ethernet/renesas/ravb_main.c b/drivers/net/ethernet/renesas/ravb_main.c
+index 76894c549da4..611d4f073685 100644
+--- a/drivers/net/ethernet/renesas/ravb_main.c
++++ b/drivers/net/ethernet/renesas/ravb_main.c
+@@ -535,7 +535,7 @@ static void ravb_emac_init_gbeth(struct net_device *ndev)
+ 	ravb_write(ndev, CSR0_TPE | CSR0_RPE, CSR0);
+ 
+ 	/* E-MAC interrupt enable register */
+-	ravb_write(ndev, ECSIPR_ICDIP, ECSIPR);
++	ravb_write(ndev, ECSIPR_ICDIP | ECSIPR_LCHNGIP, ECSIPR);
+ 
+ 	if (priv->phy_interface == PHY_INTERFACE_MODE_MII) {
+ 		ravb_modify(ndev, CXR31, CXR31_SEL_LINK0 | CXR31_SEL_LINK1, 0);
+-- 
+2.25.1
+
