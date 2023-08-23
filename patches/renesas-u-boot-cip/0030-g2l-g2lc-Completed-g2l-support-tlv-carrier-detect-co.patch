@@ -1,0 +1,1585 @@
+From 417cd9c860a4beef0f85094ca59e7eb28925ebb4 Mon Sep 17 00:00:00 2001
+From: Mikhail Anikin <mikhail.anikin@solid-run.com>
+Date: Wed, 23 Aug 2023 14:10:25 +0300
+Subject: [PATCH] [g2l/g2lc] Completed g2l support, tlv carrier detect, common
+ code split
+
+G2L SOM supported on the same level as G2LC SOM
+Added TLV-based carrier detection.
+Based on the TLV added USB VBUS output select and Linux DTS select
+New Kconfig options:
+SOLIDRUN_VBUS_OUT_PP - force USB VBUS Push-Pull out
+SOLIDRUN_VBUS_OUT_OD - force USB VBUS Open-Drain out
+SOLIDRUN_DISABLE_TLV - Do not read TLV, use default options
+SOLIDRUN_FORCE_SD_BOOT - force boot from SD, ignore DIP SW
+SOLIDRUN_FORCE_MMC_BOOT - force boot from eMMC, ignore DIP SW
+Common G2L/G2LC code is moved to the common c file
+---
+ arch/arm/dts/rzg2l-solidrun.dts         |   2 +
+ arch/arm/dts/rzg2lc-solidrun.dts        |  14 +-
+ arch/arm/mach-rmobile/Kconfig.64        |   1 +
+ board/solidrun/rzg-common/Kconfig       |  44 +++
+ board/solidrun/rzg-common/Makefile      |   5 +
+ board/solidrun/rzg-common/common.h      |  26 --
+ board/solidrun/rzg-common/rzg-common.c  | 223 ++++++++++++++
+ board/solidrun/rzg-common/rzg-common.h  |  30 ++
+ board/solidrun/rzg-common/rzg2l-regs.h  |  77 +++++
+ board/solidrun/rzg-common/update_fdt.c  | 245 ---------------
+ board/solidrun/rzg2l/Makefile           |   1 +
+ board/solidrun/rzg2l/rzg2l-solidrun.c   | 227 ++++++++------
+ board/solidrun/rzg2lc/Makefile          |   1 +
+ board/solidrun/rzg2lc/rzg2lc-solidrun.c | 379 +++++++-----------------
+ configs/rzg2l-solidrun_defconfig        |   2 +
+ configs/rzg2lc-solidrun_defconfig       |   1 +
+ 16 files changed, 629 insertions(+), 649 deletions(-)
+ create mode 100644 board/solidrun/rzg-common/Kconfig
+ create mode 100644 board/solidrun/rzg-common/Makefile
+ delete mode 100644 board/solidrun/rzg-common/common.h
+ create mode 100644 board/solidrun/rzg-common/rzg-common.c
+ create mode 100644 board/solidrun/rzg-common/rzg-common.h
+ create mode 100644 board/solidrun/rzg-common/rzg2l-regs.h
+ delete mode 100644 board/solidrun/rzg-common/update_fdt.c
+
+diff --git a/arch/arm/dts/rzg2l-solidrun.dts b/arch/arm/dts/rzg2l-solidrun.dts
+index 6afc230924..aebcaad5b0 100644
+--- a/arch/arm/dts/rzg2l-solidrun.dts
++++ b/arch/arm/dts/rzg2l-solidrun.dts
+@@ -18,6 +18,8 @@
+ 
+ 	aliases {
+ 		serial0 = &scif0;
++		eeprom_som = &eeprom_som;
++		eeprom_carrier = &eeprom_carrier;
+ 	};
+ 
+ 	chosen {
+diff --git a/arch/arm/dts/rzg2lc-solidrun.dts b/arch/arm/dts/rzg2lc-solidrun.dts
+index 9e3c592155..76e053aed7 100644
+--- a/arch/arm/dts/rzg2lc-solidrun.dts
++++ b/arch/arm/dts/rzg2lc-solidrun.dts
+@@ -18,6 +18,8 @@
+ 
+ 	aliases {
+ 		serial0 = &scif0;
++		eeprom_som = &eeprom_som;
++		eeprom_carrier = &eeprom_carrier;
+ 	};
+ 
+ 	chosen {
+@@ -33,12 +35,12 @@
+ 
+ 
+ &pinctrl {
+-  pinctrl-names = "default";
+-  pinctrl-0 = <&pinctrl_hog>;
++	pinctrl-names = "default";
++	pinctrl-0 = <&pinctrl_hog>;
+ 
+-  pinctrl_hog: hoggrp {
+-    pinmux = <RZG2L_PINMUX(22, 1, 0)>; /* SD0_DEV_SEL_SW */
+-  };
++	pinctrl_hog: hoggrp {
++		pinmux = <RZG2L_PINMUX(22, 1, 0)>; /* SD0_DEV_SEL_SW */
++	};
+ 
+ 	eth0_pins: eth0 {
+ 		pinmux = <RZG2L_PINMUX(20, 0, 1)>,
+@@ -63,7 +65,7 @@
+ 
+ 
+ &xinclk {
+-        clock-frequency = <24000000>;
++		clock-frequency = <24000000>;
+ };
+ 
+ &scif0 {
+diff --git a/arch/arm/mach-rmobile/Kconfig.64 b/arch/arm/mach-rmobile/Kconfig.64
+index 91dd9341e7..e39587a664 100644
+--- a/arch/arm/mach-rmobile/Kconfig.64
++++ b/arch/arm/mach-rmobile/Kconfig.64
+@@ -254,6 +254,7 @@ source "board/renesas/rzg2lc-dev/Kconfig"
+ source "board/renesas/rzg2ul-dev/Kconfig"
+ source "board/solidrun/rzg2lc/Kconfig"
+ source "board/solidrun/rzg2l/Kconfig"
++source "board/solidrun/rzg-common/Kconfig"
+ 
+ config MULTI_DTB_FIT_UNCOMPRESS_SZ
+ 	default 0x80000 if TARGET_HIHOPE_RZG2
+diff --git a/board/solidrun/rzg-common/Kconfig b/board/solidrun/rzg-common/Kconfig
+new file mode 100644
+index 0000000000..b23ce9ed9b
+--- /dev/null
++++ b/board/solidrun/rzg-common/Kconfig
+@@ -0,0 +1,44 @@
++config RZG_SOLIDRUN_COMMON
++    bool "Common configuration for RZG2L_SOLIDRUN targets"
++    depends on TARGET_RZG2L_SOLIDRUN || TARGET_RZG2LC_SOLIDRUN
++    default y
++    help
++      This option enables common board support code for both RZG2L/RZG2LC solidrun SOMs.
++
++config SOLIDRUN_VBUS_OUT_PP
++    bool "Set USB VBUS Push-Pull"
++    depends on RZG_SOLIDRUN_COMMON
++    default n
++    help
++      Set USB VBUS Push-Pull
++
++config SOLIDRUN_VBUS_OUT_OD
++    bool "Set USB VBUS Open-Drain"
++    depends on RZG_SOLIDRUN_COMMON && !SOLIDRUN_VBUS_OUT_PP
++    default n
++    help
++      Set USB VBUS Open-Drain
++
++config SOLIDRUN_DISABLE_TLV
++    bool "Do not use tlv eeprom for dts selection and vbus output type choice"
++	depends on RZG_SOLIDRUN_COMMON
++	depends on SOLIDRUN_VBUS_OUT_PP || SOLIDRUN_VBUS_OUT_OD
++    default n
++    help
++      Do not use tlv eeprom for dts selection and vbus output type choice.
++
++config SOLIDRUN_FORCE_SD_BOOT
++    bool "Force the SD/eMMC selection to always use SD"
++	depends on RZG_SOLIDRUN_COMMON
++    default n
++    help
++      Force the SD/eMMC selection to always use SD.
++
++config SOLIDRUN_FORCE_MMC_BOOT
++    bool "Force the SD/eMMC selection to always use eMMC"
++	depends on RZG_SOLIDRUN_COMMON && !SOLIDRUN_FORCE_SD_BOOT
++    default n
++    help
++      Force the SD/eMMC selection to always use SD.
++
++
+diff --git a/board/solidrun/rzg-common/Makefile b/board/solidrun/rzg-common/Makefile
+new file mode 100644
+index 0000000000..efc83ca7be
+--- /dev/null
++++ b/board/solidrun/rzg-common/Makefile
+@@ -0,0 +1,5 @@
++#
++# SPDX-License-Identifier: GPL-2.0+
++#
++
++obj-$(CONFIG_RZG_SOLIDRUN_COMMON) += rzg-common.o
+diff --git a/board/solidrun/rzg-common/common.h b/board/solidrun/rzg-common/common.h
+deleted file mode 100644
+index 1cea22e380..0000000000
+--- a/board/solidrun/rzg-common/common.h
++++ /dev/null
+@@ -1,26 +0,0 @@
+-/* SPDX-License-Identifier: GPL-2.0+ */
+-#ifndef __RZG_COMMON_H__
+-#define __RZG_COMMON_H__
+-
+-#ifndef ARRAY_SIZE
+-#define ARRAY_SIZE(x)	(sizeof(x) / sizeof((x)[0]))
+-#endif
+-
+-/* This SiP service command must be gotten from IPL document.*/
+-#define RZG_SIP_SVC_GET_ECC_MODE	(0x8200000F)
+-
+-/*
+- * The parameters must be defined with below requirement.
+- * * The size must is multiply of 3.
+- * * The list of char array with size is multiply of 3.
+- *   Each 3 properties are present for:
+- *       "FDT full path of Node", "Property", "Value of Property"
+- * * If none of define "Property", "Node" will be deleted
+- * * "Value of Property" will be:
+- *   "<xxx yyy>":
+- *       xxx, yyy: have '&' prefix, they are as phandle reference
+- *       xxx, yyy: are number, otherwise won't be process
+- *   "xxx yyy": They are processed as string
+- */
+-int update_fdt(void *fdt, const char **list_dt_change, int size);
+-#endif //__RZG_COMMON_H__
+diff --git a/board/solidrun/rzg-common/rzg-common.c b/board/solidrun/rzg-common/rzg-common.c
+new file mode 100644
+index 0000000000..e3c5b93291
+--- /dev/null
++++ b/board/solidrun/rzg-common/rzg-common.c
+@@ -0,0 +1,223 @@
++// SPDX-License-Identifier: GPL-2.0+
++
++#include <common.h>
++#include <tlv_eeprom.h>
++#include <linux/err.h>
++#include "rzg-common.h"
++
++static int get_tlv_udevice_by_alias(struct udevice **dev, const char *alias)
++{
++	int node, ret;
++	const char *path;
++	path = fdt_get_alias(gd->fdt_blob, alias);
++	if (!path)
++	{
++		pr_err("Cannot find the path for label %s.\n", alias);
++		return -ENODEV;
++	}
++	/* Get the node offset using the path */
++	node = fdt_path_offset(gd->fdt_blob, path);
++	if (node < 0)
++	{
++		pr_err("Cannot find the node for path %s.\n", path);
++		return -ENODEV;
++	}
++
++	/* Get the udevice using the node offset */
++	ret = uclass_get_device_by_of_offset(UCLASS_I2C_EEPROM, node, dev);
++	if (ret)
++	{
++		pr_err("Failed to find eeprom device, ret=%d\n", ret);
++		return ret;
++	}
++	return 0;
++}
++
++int get_sku_from_tlv_dev(struct udevice *dev, char *sku)
++{
++	int ret = 0;
++	char eeprom[2048];
++	struct tlvinfo_priv *tlv, *entry;
++
++	tlv = tlv_eeprom_read(dev, 0, eeprom, ARRAY_SIZE(eeprom));
++	if (IS_ERR(tlv))
++	{
++		pr_err("Can't parse the tlv: %d\n", tlv);
++		return tlv;
++	}
++	entry = tlv_entry_next_by_code(tlv, NULL, TLV_CODE_PART_NUMBER);
++	if (IS_ERR(entry))
++	{
++		pr_err("Bad entry, ret: %d\n", entry);
++		return entry;
++	}
++	ret = tlv_entry_get_string(entry, sku, CARRIER_SKU_MAX_SIZE);
++	if (ret)
++	{
++		pr_err("Can't get tlv_entry_get_string, ret: %d\n", ret);
++		return ret;
++	}
++	return 0;
++}
++
++int get_carrier(void)
++{
++	int board, ret = 0;
++	struct udevice *dev;
++	char sku[CARRIER_SKU_MAX_SIZE];
++
++	ret = get_tlv_udevice_by_alias(&dev, "eeprom_carrier");
++	if (ret)
++		return ret;
++
++	ret = get_sku_from_tlv_dev(dev, sku);
++	if (ret)
++		return ret;
++
++	switch (sku[5])
++	{
++	case 'M': // Mate
++		board = CARRIER_HB_MATE;
++		break;
++	case 'R': // Ripple
++		board = CARRIER_HB_RIPPLE;
++		break;
++	case 'U': // Pulse or Extended
++		board = CARRIER_HB_PULSE;
++		if (sku[6] == 'E')
++			board = CARRIER_HB_EXTENDED;
++		break;
++	default:
++		board = CARRIER_UNRECOGNIZED;
++		pr_warn("Did not recognise board variant in sku \"%s\"\n", sku);
++	}
++
++	return board;
++}
++
++// Should return 1 on SD and 0 on eMMC
++__weak int board_check_sd_emmc(void)
++{
++	printf("Warning! %s not implemented!", __func__);
++	return 0;
++}
++
++__weak void board_select_sd_emmc(int select_sd)
++{
++	printf("Warning! %s not implemented!", __func__);
++}
++
++static void set_bootsource_env(int select_sd)
++{
++	int ret;
++	if (select_sd)
++		ret = env_set("boot_source", "sd");
++	else
++		ret = env_set("boot_source", "emmc");
++	if (ret)
++		pr_err("Failed to set boot_source env, err: %d \n", ret);
++}
++
++void rzg_sd_emmc_init(void)
++{
++	/* Select eMMC/uSD based on SD0_DEV_SEL_SW (P22_1) GPIO value {High: uSD ; Low: eMMC}*/
++	int value = board_check_sd_emmc();
++	board_select_sd_emmc(value);
++	set_bootsource_env(value);
++}
++
++#if defined(CONFIG_OF_LIBFDT) && defined(CONFIG_OF_BOARD_SETUP) && defined(CONFIG_OF_SYSTEM_SETUP)
++/*
++ * Configure the correct sdhi0 node (eMMC/SD) in device-tree:
++ *  Set up board-specific details in device tree before boot
++ */
++
++static bool preboot_check_sd_emmc(void)
++{
++	int sd_select = 0;
++	char *boot_source_env = from_env("boot_source");
++	if (!boot_source_env)
++	{
++		sd_select = board_check_sd_emmc();
++	}
++	else if (strcmp(boot_source_env, "sd") == 0)
++	{
++		sd_select = 1;
++	}
++
++	return (sd_select || CONFIG_IS_ENABLED(SOLIDRUN_FORCE_SD_BOOT)) && !CONFIG_IS_ENABLED(SOLIDRUN_FORCE_MMC_BOOT);
++}
++
++int rzg_preboot_sd_emmc_setup(void *blob, struct bd_info *bd)
++{
++
++	int ret, node_sdhi0, node = 0;
++	bool enable_sdhc = preboot_check_sd_emmc();
++
++	if (enable_sdhc)
++	{
++		printf("patching DTS | Select uSD...\n");
++		/* dts changes (
++		set | gpio-sd0-dev-sel-emmc-hog | replace output-low with output-high
++		set | gpio-sd0-vdd-18v-hog | replace output-low with output-high
++		------------------------------------------------
++		# sdhi0 ->
++		set | bus-width = <4>;
++		add | max-frequency = <50000000>;
++		remove | mmc-hs200-1_8v;
++		remove | non-removable;
++		remove | fixed-emmc-driver-type = <1>;
++		*/
++
++		/* select uSD and set SD0_VDD=3.3V */
++		node = fdt_path_offset(blob, "/soc/pinctrl@11030000/gpio-sd0-dev-sel-hog");
++
++		ret = fdt_delprop(blob, node, "output-high");
++		if (ret < 0 && enable_sdhc)
++			pr_err("%s: failed to disable gpio-sd0-dev-sel-hog in dtb!\n", __func__);
++
++		ret = fdt_setprop_empty(blob, node, "output-low");
++		if (ret < 0 && enable_sdhc)
++			pr_err("%s: failed to set output-low -> gpio-sd0-dev-sel-hog in dtb!\n", __func__);
++
++		node = fdt_path_offset(blob, "/soc/pinctrl@11030000/gpio-sd0-vdd-18v-hog");
++		ret = fdt_delprop(blob, node, "output-high");
++		if (ret < 0 && enable_sdhc)
++			pr_err("%s: failed to delete output-high gpio-sd0-vdd-18v-hog in dtb!\n", __func__);
++
++		ret = fdt_setprop((blob), (node), ("output-low"), ((void *)0), 0);
++		if (ret < 0 && enable_sdhc)
++			pr_err("%s: failed to set output-low -> gpio-sd0-vdd-18v-hog in dtb!\n", __func__);
++
++		/* update sdhi0 settings (SD/eMMC) mmc@11c00000 */
++		node_sdhi0 = fdt_path_offset(blob, "/soc/mmc@11c00000");
++
++		ret = fdt_setprop_u32(blob, node_sdhi0, "bus-width", 4);
++		if (ret < 0 && enable_sdhc)
++			pr_err("%s : failed to set bus-width at node mmc@11c00000 in dtb!\n", __func__);
++
++		ret = fdt_setprop_u32(blob, node_sdhi0, "max-frequency", 50000000);
++		if (ret < 0 && enable_sdhc)
++			pr_err("%s : failed to set max-frequency at node mmc@11c00000 in dtb!\n", __func__);
++
++		ret = fdt_delprop(blob, node_sdhi0, "mmc-hs200-1_8v");
++		if (ret < 0 && enable_sdhc)
++			pr_err("%s : ffailed to set mmc-hs200-1_8v at node mmc@11c00000 in dtb!\n", __func__);
++
++		ret = fdt_delprop(blob, node_sdhi0, "non-removable");
++		if (ret < 0 && enable_sdhc)
++			pr_err("%s : failed to set non-removable at node mmc@11c00000 in dtb!\n", __func__);
++
++		ret = fdt_delprop(blob, node_sdhi0, "fixed-emmc-driver-type");
++		if (ret < 0 && enable_sdhc)
++			pr_err("%s : failed to set fixed-emmc-driver-type at node mmc@11c00000 in dtb!\n", __func__);
++	}
++	else
++	{
++		printf("patching DTS | keep default settings \n");
++	}
++
++	return 0;
++}
++
++#endif
+\ No newline at end of file
+diff --git a/board/solidrun/rzg-common/rzg-common.h b/board/solidrun/rzg-common/rzg-common.h
+new file mode 100644
+index 0000000000..180e882d20
+--- /dev/null
++++ b/board/solidrun/rzg-common/rzg-common.h
+@@ -0,0 +1,30 @@
++/* SPDX-License-Identifier: GPL-2.0+ */
++#ifndef __RZG_COMMON_H__
++#define __RZG_COMMON_H__
++
++enum carrier_boards
++{
++	CARRIER_UNRECOGNIZED = 0,
++	CARRIER_HB_MATE,
++	CARRIER_HB_RIPPLE,
++	CARRIER_HB_PULSE,
++	CARRIER_HB_EXTENDED,
++};
++
++enum vbus_out_type
++{
++	VBUS_OUT_PP = 0,
++	VBUS_OUT_OD,
++};
++
++#define CARRIER_SKU_MAX_SIZE 25
++
++int get_carrier(void);
++
++void rzg_sd_emmc_init(void);
++
++#if defined(CONFIG_OF_LIBFDT) && defined(CONFIG_OF_BOARD_SETUP) && defined(CONFIG_OF_SYSTEM_SETUP)
++int rzg_preboot_sd_emmc_setup(void *blob, struct bd_info *bd);
++#endif
++
++#endif //__RZG_COMMON_H__
+diff --git a/board/solidrun/rzg-common/rzg2l-regs.h b/board/solidrun/rzg-common/rzg2l-regs.h
+new file mode 100644
+index 0000000000..04852672dc
+--- /dev/null
++++ b/board/solidrun/rzg-common/rzg2l-regs.h
+@@ -0,0 +1,77 @@
++/* SPDX-License-Identifier: GPL-2.0+ */
++#ifndef __RZG2L_REGS_H__
++#define __RZG2L_REGS_H__
++
++
++#define PFC_BASE 0x11030000
++
++#define ETH_CH0 (PFC_BASE + 0x300c)
++#define ETH_CH1 (PFC_BASE + 0x3010)
++#define I2C_CH1 (PFC_BASE + 0x1870)
++#define ETH_PVDD_3300 0x00
++#define ETH_PVDD_1800 0x01
++#define ETH_PVDD_2500 0x02
++#define ETH_MII_RGMII (PFC_BASE + 0x3018)
++
++/* CPG */
++#define CPG_BASE 0x11010000
++#define CPG_CLKON_BASE (CPG_BASE + 0x500)
++#define CPG_RESET_BASE (CPG_BASE + 0x800)
++#define CPG_RESET_ETH (CPG_RESET_BASE + 0x7C)
++#define CPG_RESET_I2C (CPG_RESET_BASE + 0x80)
++#define CPG_PL2_SDHI_DSEL (CPG_BASE + 0x218)
++#define CPG_CLK_STATUS (CPG_BASE + 0x280)
++#define CPG_RST_USB (CPG_BASE + 0x878)
++#define CPG_CLKON_USB (CPG_BASE + 0x578)
++
++/* PFC */
++#define PFC_P37 (PFC_BASE + 0x037)
++#define PFC_PM37 (PFC_BASE + 0x16E)
++#define PFC_PMC37 (PFC_BASE + 0x237)
++#define PFC_PWPR (PFC_BASE + 0x3014)
++
++#define PFC_P14 (PFC_BASE + 0x0014)
++#define PFC_PM14 (PFC_BASE + 0x0128)
++#define PFC_PMC14 (PFC_BASE + 0x214)
++#define PFC_PFC14 (PFC_BASE + 0x450)
++
++#define PFC_P15 (PFC_BASE + 0x0015)
++#define PFC_PM15 (PFC_BASE + 0x012A)
++#define PFC_PMC15 (PFC_BASE + 0x215)
++#define PFC_PFC15 (PFC_BASE + 0x454)
++
++#define PFC_P3A (PFC_BASE + 0x003A)
++#define PFC_PM3A (PFC_BASE + 0x0174)
++#define PFC_PMC3A (PFC_BASE + 0x23A)
++#define PFC_PFC3A (PFC_BASE + 0x4E8)
++
++#define USBPHY_BASE (0x11c40000)
++#define USB0_BASE (0x11c50000)
++#define USB1_BASE (0x11c70000)
++#define USBF_BASE (0x11c60000)
++#define USBPHY_RESET (USBPHY_BASE + 0x000u)
++#define COMMCTRL 0x800
++#define HcRhDescriptorA 0x048
++#define LPSTS 0x102
++
++#define PFC_P26 (PFC_BASE + 0x026)	 /* PORT REGISTER26 */
++#define PFC_PM26 (PFC_BASE + 0x14C)	 /* PORT MODE REGISTER26 */
++#define PFC_PMC26 (PFC_BASE + 0x226) /* PORT MODE CONTROL REGISTER26 */
++#define PFC_PIN26 (PFC_BASE + 0x826)
++#define PFC_PUPD26 (PFC_BASE + 0x1d30) /* PULL UP/PULL DOWN SWITCHING REGISTER26 */
++#define FILONOFF26 (PFC_BASE + 0x2130) /* Digital Noise Filter Switching Register */
++#define FILNUM26 (PFC_BASE + 0x2530)   /* DIGITAL NOISE FILTER NUMBER REGISTER26 */
++
++/* WDT */
++#define WDT_BASE 0x12800800
++#define WDTCNT 0x00
++#define WDTSET 0x04
++#define WDTTIM 0x08
++#define WDTINT 0x0C
++#define PECR 0x10
++#define PEEN 0x14
++#define WDTCNT_WDTEN BIT(0)
++#define WDTINT_INTDISP BIT(0)
++
++
++#endif // __RZG2L_REGS_H__
+diff --git a/board/solidrun/rzg-common/update_fdt.c b/board/solidrun/rzg-common/update_fdt.c
+deleted file mode 100644
+index ecd4fca20c..0000000000
+--- a/board/solidrun/rzg-common/update_fdt.c
++++ /dev/null
+@@ -1,245 +0,0 @@
+-// SPDX-License-Identifier: GPL-2.0+
+-#ifndef __RZG_UPDATE_FDT__
+-#define __RZG_UPDATE_FDT__
+-
+-#include <common.h>
+-#include <malloc.h>
+-#include <fdt_support.h>
+-#include <linux/ctype.h>
+-#include "common.h"
+-
+-int add_new_node(void *fdt, char *node);
+-
+-int add_new_node(void *fdt, char *node)
+-{
+-	char *parent, *name;
+-	int len, nodeoffset;
+-
+-	name = strrchr(node, '/');
+-	if (!strcmp(node, "/") || !name)
+-		return 0;
+-
+-	len = strlen(node) - strlen(name) + 1;
+-	parent = malloc(sizeof(char) * len);
+-	strncpy(parent, node, len);
+-	parent[len] = '\0';
+-	nodeoffset = fdt_path_offset(fdt, parent);
+-	if (nodeoffset < 0) {
+-		/* Remove the last '/' in the path*/
+-		parent[len - 1] = '\0';
+-		nodeoffset = add_new_node(fdt, parent);
+-		if (nodeoffset == 0)
+-			nodeoffset = fdt_path_offset(fdt, "/");
+-	}
+-	nodeoffset = fdt_add_subnode(fdt, nodeoffset, name + 1);
+-	free(parent);
+-	return nodeoffset;
+-}
+-
+-int fdt_parse_prop(void *fdt, char **newval, char *data, int *len)
+-{
+-	char *cp;               /* temporary char pointer */
+-	char *newp;             /* temporary newval char pointer */
+-	unsigned long tmp;      /* holds converted values */
+-
+-	*len = 0;
+-	newp = newval[0];
+-
+-	/* An array of cells */
+-	if (*newp == '<') {
+-		newp++;
+-		while ((*newp != '>')) {
+-			/*
+-			 * Keep searching until we find that last ">"
+-			 * That way users don't have to escape the spaces
+-			 */
+-			if (*newp == '\0')
+-				break;
+-
+-			cp = newp;
+-
+-			if (strchr(cp, '&')) {
+-				char *handler, *next;
+-				int size, nodeoffset;
+-				u32 phandle;
+-
+-				cp = strchr(cp, '&');
+-				next = strchr(cp + 1, '&');
+-				if (!next)
+-					size = strlen(cp) - 1;
+-				else
+-					size = next - cp - 1;
+-
+-				/* Trim the space or tab*/
+-				while (cp[size] == ' ' || cp[size] == '\t')
+-					size--;
+-
+-				handler = malloc(sizeof(char) * size);
+-				/* We increase data pointer and decrease size
+-				 * to 1 value to remove '&' character
+-				 */
+-				strncpy(handler, cp + 1, size - 1);
+-				handler[size - 1] = '\0';
+-				nodeoffset = fdt_path_offset(fdt, handler);
+-				if (nodeoffset > 0) {
+-					phandle = fdt_get_phandle(fdt,
+-								  nodeoffset);
+-					if (phandle == 0) {
+-						phandle =
+-							fdt_alloc_phandle(fdt);
+-						fdt_set_phandle(fdt, nodeoffset,
+-								phandle);
+-					}
+-					*(fdt32_t *)data =
+-							cpu_to_fdt32(phandle);
+-				}
+-				free(handler);
+-				/* Move to the next */
+-				newp = cp + size;
+-			} else  {
+-				tmp = simple_strtoul(cp, &newp, 0);
+-				if (*cp != '?')
+-					*(fdt32_t *)data = cpu_to_fdt32(tmp);
+-				else
+-					newp++;
+-			}
+-			data  += 4;
+-			*len += 4;
+-
+-			/* If the ptr didn't advance,
+-			 * something went wrong
+-			 */
+-			if ((newp - cp) <= 0) {
+-				printf("Sorry, I could not convert ");
+-				printf("\"%s\"\n", cp);
+-				return 1;
+-			}
+-			while (*newp == ' ')
+-				newp++;
+-		}
+-
+-		if (*newp != '>') {
+-			printf("Unexpected character '%c'\n", *newp);
+-			return 1;
+-		}
+-	} else if (*newp == '[') {
+-		/*
+-		 * Byte stream.  Convert the values.
+-		 */
+-		newp++;
+-		while (*newp != ']') {
+-			while (*newp == ' ')
+-				newp++;
+-			if (*newp == '\0')
+-				break;
+-			if (!isxdigit(*newp))
+-				break;
+-			tmp = simple_strtoul(newp, &newp, 16);
+-			*data++ = tmp & 0xFF;
+-			*len    = *len + 1;
+-		}
+-		if (*newp != ']') {
+-			printf("Unexpected character '%c'\n", *newp);
+-			return 1;
+-		}
+-	} else {
+-		/*
+-		 * Assume it is one or more strings.  Copy it into our
+-		 * data area for convenience (including the
+-		 * terminating '\0's).
+-		 */
+-		size_t length = strlen(newp) + 1;
+-
+-		strcpy(data, newp);
+-		data += length;
+-		*len += length;
+-	}
+-	return 0;
+-}
+-
+-int process_node_data(void *fdt, char *node, char *prop, char *val)
+-{
+-	static char data[1024] __aligned(4);
+-	const void *ptmp;
+-	int len, ret, nodeoffset;
+-
+-	nodeoffset = fdt_path_offset(fdt, node);
+-	if (!val) {
+-		len = 0;
+-	} else {
+-		ptmp = fdt_getprop(working_fdt, nodeoffset, prop, &len);
+-		if (len > 1024) {
+-			printf("prop (%d) doesn't fit in scratchpad!\n", len);
+-			return 1;
+-		}
+-		if (ptmp)
+-			memcpy(data, ptmp, len);
+-
+-		ret = fdt_parse_prop(fdt, &val, data, &len);
+-		if (ret != 0)
+-			return ret;
+-	}
+-
+-	/* After parsing value for property, nodeoffset may be changed*/
+-	nodeoffset = fdt_path_offset(fdt, node);
+-
+-	return fdt_setprop(fdt, nodeoffset, prop, data, len);
+-}
+-
+-int update_fdt(void *fdt, const char **list_dt_change, int size)
+-{
+-	int i, ret;
+-
+-	if (!list_dt_change)
+-		return 1;
+-
+-	if ((size > 0) && ((size % 3) == 0)) {
+-		printf("Changing the current FDT in %lx.\n", (uintptr_t)fdt);
+-	} else {
+-		pr_debug("Wrong define FDT change structure. No change FDT.\n");
+-		return 1;
+-	}
+-
+-	for (i = 0 ; i < size; i += 3) {
+-		int nodeoffset;
+-		char *node, *prop, *val;
+-
+-		node = (char *)list_dt_change[i];
+-		prop = (char *)list_dt_change[i + 1];
+-		val = (char *)list_dt_change[i + 2];
+-		nodeoffset = fdt_path_offset(fdt, node);
+-
+-		if (!node)
+-			continue;
+-
+-		if (!prop) {
+-			if (nodeoffset < 0) {
+-				pr_debug("\tUnavailable node %s\n", node);
+-				continue;
+-			}
+-			printf("   Remove Node %s\n", node);
+-			ret = fdt_del_node(fdt, nodeoffset);
+-			if (ret < 0) {
+-				printf("\tCan't remove. ERR %d\n", ret);
+-			} else {
+-				printf("\tRemoved.\n");
+-			}
+-		} else {
+-			printf("   Config Node %s\n", node);
+-			if (nodeoffset < 0) {
+-				pr_debug("\tUnavailable node\n");
+-				printf("\tCreate node.\n");
+-				nodeoffset = add_new_node(fdt, node);
+-			}
+-			printf("\tSet property %s : %s\n", prop, val);
+-			ret = process_node_data(fdt, node, prop, val);
+-			if (ret < 0) {
+-				printf("\t\tCan't set property. ERR %d\n", ret);
+-			}
+-		}
+-	}
+-	/* We fit the FDT size in order not to consume the memory*/
+-	fdt_shrink_to_minimum(fdt, 0x0);
+-	return 1;
+-}
+-#endif // __RZG_UPDATE_FDT__
+diff --git a/board/solidrun/rzg2l/Makefile b/board/solidrun/rzg2l/Makefile
+index 91091e01ad..f7a4e66ec0 100644
+--- a/board/solidrun/rzg2l/Makefile
++++ b/board/solidrun/rzg2l/Makefile
+@@ -10,4 +10,5 @@ ifdef CONFIG_SPL_BUILD
+ obj-y	:= ../rcar-common/gen3-spl.o
+ else
+ obj-y	:= rzg2l-solidrun.o ../rcar-common/common.o
++obj-y 	+= ../rzg-common/
+ endif
+diff --git a/board/solidrun/rzg2l/rzg2l-solidrun.c b/board/solidrun/rzg2l/rzg2l-solidrun.c
+index 4aa78e6e0a..2106865018 100644
+--- a/board/solidrun/rzg2l/rzg2l-solidrun.c
++++ b/board/solidrun/rzg2l/rzg2l-solidrun.c
+@@ -1,89 +1,11 @@
+ #include <common.h>
+-#include <cpu_func.h>
+-#include <image.h>
+ #include <init.h>
+-#include <malloc.h>
+-#include <netdev.h>
+-#include <dm.h>
+-#include <dm/platform_data/serial_sh.h>
+-#include <asm/processor.h>
+-#include <asm/mach-types.h>
+ #include <asm/io.h>
+-#include <linux/bitops.h>
+-#include <linux/errno.h>
+-#include <asm/arch/sys_proto.h>
+-#include <asm/gpio.h>
+-#include <asm/arch/gpio.h>
+-#include <asm/arch/rmobile.h>
+-#include <asm/arch/rcar-mstp.h>
+-#include <asm/arch/sh_sdhi.h>
+-#include <i2c.h>
+-#include <mmc.h>
++#include "../rzg-common/rzg-common.h"
++#include "../rzg-common/rzg2l-regs.h"
+ 
+ DECLARE_GLOBAL_DATA_PTR;
+ 
+-#define PFC_BASE 0x11030000
+-
+-#define ETH_CH0 (PFC_BASE + 0x300c)
+-#define ETH_CH1 (PFC_BASE + 0x3010)
+-#define I2C_CH1 (PFC_BASE + 0x1870)
+-#define ETH_PVDD_3300 0x00
+-#define ETH_PVDD_1800 0x01
+-#define ETH_PVDD_2500 0x02
+-#define ETH_MII_RGMII (PFC_BASE + 0x3018)
+-
+-/* CPG */
+-#define CPG_BASE 0x11010000
+-#define CPG_CLKON_BASE (CPG_BASE + 0x500)
+-#define CPG_RESET_BASE (CPG_BASE + 0x800)
+-#define CPG_RESET_ETH (CPG_RESET_BASE + 0x7C)
+-#define CPG_RESET_I2C (CPG_RESET_BASE + 0x80)
+-#define CPG_RST_USB (CPG_BASE + 0x878)
+-#define CPG_CLKON_USB (CPG_BASE + 0x578)
+-
+-/* PFC */
+-#define PFC_P37 (PFC_BASE + 0x037)
+-#define PFC_PM37 (PFC_BASE + 0x16E)
+-#define PFC_PMC37 (PFC_BASE + 0x237)
+-#define PFC_PWPR (PFC_BASE + 0x3014)
+-
+-#define PFC_P14 (PFC_BASE + 0x0014)
+-#define PFC_PM14 (PFC_BASE + 0x0128)
+-#define PFC_PMC14 (PFC_BASE + 0x214)
+-#define PFC_PFC14 (PFC_BASE + 0x450)
+-
+-#define PFC_P3A (PFC_BASE + 0x003A)
+-#define PFC_PM3A (PFC_BASE + 0x0174)
+-#define PFC_PMC3A (PFC_BASE + 0x23A)
+-#define PFC_PFC3A (PFC_BASE + 0x4E8)
+-
+-#define USBPHY_BASE (0x11c40000)
+-#define USB0_BASE (0x11c50000)
+-#define USB1_BASE (0x11c70000)
+-#define USBF_BASE (0x11c60000)
+-#define USBPHY_RESET (USBPHY_BASE + 0x000u)
+-#define COMMCTRL 0x800
+-#define HcRhDescriptorA 0x048
+-#define LPSTS 0x102
+-
+-/* WDT */
+-#define WDT_BASE 0x12800800
+-#define WDTCNT 0x00
+-#define WDTSET 0x04
+-#define WDTTIM 0x08
+-#define WDTINT 0x0C
+-#define PECR 0x10
+-#define PEEN 0x14
+-#define WDTCNT_WDTEN BIT(0)
+-#define WDTINT_INTDISP BIT(0)
+-
+-/**
+- * The Hummingboard requires Open-Drain VBUS signals.
+- * Comment the line below to enable Push-Pull signals instead.
+- * TODO: remove this macro and change signal type based on TLV info.
+- */
+-#define USB_VBUS_OD
+-
+ void s_init(void)
+ {
+ 	/* SD1 power control: P39_1 = 0; P39_2 = 1; */
+@@ -110,7 +32,7 @@ void s_init(void)
+ }
+ 
+ // VBUS: P4_0 and P42_0
+-static void board_usb_init(void)
++static void board_usb_init(int pin_type)
+ {
+ 	/*Enable USB*/
+ 	(*(volatile u32 *)CPG_RST_USB) = 0x000f000f;
+@@ -121,21 +43,25 @@ static void board_usb_init(void)
+ 	(*(volatile u32 *)PFC_PWPR) &= ~(0x1u << 7); /* PWPR.BOWI = 0 */
+ 	(*(volatile u32 *)PFC_PWPR) |= (0x1u << 6);	 /* PWPR.PFCWE = 1 */
+ 
+-#ifdef USB_VBUS_OD
+-	/* Humming board has pulled up signals, enabled by default */
+-	/* set P4_0 as GPIO Input */
+-	(*(volatile u8 *)PFC_PM14) = 0;
+-	/* set P42_0 as GPIO Input */
+-	(*(volatile u8 *)PFC_PM3A) = 0;
+-#elif
+-	/* set P4_0 as GPIO Output High VBUSEN */
+-	(*(volatile u8 *)PFC_PM14) |= (0x1u << 1);
+-	(*(volatile u8 *)PFC_P14) |= (0x1u << 0);
+-	// /* set P42_0 as GPIO Output High */
+-	(*(volatile u8 *)PFC_PM3A) |= (0x1u << 1);
+-	(*(volatile u8 *)PFC_P3A) |= (0x1u << 0);
+-
+-#endif
++	if (pin_type == VBUS_OUT_OD || CONFIG_IS_ENABLED(SOLIDRUN_VBUS_OUT_OD))
++	{
++		pr_info("Using VBUS open-drain \n");
++		/* Humming board has pulled up signals, enabled by default */
++		/* set P4_0 as GPIO Input */
++		(*(volatile u8 *)PFC_PM14) = 0;
++		/* set P42_0 as GPIO Input */
++		(*(volatile u8 *)PFC_PM3A) = 0;
++	}
++	else if (pin_type == VBUS_OUT_PP || CONFIG_IS_ENABLED(SOLIDRUN_VBUS_OUT_PP))
++	{
++		pr_info("Using VBUS push-pull\n");
++		/* set P4_0 as GPIO Output High VBUSEN */
++		(*(volatile u8 *)PFC_PM14) |= (0x1u << 1);
++		(*(volatile u8 *)PFC_P14) |= (0x1u << 0);
++		// /* set P42_0 as GPIO Output High */
++		(*(volatile u8 *)PFC_PM3A) |= (0x1u << 1);
++		(*(volatile u8 *)PFC_P3A) |= (0x1u << 0);
++	}
+ 
+ 	// /* Enable write protect */
+ 	(*(volatile u32 *)PFC_PWPR) &= ~(0x1u << 6); /* PWPR.PFCWE = 0 */
+@@ -154,6 +80,53 @@ static void board_usb_init(void)
+ 	(*(volatile u32 *)(USB1_BASE + HcRhDescriptorA)) |= (0x1u << 12); /* NOCP = 1 */
+ }
+ 
++int board_check_sd_emmc(void)
++{
++	int value = 0;
++	/* Read SD0_DEV_SEL_SW value - P22_1 */
++	/* eMMC/uSD Device Select - SD0_DEV_SEL_SW (LOW: uSD ; HIGH: eMMC) */
++
++	generic_clear_bit(1, PFC_PMC26); /* P22_1 Port GPIO mode */
++	generic_set_bit(2, PFC_PM26);	 /* P22_1 GPIO input mode */
++
++	value = ((u32)(((*(volatile u32 *)(PFC_PIN26)) & (1 << 1))) != 0); /* Port 22[1] read input value */
++	if (value == 0 || CONFIG_IS_ENABLED(SOLIDRUN_FORCE_SD_BOOT)) // Note: sd is LOW in g2l.
++		return 1;
++
++	return 0;
++}
++
++void board_select_sd_emmc(int select_sd)
++{
++	if (select_sd == 0 || CONFIG_IS_ENABLED(SOLIDRUN_FORCE_EMMC_BOOT))
++	{
++		printf("%s: select emmc.\n", __func__);
++		/* Enable eMMC */
++		/* Set SD0 VDD = 1.8v -> PFC-eMMC - LDO_SEL1 (High: 3.3v ; Low: 1.8v) */
++		generic_clear_bit(1, PFC_PMC26); /* P22_1 Port GPIO mode */
++		generic_set_bit(3, PFC_PM26);	 /* P22_1 GPIO output mode */
++		generic_set_bit(1, PFC_P26);	 /* P22_1 GPIO out HIGH */
++
++		/* Select eMMC */
++		generic_clear_bit(0, PFC_PMC37); /* P39_0 Port GPIO mode */
++		generic_set_bit(1, PFC_PM37);	 /* P39_0 GPIO output mode */
++		generic_clear_bit(0, PFC_P37);	 /* P39_0 GPIO out LOW */
++	}
++	else if (select_sd != 0 || CONFIG_IS_ENABLED(SOLIDRUN_FORCE_SD_BOOT))
++	{
++		printf("%s: select uSD.\n", __func__);
++		/* Enable uSD */
++		generic_clear_bit(1, PFC_PMC26); /* P22_1 Port GPIO mode */
++		generic_set_bit(3, PFC_PM26);	 /* P22_1 GPIO output mode */
++		generic_clear_bit(1, PFC_P26);	 /* P22_1 GPIO out LOW */
++
++		/* Select uSD */
++		generic_clear_bit(0, PFC_PMC37); /* P39_0 Port GPIO mode */
++		generic_set_bit(1, PFC_PM37);	 /* P39_0 GPIO output mode */
++		generic_set_bit(0, PFC_P37);	 /* P39_0 GPIO out HIGH */
++	}
++}
++
+ int board_early_init_f(void)
+ {
+ 
+@@ -167,18 +140,76 @@ int board_init(void)
+ 	return 0;
+ }
+ 
++static void carrier_usb_init(int carrier)
++{
++	switch (carrier)
++	{
++	case CARRIER_HB_MATE:
++	case CARRIER_HB_RIPPLE:
++	case CARRIER_HB_PULSE:
++	case CARRIER_HB_EXTENDED:
++		board_usb_init(VBUS_OUT_OD);
++		break;
++	default:
++		board_usb_init(VBUS_OUT_PP);
++		break;
++	}
++}
++
++static void carrier_select_fdt(int carrier)
++{
++	pr_info("Selecting fdt file for board %d...\n", carrier);
++	switch (carrier)
++	{
++	case CARRIER_HB_MATE:
++	case CARRIER_HB_RIPPLE:
++	case CARRIER_HB_PULSE:
++		env_set("fdtfile", "rzg2l-hummingboard-ripple.dtb");
++		break;
++	case CARRIER_HB_EXTENDED:
++		env_set("fdtfile", "rzg2l-hummingboard-extended.dtb");
++		break;
++	default:
++		pr_warn("Leaving default fdtfile \n");
++		break;
++	}
++}
++
+ int board_late_init(void)
+ {
+-	board_usb_init();
++#ifndef CONFIG_SOLIDRUN_DISABLE_TLV
++	int carrier = get_carrier();
++	if (carrier < 0)
++	{
++		pr_err("Can't recognize the carrier board \n");
++	}
++	carrier_usb_init(carrier);
++	carrier_select_fdt(carrier);
++#else
++	board_usb_init(0);
++#endif
++
++	rzg_sd_emmc_init();
++
+ 	return 0;
+ }
+ 
++#if defined(CONFIG_OF_LIBFDT) && defined(CONFIG_OF_BOARD_SETUP) && defined(CONFIG_OF_SYSTEM_SETUP)
++
++int ft_system_setup(void *blob, struct bd_info *bd)
++{
++	return rzg_preboot_sd_emmc_setup(blob, bd);
++}
++
++void ft_board_setup_ex(void *blob, struct bd_info *bd) {}
++#endif
++
+ static void wdt_write(u32 val, unsigned int reg)
+ {
+ 	writel(val, WDT_BASE + reg);
+ }
+ 
+-static int reset_wdt_start()
++static int reset_wdt_start(void)
+ {
+ 	/* Clear Lapsed Time Register and clear Interrupt */
+ 	wdt_write(WDTINT_INTDISP, WDTINT);
+diff --git a/board/solidrun/rzg2lc/Makefile b/board/solidrun/rzg2lc/Makefile
+index effa51e31e..f37bf0f3af 100644
+--- a/board/solidrun/rzg2lc/Makefile
++++ b/board/solidrun/rzg2lc/Makefile
+@@ -10,4 +10,5 @@ ifdef CONFIG_SPL_BUILD
+ obj-y	:= ../rcar-common/gen3-spl.o
+ else
+ obj-y	:= rzg2lc-solidrun.o ../rcar-common/common.o
++obj-y 	+= ../rzg-common/
+ endif
+diff --git a/board/solidrun/rzg2lc/rzg2lc-solidrun.c b/board/solidrun/rzg2lc/rzg2lc-solidrun.c
+index c8666775ce..54ae0ee68d 100644
+--- a/board/solidrun/rzg2lc/rzg2lc-solidrun.c
++++ b/board/solidrun/rzg2lc/rzg2lc-solidrun.c
+@@ -1,196 +1,77 @@
+ #include <common.h>
+-#include <cpu_func.h>
+-#include <image.h>
+ #include <init.h>
+-#include <malloc.h>
+-#include <netdev.h>
+-#include <dm.h>
+-#include <dm/platform_data/serial_sh.h>
+-#include <asm/processor.h>
+-#include <asm/mach-types.h>
+ #include <asm/io.h>
+-#include <linux/bitops.h>
+-#include <linux/errno.h>
+-#include <fdt_support.h>
+-#include <asm/arch/sys_proto.h>
+-#include <asm/gpio.h>
+-#include <asm/arch/gpio.h>
+-#include <asm/arch/rmobile.h>
+-#include <asm/arch/rcar-mstp.h>
+-#include <asm/arch/sh_sdhi.h>
+-#include <i2c.h>
+-#include <mmc.h>
+-#include <env.h>
+-#include <command.h>
++#include "../rzg-common/rzg-common.h"
++#include "../rzg-common/rzg2l-regs.h"
+ 
+ DECLARE_GLOBAL_DATA_PTR;
+ 
+-#define PFC_BASE 0x11030000
+-
+-#define ETH_CH0 (PFC_BASE + 0x300c)
+-#define I2C_CH1 (PFC_BASE + 0x1870)
+-#define ETH_PVDD_3300 0x00
+-#define ETH_PVDD_1800 0x01
+-#define ETH_PVDD_2500 0x02
+-#define ETH_MII_RGMII (PFC_BASE + 0x3018)
+-
+-/* CPG */
+-#define CPG_BASE 0x11010000
+-#define CPG_CLKON_BASE (CPG_BASE + 0x500)
+-#define CPG_RESET_BASE (CPG_BASE + 0x800)
+-#define CPG_RESET_ETH (CPG_RESET_BASE + 0x7C)
+-#define CPG_RESET_I2C (CPG_RESET_BASE + 0x80)
+-#define CPG_PL2_SDHI_DSEL (CPG_BASE + 0x218)
+-#define CPG_CLK_STATUS (CPG_BASE + 0x280)
+-#define CPG_RST_USB (CPG_BASE + 0x878)
+-#define CPG_CLKON_USB (CPG_BASE + 0x578)
+-
+-/* PFC */
+-#define PFC_P37 (PFC_BASE + 0x037)
+-#define PFC_PM37 (PFC_BASE + 0x16E)
+-#define PFC_PMC37 (PFC_BASE + 0x237)
+-
+-#define PFC_P26 (PFC_BASE + 0x026)	 /* PORT REGISTER26 */
+-#define PFC_PM26 (PFC_BASE + 0x14C)	 /* PORT MODE REGISTER26 */
+-#define PFC_PMC26 (PFC_BASE + 0x226) /* PORT MODE CONTROL REGISTER26 */
+-#define PFC_PIN26 (PFC_BASE + 0x826)
+-#define PFC_PUPD26 (PFC_BASE + 0x1d30) /* PULL UP/PULL DOWN SWITCHING REGISTER26 */
+-#define FILONOFF26 (PFC_BASE + 0x2130) /* Digital Noise Filter Switching Register */
+-#define FILNUM26 (PFC_BASE + 0x2530)   /* DIGITAL NOISE FILTER NUMBER REGISTER26 */
+-
+-#define PFC_PWPR (PFC_BASE + 0x3014)
+-
+-#define PFC_P14 (PFC_BASE + 0x0014)
+-#define PFC_PM14 (PFC_BASE + 0x0128)
+-#define PFC_PMC14 (PFC_BASE + 0x214)
+-#define PFC_PFC14 (PFC_BASE + 0x450)
+-#define PFC_P15 (PFC_BASE + 0x0015)
+-#define PFC_PM15 (PFC_BASE + 0x012A)
+-#define PFC_PMC15 (PFC_BASE + 0x215)
+-#define PFC_PFC15 (PFC_BASE + 0x454)
+-#define PFC_PMC3A (PFC_BASE + 0x23a)
+-#define PFC_PFC3A (PFC_BASE + 0x4e8)
+-
+-#define USBPHY_BASE (0x11c40000)
+-#define USB0_BASE (0x11c50000)
+-#define USB1_BASE (0x11c70000)
+-#define USBF_BASE (0x11c60000)
+-#define USBPHY_RESET (USBPHY_BASE + 0x000u)
+-#define COMMCTRL 0x800
+-#define HcRhDescriptorA 0x048
+-#define LPSTS 0x102
+-
+-/* WDT */
+-#define WDT_BASE 0x12800800
+-#define WDTCNT 0x00
+-#define WDTSET 0x04
+-#define WDTTIM 0x08
+-#define WDTINT 0x0C
+-#define PECR 0x10
+-#define PEEN 0x14
+-#define WDTCNT_WDTEN BIT(0)
+-#define WDTINT_INTDISP BIT(0)
+-
+-/**
+- * The Hummingboard requires Open-Drain VBUS signals.
+- * Comment the line below to enable Push-Pull signals instead.
+- * TODO: remove this macro and change signal type based on TLV info.
+- */
+-#define USB_VBUS_OD
+-
+-/* eMMC/SD Auto detecte*/
+-#define EMMC_SD_AUTO 1
+-/* force select eMMC*/
+-#define SEL_EMMC 0
+-/* force select uSD*/
+-#define SEL_SD 0
++void s_init(void)
++{
++	/* can go in board_eht_init() once enabled */
++	*(volatile u32 *)(ETH_CH0) = (*(volatile u32 *)(ETH_CH0)&0xFFFFFFFC) | ETH_PVDD_1800;
++	/* Enable RGMII for ETH0 */
++	*(volatile u32 *)(ETH_MII_RGMII) = (*(volatile u32 *)(ETH_MII_RGMII)&0xFFFFFFFC);
++	/* ETH CLK */
++	*(volatile u32 *)(CPG_RESET_ETH) = 0x30001;
++	/* I2C CLK */
++	*(volatile u32 *)(CPG_RESET_I2C) = 0xF000F;
++	/* I2C pin non GPIO enable */
++	*(volatile u32 *)(I2C_CH1) = 0x01010101;
++	/* SD CLK */
++	*(volatile u32 *)(CPG_PL2_SDHI_DSEL) = 0x00110011;
++	while (*(volatile u32 *)(CPG_CLK_STATUS) != 0)
++		;
++}
+ 
+-static int check_sd_emmc_select(void)
++int board_check_sd_emmc(void)
+ {
+ 	int value = 0;
+ 	/* Read SD0_DEV_SEL_SW value - P22_1 */
+ 	/* eMMC/uSD Device Select - SD0_DEV_SEL_SW (High: uSD ; Low: eMMC) */
+-
+ 	generic_clear_bit(1, PFC_PMC26); /* P22_1 Port GPIO mode */
+ 	generic_set_bit(2, PFC_PM26);	 /* P22_1 GPIO input mode */
+ 
+ 	value = ((u32)(((*(volatile u32 *)(PFC_PIN26)) & (1 << 1))) != 0); /* Port 22[1] read input value */
+ 	printf("SD0_DEV_SEL_SW = %d \n", value);
+-	if (value == 1 || SEL_SD == 1)
++	if (value == 1 || CONFIG_IS_ENABLED(SOLIDRUN_FORCE_SD_BOOT))
+ 		return 1;
+ 
+ 	return 0;
+ }
+ 
+-static void select_sd_emmc(int select_sd)
++void board_select_sd_emmc(int select_sd)
+ {
+-	if (select_sd == 0 || SEL_EMMC == 1)
++	if (select_sd == 0 || CONFIG_IS_ENABLED(SOLIDRUN_FORCE_EMMC_BOOT))
+ 	{
+ 		printf("%s: select emmc.\n", __func__);
+ 		/* Enable eMMC */
+ 		/* Set SD0 VDD = 1.8v -> PFC-eMMC - LDO_SEL1 (High: 3.3v ; Low: 1.8v) */
+-		generic_clear_bit(1, PFC_PMC26); /* P39_0 Port GPIO mode */
+-		generic_set_bit(3, PFC_PM26);	 /* P39_0 GPIO output mode */
+-		generic_clear_bit(1, PFC_P26);	 /* P39_0 GPIO out LOW */
++		generic_clear_bit(1, PFC_PMC26); /* P22_1 Port GPIO mode */
++		generic_set_bit(3, PFC_PM26);	 /* P22_1 GPIO output mode */
++		generic_clear_bit(1, PFC_P26);	 /* P22_1 GPIO out LOW */
+ 
+ 		/* Select eMMC */
+-		generic_clear_bit(0, PFC_PMC37); /* P22_1 Port GPIO mode */
+-		generic_set_bit(1, PFC_PM37);	 /* P22_1 GPIO output mode */
+-		generic_clear_bit(0, PFC_P37);	 /* P22_1 GPIO out LOW */
++		generic_clear_bit(0, PFC_PMC37); /* P39_0 Port GPIO mode */
++		generic_set_bit(1, PFC_PM37);	 /* P39_0 GPIO output mode */
++		generic_clear_bit(0, PFC_P37);	 /* P39_0 GPIO out LOW */
+ 	}
+-	else if (select_sd != 0 || SEL_SD == 1)
++	else if (select_sd != 0 || CONFIG_IS_ENABLED(SOLIDRUN_FORCE_SD_BOOT))
+ 	{
+ 		printf("%s: select uSD.\n", __func__);
+ 		/* Enable uSD */
+-		generic_clear_bit(1, PFC_PMC26); /* P39_0 Port GPIO mode */
+-		generic_set_bit(3, PFC_PM26);	 /* P39_0 GPIO output mode */
+-		generic_set_bit(1, PFC_P26);	 /* P39_0 GPIO out HIGH */
++		generic_clear_bit(1, PFC_PMC26); /* P22_1 Port GPIO mode */
++		generic_set_bit(3, PFC_PM26);	 /* P22_1 GPIO output mode */
++		generic_set_bit(1, PFC_P26);	 /* P22_1 GPIO out HIGH */
+ 
+ 		/* Select uSD */
+-		generic_clear_bit(0, PFC_PMC37); /* P22_1 Port GPIO mode */
+-		generic_set_bit(1, PFC_PM37);	 /* P22_1 GPIO output mode */
+-		generic_set_bit(0, PFC_P37);	 /* P22_1 GPIO out HIGH */
++		generic_clear_bit(0, PFC_PMC37); /* P39_0 Port GPIO mode */
++		generic_set_bit(1, PFC_PM37);	 /* P39_0 GPIO output mode */
++		generic_set_bit(0, PFC_P37);	 /* P39_0 GPIO out HIGH */
+ 	}
+ }
+ 
+-static void set_bootsource_env(int select_sd)
+-{
+-	int ret;
+-	if (select_sd)
+-		ret = env_set("boot_source", "sd");
+-	else
+-		ret = env_set("boot_source", "emmc");
+-	if (ret)
+-		pr_err("Failed to set boot_source env, err: %d \n", ret);
+-}
+-
+-static void board_sd_emmc_init(void)
+-{
+-	/* Select eMMC/uSD based on SD0_DEV_SEL_SW (P22_1) GPIO value {High: uSD ; Low: eMMC}*/
+-	int value = check_sd_emmc_select();
+-	select_sd_emmc(value);
+-	set_bootsource_env(value);
+-}
+-
+-void s_init(void)
+-{
+-	/* can go in board_eht_init() once enabled */
+-	*(volatile u32 *)(ETH_CH0) = (*(volatile u32 *)(ETH_CH0)&0xFFFFFFFC) | ETH_PVDD_1800;
+-	/* Enable RGMII for ETH0 */
+-	*(volatile u32 *)(ETH_MII_RGMII) = (*(volatile u32 *)(ETH_MII_RGMII)&0xFFFFFFFC);
+-	/* ETH CLK */
+-	*(volatile u32 *)(CPG_RESET_ETH) = 0x30001;
+-	/* I2C CLK */
+-	*(volatile u32 *)(CPG_RESET_I2C) = 0xF000F;
+-	/* I2C pin non GPIO enable */
+-	*(volatile u32 *)(I2C_CH1) = 0x01010101;
+-	/* SD CLK */
+-	*(volatile u32 *)(CPG_PL2_SDHI_DSEL) = 0x00110011;
+-	while (*(volatile u32 *)(CPG_CLK_STATUS) != 0)
+-		;
+-}
+-
+-static void board_usb_init(void)
++static void board_usb_init(int pin_type)
+ {
+ 	/*Enable USB*/
+ 	(*(volatile u32 *)CPG_RST_USB) = 0x000f000f;
+@@ -201,21 +82,23 @@ static void board_usb_init(void)
+ 	(*(volatile u32 *)PFC_PWPR) &= ~(0x1u << 7); /* PWPR.BOWI = 0 */
+ 	(*(volatile u32 *)PFC_PWPR) |= (0x1u << 6);	 /* PWPR.PFCWE = 1 */
+ 
+-#ifdef USB_VBUS_OD
+-	/* Humming board has pulled up signals, enabled by default */
+-	/* set P4_0 as GPIO Input */
+-	(*(volatile u8 *)PFC_PM14) = 0;
+-	/* set P5_0 as GPIO Input */
+-	(*(volatile u8 *)PFC_PM15) = 0;
+-#elif
+-	/* set P4_0 as GPIO Output High VBUSEN */
+-	(*(volatile u8 *)PFC_PM14) |= (0x1u << 1);
+-	(*(volatile u8 *)PFC_P14) |= (0x1u << 0);
+-	// /* set P5_0 as GPIO Output High */
+-	(*(volatile u8 *)PFC_PM15) |= (0x1u << 1);
+-	(*(volatile u8 *)PFC_P15) |= (0x1u << 0);
+-
+-#endif
++	if (pin_type == VBUS_OUT_OD || CONFIG_IS_ENABLED(SOLIDRUN_VBUS_OUT_OD))
++	{
++		/* Humming board has pulled up signals, enabled by default */
++		/* set P4_0 as GPIO Input */
++		(*(volatile u8 *)PFC_PM14) = 0;
++		/* set P5_0 as GPIO Input */
++		(*(volatile u8 *)PFC_PM15) = 0;
++	}
++	else if (pin_type == VBUS_OUT_PP || CONFIG_IS_ENABLED(SOLIDRUN_VBUS_OUT_PP))
++	{
++		/* set P4_0 as GPIO Output High VBUSEN */
++		(*(volatile u8 *)PFC_PM14) |= (0x1u << 1);
++		(*(volatile u8 *)PFC_P14) |= (0x1u << 0);
++		// /* set P5_0 as GPIO Output High */
++		(*(volatile u8 *)PFC_PM15) |= (0x1u << 1);
++		(*(volatile u8 *)PFC_P15) |= (0x1u << 0);
++	}
+ 
+ 	// /* Enable write protect */
+ 	(*(volatile u32 *)PFC_PWPR) &= ~(0x1u << 6); /* PWPR.PFCWE = 0 */
+@@ -234,134 +117,82 @@ static void board_usb_init(void)
+ 	(*(volatile u32 *)(USB1_BASE + HcRhDescriptorA)) |= (0x1u << 12); /* NOCP = 1 */
+ }
+ 
+-#if defined(CONFIG_OF_LIBFDT) && defined(CONFIG_OF_BOARD_SETUP) && defined(CONFIG_OF_SYSTEM_SETUP)
+-/*
+- * Configure the correct sdhi0 node (eMMC/SD) in device-tree:
+- *  Set up board-specific details in device tree before boot
+- */
+-
+-static bool preboot_check_sd_emmc(void)
++int board_early_init_f(void)
+ {
+-	int sd_select = 0;
+-	char *boot_source_env = from_env("boot_source");
+-	if (!boot_source_env)
+-	{
+-		sd_select = check_sd_emmc_select();
+-	}
+-	else if (strcmp(boot_source_env, "sd") == 0)
+-	{
+-		sd_select = 1;
+-	}
+ 
+-	return (sd_select || SEL_SD) && !SEL_EMMC;
++	return 0;
+ }
+ 
+-int ft_system_setup(void *blob, struct bd_info *bd)
++int board_init(void)
+ {
+-#if EMMC_SD_AUTO
+-	int ret, node_sdhi0, node = 0;
+-	bool enable_sdhc = preboot_check_sd_emmc();
+-
+-	if (enable_sdhc)
+-	{
+-		printf("patching DTS | Select uSD...\n");
+-		/* dts changes (
+-		set | gpio-sd0-dev-sel-emmc-hog | replace output-low with output-high
+-		set | gpio-sd0-vdd-18v-hog | replace output-low with output-high
+-		------------------------------------------------
+-		# sdhi0 ->
+-		set | pinctrl-0 = <&sdhi0_pins>;
+-		set | pinctrl-1 = <&sdhi0_pins_uhs>;
+-		set | vqmmc-supply = <&vccq_sdhi0>;
+-		set | bus-width = <4>;
+-		add | max-frequency = <50000000>;
+-		remove | mmc-hs200-1_8v;
+-		remove | non-removable;
+-		remove | fixed-emmc-driver-type = <1>;
+-		*/
+-
+-		/* select uSD and set SD0_VDD=3.3V */
+-		node = fdt_path_offset(blob, "/soc/pinctrl@11030000/gpio-sd0-dev-sel-emmc-hog");
+-
+-		ret = fdt_delprop(blob, node, "output-high");
+-		if (ret < 0 && enable_sdhc)
+-			pr_err("%s: failed to disable gpio-sd0-dev-sel-emmc-hog in dtb!\n", __func__);
+-
+-		ret = fdt_setprop_empty(blob, node, "output-low");
+-		if (ret < 0 && enable_sdhc)
+-			pr_err("%s: failed to set output-low -> gpio-sd0-dev-sel-emmc-hog in dtb!\n", __func__);
+-
+-		node = fdt_path_offset(blob, "/soc/pinctrl@11030000/gpio-sd0-vdd-18v-hog");
+-		ret = fdt_delprop(blob, node, "output-high");
+-		if (ret < 0 && enable_sdhc)
+-			pr_err("%s: failed to delete output-high gpio-sd0-vdd-18v-hog in dtb!\n", __func__);
+-
+-		ret = fdt_setprop_empty(blob, node, "output-low");
+-		if (ret < 0 && enable_sdhc)
+-			pr_err("%s: failed to set output-low -> gpio-sd0-vdd-18v-hog in dtb!\n", __func__);
+-
+-		/* update sdhi0 settings (SD/eMMC) mmc@11c00000 */
+-		node_sdhi0 = fdt_path_offset(blob, "/soc/mmc@11c00000");
+-
+-		ret = fdt_setprop_u32(blob, node_sdhi0, "bus-width", 4);
+-		if (ret < 0 && enable_sdhc)
+-			pr_err("%s : failed to set bus-width at node mmc@11c00000 in dtb!\n", __func__);
+-
+-		ret = fdt_setprop_u32(blob, node_sdhi0, "max-frequency", 50000000);
+-		if (ret < 0 && enable_sdhc)
+-			pr_err("%s : failed to set max-frequency at node mmc@11c00000 in dtb!\n", __func__);
+-
+-		ret = fdt_delprop(blob, node_sdhi0, "mmc-hs200-1_8v");
+-		if (ret < 0 && enable_sdhc)
+-			pr_err("%s : ffailed to set mmc-hs200-1_8v at node mmc@11c00000 in dtb!\n", __func__);
++	/* adress of boot parameters */
++	gd->bd->bi_boot_params = CONFIG_SYS_TEXT_BASE + 0x50000;
+ 
+-		ret = fdt_delprop(blob, node_sdhi0, "non-removable");
+-		if (ret < 0 && enable_sdhc)
+-			pr_err("%s : failed to set non-removable at node mmc@11c00000 in dtb!\n", __func__);
++	return 0;
++}
+ 
+-		ret = fdt_delprop(blob, node_sdhi0, "fixed-emmc-driver-type");
+-		if (ret < 0 && enable_sdhc)
+-			pr_err("%s : failed to set fixed-emmc-driver-type at node mmc@11c00000 in dtb!\n", __func__);
+-	}
+-	else
++static void carrier_usb_init(int carrier)
++{
++	switch (carrier)
+ 	{
+-		printf("patching DTS | keep default settings \n");
++	case CARRIER_HB_MATE:
++	case CARRIER_HB_RIPPLE:
++	case CARRIER_HB_PULSE:
++	case CARRIER_HB_EXTENDED:
++		board_usb_init(VBUS_OUT_OD);
++		break;
++	default:
++		board_usb_init(VBUS_OUT_PP);
++		break;
+ 	}
+-#endif
+-
+-	return 0;
+ }
+ 
+-void ft_board_setup_ex(void *blob, struct bd_info *bd)
++static void carrier_select_fdt(int carrier)
+ {
++	pr_info("Selecting fdt file for board %d...\n", carrier);
++	switch (carrier)
++	{
++	case CARRIER_HB_MATE:
++	case CARRIER_HB_RIPPLE:
++	case CARRIER_HB_PULSE:
++	case CARRIER_HB_EXTENDED:
++		env_set("fdtfile", "rzg2lc-hummingboard.dtb");
++		break;
++	default:
++		pr_warn("Leaving default fdtfile \n");
++		break;
++	}
+ }
+ 
++int board_late_init(void)
++{
++#ifndef CONFIG_SOLIDRUN_DISABLE_TLV
++	int carrier = get_carrier();
++	if (carrier < 0)
++	{
++		pr_err("Can't recognize the carrier board \n");
++	}
++	carrier_usb_init(carrier);
++	carrier_select_fdt(carrier);
++#else
++	board_usb_init(0);
+ #endif
+ 
+-int board_early_init_f(void)
+-{
++	rzg_sd_emmc_init();
+ 
+ 	return 0;
+ }
+ 
+-int board_init(void)
+-{
+-	/* adress of boot parameters */
+-	gd->bd->bi_boot_params = CONFIG_SYS_TEXT_BASE + 0x50000;
++#if defined(CONFIG_OF_LIBFDT) && defined(CONFIG_OF_BOARD_SETUP) && defined(CONFIG_OF_SYSTEM_SETUP)
+ 
+-	return 0;
++int ft_system_setup(void *blob, struct bd_info *bd)
++{
++	return rzg_preboot_sd_emmc_setup(blob, bd);
+ }
+ 
+-int board_late_init(void)
+-{
+-	board_usb_init();
+-#if EMMC_SD_AUTO
+-	board_sd_emmc_init();
++void ft_board_setup_ex(void *blob, struct bd_info *bd) {}
+ #endif
+ 
+-	return 0;
+-}
+-
+ static void wdt_write(u32 val, unsigned int reg)
+ {
+ 	writel(val, WDT_BASE + reg);
+diff --git a/configs/rzg2l-solidrun_defconfig b/configs/rzg2l-solidrun_defconfig
+index 52e3f8fd72..ab5381f72b 100644
+--- a/configs/rzg2l-solidrun_defconfig
++++ b/configs/rzg2l-solidrun_defconfig
+@@ -82,4 +82,6 @@ CONFIG_NET_RANDOM_ETHADDR=y
+ CONFIG_DISTRO_DEFAULTS=y
+ CONFIG_MISC=y
+ CONFIG_I2C_EEPROM=y
++CONFIG_EEPROM_TLV_LIB=y
+ CONFIG_CMD_TLV_EEPROM=y
++CONFIG_OF_SYSTEM_SETUP=y
+diff --git a/configs/rzg2lc-solidrun_defconfig b/configs/rzg2lc-solidrun_defconfig
+index 8e006a5991..6430c03850 100644
+--- a/configs/rzg2lc-solidrun_defconfig
++++ b/configs/rzg2lc-solidrun_defconfig
+@@ -88,3 +88,4 @@ CONFIG_CMD_PART=y
+ CONFIG_CMD_FS_UUID=y
+ CONFIG_PARTITION_UUIDS=y
+ CONFIG_OF_SYSTEM_SETUP=y
++CONFIG_EEPROM_TLV_LIB=y
+-- 
+2.41.0
+

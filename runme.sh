@@ -8,7 +8,7 @@ set -o pipefail
 
 UBOOT_COMMIT_HASH=83b2ea37f4b2dd52accce8491af86cbb280f6774
 : ${BOOTLOADER_MENU:=false}
-: ${SHALLOW:=false}
+: ${SHALLOW:=true}
 # Choose machine RZ/G2LC rzg2lc-solidrun | rzg2l-solidrun
 : ${MACHINE:=rzg2lc-solidrun}
 : ${RAMFS:=false}
@@ -67,8 +67,8 @@ if [ "x$USE_CCACHE" == "xtrue" ]; then
 	mkdir -p $ROOTDIR/ccache
 	export CCACHE_DIR=$ROOTDIR/ccache
 	mkdir -p $ROOTDIR/build/ccache_symlinks
-	ln -s $(which ccache) $ROOTDIR/build/ccache_symlinks/aarch64-none-elf-gcc
-	ln -s $(which ccache) $ROOTDIR/build/ccache_symlinks/aarch64-none-elf-g++
+	ln -sf $(which ccache) $ROOTDIR/build/ccache_symlinks/aarch64-none-elf-gcc
+	ln -sf $(which ccache) $ROOTDIR/build/ccache_symlinks/aarch64-none-elf-g++
 	export PATH="$ROOTDIR/build/ccache_symlinks:$PATH"
 fi
 
@@ -140,16 +140,15 @@ for i in $QORIQ_COMPONENTS; do
 				fi
 			done
 		fi
-
-		# Creating symolinks for ATF/U-Boo	t/Linux
-		cd ${ROOTDIR}/build/
-		ln -s renesas-u-boot-cip/ u-boot
-		ln -s rzg_trusted-firmware-a/ atf
-		ln -s rz_linux-cip/ linux
-		cd ${ROOTDIR}/
-
 	fi
 done
+
+# Creating symolinks for ATF/U-Boo	t/Linux
+cd ${ROOTDIR}/build/
+ln -s renesas-u-boot-cip/ u-boot
+ln -s rzg_trusted-firmware-a/ atf
+ln -s rz_linux-cip/ linux
+cd ${ROOTDIR}/
 
 # we don't have status code checks for each step - use "-e" with a trap instead
 function error() {
@@ -204,6 +203,8 @@ else
 	    ;;
 	esac
 
+	echo "UBOOT_DEFCONFIG=${UBOOT_DEFCONFIG} PLATFORM=${PLATFORM} BOARD=${BOARD}"
+
 	OUTPUT_BOOTLOADER_DIR=$ROOTDIR/build/output_${MACHINE}
 	rm -rf ${OUTPUT_BOOTLOADER_DIR}
 	mkdir -p ${OUTPUT_BOOTLOADER_DIR}
@@ -212,13 +213,17 @@ else
 	echo "================================="
 	# Generate U-Boot (u-boot.bin)
 	cd $ROOTDIR/build/${UBOOT_DIR_DEFAULT}
-	make O=.out $UBOOT_DEFCONFIG
-	make -j${PARALLEL} O=.out
+	echo "U-Boot config: $UBOOT_DEFCONFIG"
+	make mrproper
+	make $UBOOT_DEFCONFIG
+	make -j${PARALLEL}
 	# Generate ATF (BL2 & FIP & BOOTPARMS)
 	echo "================================="
 	echo "Generating ATF...."
 	echo "================================="
+	
 	cd $ROOTDIR/build/${TFA_DIR_DEFAULT}
+	rm -rf $ROOTDIR/build/${TFA_DIR_DEFAULT}/build
 	# create the fip file by combining the bl31.bin and u-boot.bin (copy the u-boot.bin in the ATF root folder)
 	# cp $ROOTDIR/build/${UBOOT_DIR_DEFAULT}/.out/u-boot.bin $ROOTDIR/build/${TFA_DIR_DEFAULT}
 	U_BOOT_BIN=$(find $ROOTDIR/build/${UBOOT_DIR_DEFAULT} -iname u-boot.bin)
@@ -239,7 +244,7 @@ else
 	cp build/${PLATFORM}/release/bl2.bin ${OUTPUT_BOOTLOADER_DIR}/bl2-${MACHINE}.bin
 	cp build/${PLATFORM}/release/bootparams.bin ${OUTPUT_BOOTLOADER_DIR}/bootparams-${MACHINE}.bin
 	cp build/${PLATFORM}/release/bl2_bp.bin ${OUTPUT_BOOTLOADER_DIR}/bl2_bp-${MACHINE}.bin
-	\cp -r ${OUTPUT_BOOTLOADER_DIR}/* $ROOTDIR/images/tmp/
+	cp -r ${OUTPUT_BOOTLOADER_DIR}/* $ROOTDIR/images/tmp/
 	echo "bootloader binaries are here ${OUTPUT_BOOTLOADER_DIR}... "
 	ls -la ${OUTPUT_BOOTLOADER_DIR}/
 fi
@@ -248,7 +253,7 @@ fi
 cd $ROOTDIR/images/
 BOOT_IMG=${MACHINE}-sd-bootloader-${REPO_PREFIX}.img
 rm -rf $ROOTDIR/images/${BOOT_IMG}
-dd if=/dev/zero of=${BOOT_IMG} bs=1M count=1
+dd if=/dev/zero of=${BOOT_IMG} bs=1M count=2
 
 # Boot loader
 if [ -f tmp/bootparams-${MACHINE}.bin ] && [ -f tmp/bl2-${MACHINE}.bin ] && [ -f tmp/fip-${MACHINE}.bin ]; then
@@ -285,12 +290,12 @@ do_build_buildroot() {
 	echo "*** Building Buildroot FS..."
 	echo "================================="
 	cd $ROOTDIR/build/buildroot
-	cp $ROOTDIR/configs/buildroot/${MACHINE}_defconfig $ROOTDIR/build/buildroot/configs
+	cp $ROOTDIR/configs/buildroot/${BUILDROOT_DEFCONFIG} $ROOTDIR/build/buildroot/configs
 	if [ "x$USE_CCACHE" == "xtrue" ]; then
-		echo "BR2_CCACHE=y" >> $ROOTDIR/build/buildroot/configs/${MACHINE}_defconfig
-		echo "BR2_CCACHE_DIR=$ROOTDIR/ccache" >> $ROOTDIR/build/buildroot/configs/${MACHINE}_defconfig
+		echo "BR2_CCACHE=y" >> $ROOTDIR/build/buildroot/configs/${BUILDROOT_DEFCONFIG}
+		echo "BR2_CCACHE_DIR=$ROOTDIR/ccache" >> $ROOTDIR/build/buildroot/configs/${BUILDROOT_DEFCONFIG}
 	fi
-	make ${MACHINE}_defconfig
+	make ${BUILDROOT_DEFCONFIG}
 	make -j${PARALLEL}
 	cp $ROOTDIR/build/buildroot/output/images/rootfs* $ROOTDIR/images/tmp/
 	# Preparing initrd
@@ -388,10 +393,12 @@ echo "*** Building Flash Writer"
 echo "================================="
 cd $ROOTDIR/build/rzg2_flash_writer
 # RZ/G2LC
+make clean
 FLASH_WRITER_BUILD_ARGS="DEVICE=RZG2LC DDR_TYPE=DDR4 DDR_SIZE=1GB_1PCS SWIZZLE=T3BC FILENAME_ADD=_RZG2LC_HUMMINGBOARD"
 make $FLASH_WRITER_BUILD_ARGS -f makefile.linaro
 cp ./AArch64_output/Flash_Writer_SCIF_RZG2LC_HUMMINGBOARD_DDR4_1GB_1PCS.mot $ROOTDIR/images
 # RZ/G2L
+make clean
 FLASH_WRITER_BUILD_ARGS="DEVICE=RZG2L DDR_TYPE=DDR4 DDR_SIZE=1GB_1PCS SWIZZLE=T1BC FILENAME_ADD=_RZG2L_HUMMINGBOARD"
 make $FLASH_WRITER_BUILD_ARGS -f makefile.linaro
 cp ./AArch64_output/Flash_Writer_SCIF_RZG2L_HUMMINGBOARD_DDR4_1GB_1PCS.mot $ROOTDIR/images
@@ -473,13 +480,11 @@ if [ "x${INCLUDE_KERNEL_MODULES}" = "xtrue" ]; then
 	echo "copying kernel modules ..."
 	find "${ROOTDIR}/images/tmp/modules/lib/modules" -type f -not -name "*.ko*" -printf "%P\n" | e2cp -G 0 -O 0 -P 644 -s "${ROOTDIR}/images/tmp/modules/lib/modules" -d "${ROOTDIR}/images/tmp/rootfs.ext4:lib/modules" -a
 	find "${ROOTDIR}/images/tmp/modules/lib/modules" -type f -name "*.ko*" -printf "%P\n" | e2cp -G 0 -O 0 -P 644 -s "${ROOTDIR}/images/tmp/modules/lib/modules" -d "${ROOTDIR}/images/tmp/rootfs.ext4:lib/modules" -a -v
-	# TODO: create symlink  /lib/modules/ -> /usr/lib/modules/
-	# ln -s /usr/lib/modules/ /lib/modules/
 fi
 
 # EXT partion
-env PATH="$PATH:/sbin:/usr/sbin" parted --script ${IMG} mklabel msdos mkpart primary 2MiB ${IMAGE_BOOTPART_SIZE_MB}MiB mkpart primary ${IMAGE_BOOTPART_SIZE_MB}MiB $((IMAGE_SIZE_MB - 1))MiB
-dd if=tmp/part1.fat32 of=${IMG} bs=1M seek=2 conv=notrunc
+env PATH="$PATH:/sbin:/usr/sbin" parted --script ${IMG} mklabel msdos mkpart primary 4MiB ${IMAGE_BOOTPART_SIZE_MB}MiB mkpart primary ${IMAGE_BOOTPART_SIZE_MB}MiB $((IMAGE_SIZE_MB - 1))MiB
+dd if=tmp/part1.fat32 of=${IMG} bs=1M seek=4 conv=notrunc
 dd if=${ROOTFS} of=${IMG} bs=1M seek=${IMAGE_BOOTPART_SIZE_MB} conv=notrunc
 # Boot loader
 if [ -f tmp/bootparams-${MACHINE}.bin ] && [ -f tmp/bl2-${MACHINE}.bin ] && [ -f tmp/fip-${MACHINE}.bin ]; then
@@ -488,5 +493,5 @@ if [ -f tmp/bootparams-${MACHINE}.bin ] && [ -f tmp/bl2-${MACHINE}.bin ] && [ -f
   dd if=$ROOTDIR/images/tmp/bl2-${MACHINE}.bin of=$IMG bs=512 seek=8 conv=notrunc
   dd if=$ROOTDIR/images/tmp/fip-${MACHINE}.bin of=$IMG bs=512 seek=128 conv=notrunc
 fi
-echo -e "\n\n*** Image is ready - images/${IMG}"
 sync
+echo -e "\n\n*** Image is ready - images/${IMG}"
