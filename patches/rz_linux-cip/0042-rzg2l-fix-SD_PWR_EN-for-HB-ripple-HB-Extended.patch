@@ -1,0 +1,39 @@
+From 089e90cdba7d8d8154bad690e3b3d93f7ca5bedc Mon Sep 17 00:00:00 2001
+From: Yazan Shhady <yazan.shhady@solid-run.com>
+Date: Wed, 23 Aug 2023 11:18:20 +0300
+Subject: [PATCH] rzg2l: fix SD_PWR_EN for HB-ripple & HB-Extended
+
+---
+ arch/arm64/boot/dts/renesas/rzg2l-hummingboard-extended.dts | 2 +-
+ arch/arm64/boot/dts/renesas/rzg2l-hummingboard-ripple.dts   | 2 +-
+ 2 files changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/arch/arm64/boot/dts/renesas/rzg2l-hummingboard-extended.dts b/arch/arm64/boot/dts/renesas/rzg2l-hummingboard-extended.dts
+index f3beaf577fb3..1eabb78c03f2 100644
+--- a/arch/arm64/boot/dts/renesas/rzg2l-hummingboard-extended.dts
++++ b/arch/arm64/boot/dts/renesas/rzg2l-hummingboard-extended.dts
+@@ -45,7 +45,7 @@ hdmi_con_out: endpoint {
+ &pinctrl {
+ 	gpio-sd0-pwr-en-hog {
+ 		gpio-hog;
+-		gpios = <RZG2L_GPIO(4, 1) GPIO_ACTIVE_HIGH>;
++		gpios = <RZG2L_GPIO(4, 1) GPIO_ACTIVE_LOW>;
+ 		output-high;
+ 		line-name = "gpio_sd0_pwr_en";
+ 	};
+diff --git a/arch/arm64/boot/dts/renesas/rzg2l-hummingboard-ripple.dts b/arch/arm64/boot/dts/renesas/rzg2l-hummingboard-ripple.dts
+index 6e255bc29003..3e75bc95c5b9 100644
+--- a/arch/arm64/boot/dts/renesas/rzg2l-hummingboard-ripple.dts
++++ b/arch/arm64/boot/dts/renesas/rzg2l-hummingboard-ripple.dts
+@@ -45,7 +45,7 @@ hdmi_con_out: endpoint {
+ &pinctrl {
+ 	gpio-sd0-pwr-en-hog {
+ 		gpio-hog;
+-		gpios = <RZG2L_GPIO(4, 1) GPIO_ACTIVE_HIGH>;
++		gpios = <RZG2L_GPIO(4, 1) GPIO_ACTIVE_LOW>;
+ 		output-high;
+ 		line-name = "gpio_sd0_pwr_en";
+ 	};
+-- 
+2.25.1
+
