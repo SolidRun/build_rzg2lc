@@ -1,7 +1,7 @@
 #!/bin/bash
 
 set -o pipefail
-
+set +x
 ###############################################################################
 # General configurations
 ###############################################################################
@@ -145,9 +145,9 @@ done
 
 # Creating symolinks for ATF/U-Boo	t/Linux
 cd ${ROOTDIR}/build/
-ln -s renesas-u-boot-cip/ u-boot
-ln -s rzg_trusted-firmware-a/ atf
-ln -s rz_linux-cip/ linux
+ln -sn renesas-u-boot-cip u-boot
+ln -sn rzg_trusted-firmware-a atf
+ln -sn rz_linux-cip linux
 cd ${ROOTDIR}/
 
 # we don't have status code checks for each step - use "-e" with a trap instead
@@ -264,22 +264,22 @@ if [ -f tmp/bootparams-${MACHINE}.bin ] && [ -f tmp/bl2-${MACHINE}.bin ] && [ -f
 fi
 echo "SD booloader image ready -> images/$BOOT_IMG"
 
- ###############################################################################
- # Building Linux
- ###############################################################################
- echo "================================="
- echo "*** Building Linux kernel..."
- echo "================================="
- LINUX_DEFCONFIG="${MACHINE}_defconfig"
- cd $ROOTDIR/build/rz_linux-cip
- cp $ROOTDIR/configs/linux/$LINUX_DEFCONFIG arch/arm64/configs
- make $LINUX_DEFCONFIG
- make -j${PARALLEL} Image dtbs modules
- cp $ROOTDIR/build/rz_linux-cip/arch/arm64/boot/Image $ROOTDIR/images/tmp/
- cp $ROOTDIR/build/rz_linux-cip/arch/arm64/boot/dts/renesas/*smarc.dtb $ROOTDIR/images/tmp/
- cp $ROOTDIR/build/rz_linux-cip/arch/arm64/boot/dts/renesas/rzg2l*.dtb $ROOTDIR/images/tmp/
- rm -rf ${ROOTDIR}/images/tmp/modules # remove old modules
- make -j${PARALLEL} INSTALL_MOD_PATH="${ROOTDIR}/images/tmp/modules" modules_install
+###############################################################################
+# Building Linux
+###############################################################################
+echo "================================="
+echo "*** Building Linux kernel..."
+echo "================================="
+LINUX_DEFCONFIG="${MACHINE}_defconfig"
+cd $ROOTDIR/build/rz_linux-cip
+cp $ROOTDIR/configs/linux/$LINUX_DEFCONFIG arch/arm64/configs
+make $LINUX_DEFCONFIG
+make -j${PARALLEL} Image dtbs modules
+cp $ROOTDIR/build/rz_linux-cip/arch/arm64/boot/Image $ROOTDIR/images/tmp/
+cp $ROOTDIR/build/rz_linux-cip/arch/arm64/boot/dts/renesas/*smarc.dtb $ROOTDIR/images/tmp/
+cp $ROOTDIR/build/rz_linux-cip/arch/arm64/boot/dts/renesas/rzg2l*.dtb $ROOTDIR/images/tmp/
+rm -rf ${ROOTDIR}/images/tmp/modules # remove old modules
+make -j${PARALLEL} INSTALL_MOD_PATH="${ROOTDIR}/images/tmp/modules" modules_install
 
 ###############################################################################
 # Building FS Builroot/Debian

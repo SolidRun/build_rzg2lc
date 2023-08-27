@@ -1,0 +1,53 @@
+From a535b8739d44ced8cbaf5574675a7efb6a4a5645 Mon Sep 17 00:00:00 2001
+From: Mikhail Anikin <mikhail.anikin@solid-run.com>
+Date: Sun, 27 Aug 2023 16:27:44 +0300
+Subject: [PATCH 2/2] sr-rzg2l: fix eth0 pinmux
+
+---
+ arch/arm/dts/rzg2l-solidrun.dts | 30 +++++++++++++++---------------
+ 1 file changed, 15 insertions(+), 15 deletions(-)
+
+diff --git a/arch/arm/dts/rzg2l-solidrun.dts b/arch/arm/dts/rzg2l-solidrun.dts
+index aebcaad5..da524ab6 100644
+--- a/arch/arm/dts/rzg2l-solidrun.dts
++++ b/arch/arm/dts/rzg2l-solidrun.dts
+@@ -45,21 +45,21 @@
+ 	};
+ 
+ 	eth0_pins: eth0 {
+-		pinmux = <RZG2L_PINMUX(20, 0, 1)>, //ET0_TXC_TX_CLK
+-			<RZG2L_PINMUX(20, 1, 1)>, // ET0_TX_CTL_TX_EN
+-			<RZG2L_PINMUX(20, 2, 1)>, // ET0_TXD0
+-			<RZG2L_PINMUX(21, 0, 1)>, // ET0_TXD1
+-			<RZG2L_PINMUX(21, 1, 1)>, // ET0_TXD2
+-			<RZG2L_PINMUX(22, 0, 1)>, // ET0_TXD3			
+-			<RZG2L_PINMUX(24, 0, 1)>, // ET0_RXC_RX_CLK
+-			<RZG2L_PINMUX(24, 1, 1)>, // ET0_RX_CTL_RX_DV
+-			<RZG2L_PINMUX(25, 0, 1)>, // ET0_RXD 
+-			<RZG2L_PINMUX(25, 1, 1)>, // ET0_RXD1
+-			<RZG2L_PINMUX(26, 0, 1)>, // ET0_RXD2
+-			<RZG2L_PINMUX(26, 1, 1)>, // ET0_RXD3				
+-			<RZG2L_PINMUX(27, 1, 1)>, // ET0_MDC
+-			<RZG2L_PINMUX(28, 0, 1)>, // ET0_MDIO
+-			<RZG2L_PINMUX(28, 1, 1)>; // ET0_LINKSTA
++	pinmux = <RZG2L_PINMUX(28, 1, 1)>, /* ET0_LINKSTA */
++			<RZG2L_PINMUX(27, 1, 1)>, /* ET0_MDC */
++			<RZG2L_PINMUX(28, 0, 1)>, /* ET0_MDIO */
++			<RZG2L_PINMUX(20, 0, 1)>, /* ET0_TXC */
++			<RZG2L_PINMUX(20, 1, 1)>, /* ET0_TX_CTL */
++			<RZG2L_PINMUX(20, 2, 1)>, /* ET0_TXD0 */
++			<RZG2L_PINMUX(21, 0, 1)>, /* ET0_TXD1 */
++			<RZG2L_PINMUX(21, 1, 1)>, /* ET0_TXD2 */
++			<RZG2L_PINMUX(22, 0, 1)>, /* ET0_TXD3 */
++			<RZG2L_PINMUX(24, 0, 1)>, /* ET0_RXC */
++			<RZG2L_PINMUX(24, 1, 1)>, /* ET0_RX_CTL */
++			<RZG2L_PINMUX(25, 0, 1)>, /* ET0_RXD0 */
++			<RZG2L_PINMUX(25, 1, 1)>, /* ET0_RXD1 */
++			<RZG2L_PINMUX(26, 0, 1)>, /* ET0_RXD2 */
++			<RZG2L_PINMUX(26, 1, 1)>; /* ET0_RXD3 */
+ 	};
+ 
+ 	eth1_pins: eth1 {
+-- 
+2.41.0
+
