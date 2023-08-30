@@ -1,0 +1,58 @@
+From 2280abbc25f16b446c431eef777c836bbbc05b5e Mon Sep 17 00:00:00 2001
+From: Mikhail Anikin <mikhail.anikin@solid-run.com>
+Date: Wed, 30 Aug 2023 10:46:42 +0300
+Subject: [PATCH] rzg2l: remove pmic from the dts
+
+---
+ arch/arm64/boot/dts/renesas/rzg2l-sr-som.dtsi | 35 +++++++++++--------
+ 1 file changed, 21 insertions(+), 14 deletions(-)
+
+diff --git a/arch/arm64/boot/dts/renesas/rzg2l-sr-som.dtsi b/arch/arm64/boot/dts/renesas/rzg2l-sr-som.dtsi
+index c2da8c043..83fd78f62 100644
+--- a/arch/arm64/boot/dts/renesas/rzg2l-sr-som.dtsi
++++ b/arch/arm64/boot/dts/renesas/rzg2l-sr-som.dtsi
+@@ -451,20 +451,27 @@ &i2c3 {
+ 
+ 	status = "okay";
+ 
+-	pmic: raa215300@12 {
+-		compatible = "renesas,raa215300";
+-		reg = <0x12>;
+-		rtc-enable;
+-		mpio2-32k-enable;
+-	};
+-
+-	rtc: isl1208@6f {
+-		compatible = "isil,isl1208";
+-		reg = <0x6f>;
+-		//external-oscillator;
+-		status="disabled";
+-	};
+-
++	/**
++	* The PMIC is disabled in linux for the G2L SOM
++	* The SR G2L SOM uses PMIC INT# signal as a clock
++	* for the wifi brcm chip.
++	* This clock signal is a part of isl1208 integrated RTC
++	* This functionality is not supported in raa215300 or isl1208 drivers
++	* This part was moved to the u-boot.
++	*/
++
++	// pmic: raa215300@12 {
++	// 	compatible = "renesas,raa215300";
++	// 	reg = <0x12>;
++	// 	rtc-enable;
++	// };
++
++	// rtc: isl1208@6f {
++	// 	compatible = "isil,isl1208";
++	// 	reg = <0x6f>;
++	// 	// external-oscillator;
++	// 	status="okay";
++	// };
+ };
+ 
+ &ohci0 {
+-- 
+2.41.0
+
