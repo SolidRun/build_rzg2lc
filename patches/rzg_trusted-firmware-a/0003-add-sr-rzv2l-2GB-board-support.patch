@@ -1,0 +1,31 @@
+From f67c8a6fdf93f7eb1b3cbfc07d3e74020f5b476c Mon Sep 17 00:00:00 2001
+From: Yazan Shhady <yazan.shhady@solid-run.com>
+Date: Sun, 3 Sep 2023 16:23:15 +0300
+Subject: [PATCH] add sr-rzv2l 2GB board support
+
+---
+ plat/renesas/rz/board/sr_rzv2l_2g/rz_board.mk | 12 ++++++++++++
+ 1 file changed, 12 insertions(+)
+ create mode 100644 plat/renesas/rz/board/sr_rzv2l_2g/rz_board.mk
+
+diff --git a/plat/renesas/rz/board/sr_rzv2l_2g/rz_board.mk b/plat/renesas/rz/board/sr_rzv2l_2g/rz_board.mk
+new file mode 100644
+index 000000000..48a656919
+--- /dev/null
++++ b/plat/renesas/rz/board/sr_rzv2l_2g/rz_board.mk
+@@ -0,0 +1,12 @@
++#
++# Copyright (c) 2021, Renesas Electronics Corporation. All rights reserved.
++#
++# SPDX-License-Identifier: BSD-3-Clause
++#
++
++DDR_SOURCES +=  plat/renesas/rz/soc/${PLAT}/drivers/ddr/param_mc_C-011_D4-01-1.c \
++				plat/renesas/rz/common/drivers/ddr/param_swizzle_T1bc.c
++
++DDR_PLL4    := 1600
++$(eval $(call add_define,DDR_PLL4))
++
+-- 
+2.25.1
+

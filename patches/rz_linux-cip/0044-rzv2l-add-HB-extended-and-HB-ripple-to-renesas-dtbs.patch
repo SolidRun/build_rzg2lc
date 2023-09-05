@@ -1,0 +1,22 @@
+From 7749528a8ad3439bc9b0360762578024064f50b8 Mon Sep 17 00:00:00 2001
+From: Yazan Shhady <yazan.shhady@solid-run.com>
+Date: Tue, 5 Sep 2023 17:04:18 +0300
+Subject: [PATCH 2/2] rzv2l: add HB-extended and HB-ripple to renesas dtbs list
+
+---
+ arch/arm64/boot/dts/renesas/Makefile | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/arch/arm64/boot/dts/renesas/Makefile b/arch/arm64/boot/dts/renesas/Makefile
+index aef12b7039aa..fa7306f264fc 100644
+--- a/arch/arm64/boot/dts/renesas/Makefile
++++ b/arch/arm64/boot/dts/renesas/Makefile
+@@ -99,3 +99,5 @@ dtb-$(CONFIG_ARCH_R9A07G044) += rzg2l-hummingboard-extended.dtb
+ 
+ dtb-$(CONFIG_ARCH_R9A07G054) += r9a07g054l2-smarc.dtb
+ dtb-$(CONFIG_ARCH_R9A07G054) += r9a07g054l2-dev.dtb
++dtb-$(CONFIG_ARCH_R9A07G054) += rzv2l-hummingboard-ripple.dtb
++dtb-$(CONFIG_ARCH_R9A07G054) += rzv2l-hummingboard-extended.dtb
+-- 
+2.25.1
+

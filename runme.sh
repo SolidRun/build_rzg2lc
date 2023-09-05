@@ -9,7 +9,7 @@ set +x
 UBOOT_COMMIT_HASH=83b2ea37f4b2dd52accce8491af86cbb280f6774
 : ${BOOTLOADER_MENU:=false}
 : ${SHALLOW:=true}
-# Choose machine RZ/G2LC rzg2lc-solidrun | rzg2l-solidrun
+# Choose machine RZ/G2LC rzg2lc-solidrun | rzg2l-solidrun | rzv2l-solidrun
 : ${MACHINE:=rzg2lc-solidrun}
 : ${RAMFS:=false}
 REPO_PREFIX=`git log -1 --pretty=format:%h`
@@ -185,15 +185,20 @@ if [ "x$BOOTLOADER_MENU" == "xtrue" ]; then
 else
 	# Select machine configuration
 	case "$MACHINE" in
-		"rzg2lc-humminboard" | "rzg2lc-solidrun")
+		"rzg2lc-hummingboard" | "rzg2lc-solidrun")
 			UBOOT_DEFCONFIG=rzg2lc-solidrun_defconfig
 			PLATFORM=g2l
 			BOARD=sr_rzg2lc_1g
 			;;
-		"rzg2l-humminboard" | "rzg2l-solidrun")
+		"rzg2l-hummingboard" | "rzg2l-solidrun")
 			UBOOT_DEFCONFIG=rzg2l-solidrun_defconfig
             PLATFORM=g2l
             BOARD=sr_rzg2l_1g
+			;;
+		"rzv2l-hummingboard" | "rzv2l-solidrun")
+			UBOOT_DEFCONFIG=rzv2l-solidrun_defconfig
+			PLATFORM=v2l
+			BOARD=sr_rzv2l_2g
 			;;
 		*)
 			echo "Unknown Machine=$MACHINE -> default=rzg2lc-solidrun"
@@ -278,6 +283,7 @@ make -j${PARALLEL} Image dtbs modules
 cp $ROOTDIR/build/rz_linux-cip/arch/arm64/boot/Image $ROOTDIR/images/tmp/
 cp $ROOTDIR/build/rz_linux-cip/arch/arm64/boot/dts/renesas/*smarc.dtb $ROOTDIR/images/tmp/
 cp $ROOTDIR/build/rz_linux-cip/arch/arm64/boot/dts/renesas/rzg2l*.dtb $ROOTDIR/images/tmp/
+cp $ROOTDIR/build/rz_linux-cip/arch/arm64/boot/dts/renesas/rzv2l*.dtb $ROOTDIR/images/tmp/
 rm -rf ${ROOTDIR}/images/tmp/modules # remove old modules
 make -j${PARALLEL} INSTALL_MOD_PATH="${ROOTDIR}/images/tmp/modules" modules_install
 
@@ -402,6 +408,11 @@ make clean
 FLASH_WRITER_BUILD_ARGS="DEVICE=RZG2L DDR_TYPE=DDR4 DDR_SIZE=1GB_1PCS SWIZZLE=T1BC FILENAME_ADD=_RZG2L_HUMMINGBOARD"
 make $FLASH_WRITER_BUILD_ARGS -f makefile.linaro
 cp ./AArch64_output/Flash_Writer_SCIF_RZG2L_HUMMINGBOARD_DDR4_1GB_1PCS.mot $ROOTDIR/images
+# RZ/V2L
+make clean
+FLASH_WRITER_BUILD_ARGS="DEVICE=RZV2L DDR_TYPE=DDR4 DDR_SIZE=2GB_1PCS SWIZZLE=T1BC FILENAME_ADD=_RZV2L_HUMMINGBOARD"
+make $FLASH_WRITER_BUILD_ARGS -f makefile.linaro
+cp ./AArch64_output/Flash_Writer_SCIF_RZV2L_HUMMINGBOARD_DDR4_2GB_1PCS.mot $ROOTDIR/images
 
 if [ "x$USE_CCACHE" == "xtrue" ]; then
 	ccache --show-stats
