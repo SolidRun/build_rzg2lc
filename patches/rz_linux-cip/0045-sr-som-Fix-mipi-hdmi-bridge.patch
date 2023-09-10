@@ -1,0 +1,115 @@
+From 1b5926910ab21df24ed1b11e2132d4b3ca71308e Mon Sep 17 00:00:00 2001
+From: Mikhail Anikin <mikhail.anikin@solid-run.com>
+Date: Sun, 10 Sep 2023 11:24:31 +0300
+Subject: [PATCH] [sr som] Fix mipi-hdmi bridge
+
+---
+ .../boot/dts/renesas/rzg2l-hummingboard-extended.dts      | 8 +++-----
+ arch/arm64/boot/dts/renesas/rzg2l-hummingboard-ripple.dts | 8 +++-----
+ arch/arm64/boot/dts/renesas/rzg2lc-hummingboard.dts       | 4 +---
+ .../boot/dts/renesas/rzv2l-hummingboard-extended.dts      | 2 --
+ arch/arm64/boot/dts/renesas/rzv2l-hummingboard-ripple.dts | 2 --
+ 5 files changed, 7 insertions(+), 17 deletions(-)
+
+diff --git a/arch/arm64/boot/dts/renesas/rzg2l-hummingboard-extended.dts b/arch/arm64/boot/dts/renesas/rzg2l-hummingboard-extended.dts
+index 1eabb78c03f2..55fb0af1b485 100644
+--- a/arch/arm64/boot/dts/renesas/rzg2l-hummingboard-extended.dts
++++ b/arch/arm64/boot/dts/renesas/rzg2l-hummingboard-extended.dts
+@@ -86,19 +86,17 @@ gpio-lte_reset {
+ 
+ &i2c0 {
+ 	adv7535@3d {
+-		compatible = "adi,adv7533";
++		compatible = "adi,adv7535";
+ 		reg = <0x3d>;
+-		adi,addr-cec = <0x3c>;
+ 		adi,dsi-lanes = <4>;
+-		adi,addr-edid = <0x3b>;
+-		pd-gpios = <&pinctrl RZG2L_GPIO(40, 2) GPIO_ACTIVE_LOW>; // ADV_PD / DSI_EN J9-34 / P40_2
++		pd-gpios = <&pinctrl RZG2L_GPIO(3, 0) GPIO_ACTIVE_LOW>; // ADV_PD / DSI_EN J9-34 / P4_0
+ 		/*
+ 		 * With interrupts enabled and hdmi connected during boot,
+ 		 * rzg2l_mipi_dsi_enable never happens and display receives no signal.
+ 		 * Re-enable once issue has been resolved.
+ 		 *
+ 		 * interrupt-parent = <&pinctrl>;
+-		 * interrupts = <RZG2L_GPIO(42, 2) IRQ_TYPE_EDGE_FALLING>; // DSI_TS_nINT J5001-43 P42_2
++		 * interrupts = <RZG2L_GPIO(9, 1) IRQ_TYPE_EDGE_FALLING>; // DSI_TS_nINT J5001-43 P9_1
+ 		 */
+ 		status = "okay";
+ 
+diff --git a/arch/arm64/boot/dts/renesas/rzg2l-hummingboard-ripple.dts b/arch/arm64/boot/dts/renesas/rzg2l-hummingboard-ripple.dts
+index 3e75bc95c5b9..20b94394bfce 100644
+--- a/arch/arm64/boot/dts/renesas/rzg2l-hummingboard-ripple.dts
++++ b/arch/arm64/boot/dts/renesas/rzg2l-hummingboard-ripple.dts
+@@ -86,19 +86,17 @@ gpio-lte_reset {
+ 
+ &i2c0 {
+ 	adv7535@3d {
+-		compatible = "adi,adv7533";
++		compatible = "adi,adv7535";
+ 		reg = <0x3d>;
+-		adi,addr-cec = <0x3c>;
+ 		adi,dsi-lanes = <4>;
+-		adi,addr-edid = <0x3b>;
+-		pd-gpios = <&pinctrl RZG2L_GPIO(40, 2) GPIO_ACTIVE_LOW>; // ADV_PD / DSI_EN J9-34 / P40_2
++		pd-gpios = <&pinctrl RZG2L_GPIO(3, 0) GPIO_ACTIVE_LOW>; // ADV_PD / DSI_EN J9-34 / P4_0
+ 		/*
+ 		 * With interrupts enabled and hdmi connected during boot,
+ 		 * rzg2l_mipi_dsi_enable never happens and display receives no signal.
+ 		 * Re-enable once issue has been resolved.
+ 		 *
+ 		 * interrupt-parent = <&pinctrl>;
+-		 * interrupts = <RZG2L_GPIO(42, 2) IRQ_TYPE_EDGE_FALLING>; // DSI_TS_nINT J5001-43 P42_2
++		 * interrupts = <RZG2L_GPIO(9, 1) IRQ_TYPE_EDGE_FALLING>; // DSI_TS_nINT J5001-43 P9_1
+ 		 */
+ 		status = "okay";
+ 
+diff --git a/arch/arm64/boot/dts/renesas/rzg2lc-hummingboard.dts b/arch/arm64/boot/dts/renesas/rzg2lc-hummingboard.dts
+index 2a3b39512e49..2e97f4073ef6 100644
+--- a/arch/arm64/boot/dts/renesas/rzg2lc-hummingboard.dts
++++ b/arch/arm64/boot/dts/renesas/rzg2lc-hummingboard.dts
+@@ -42,11 +42,9 @@ gpio-lte_on {
+ 
+ &i2c0 {
+ 	adv7535@3d {
+-		compatible = "adi,adv7533";
++		compatible = "adi,adv7535";
+ 		reg = <0x3d>;
+-		adi,addr-cec = <0x3c>;
+ 		adi,dsi-lanes = <4>;
+-		adi,addr-edid = <0x3b>;
+ 		pd-gpios = <&pinctrl RZG2L_GPIO(40, 2) GPIO_ACTIVE_LOW>; // ADV_PD / DSI_EN J9-34 / P40_2
+ 		/*
+ 		 * With interrupts enabled and hdmi connected during boot,
+diff --git a/arch/arm64/boot/dts/renesas/rzv2l-hummingboard-extended.dts b/arch/arm64/boot/dts/renesas/rzv2l-hummingboard-extended.dts
+index 7b2adb8ff2c6..320eb2560a8a 100644
+--- a/arch/arm64/boot/dts/renesas/rzv2l-hummingboard-extended.dts
++++ b/arch/arm64/boot/dts/renesas/rzv2l-hummingboard-extended.dts
+@@ -88,9 +88,7 @@ &i2c0 {
+ 	adv7535@3d {
+ 		compatible = "adi,adv7535";
+ 		reg = <0x3d>;
+-		adi,addr-cec = <0x3c>;
+ 		adi,dsi-lanes = <4>;
+-		adi,addr-edid = <0x3b>;
+ 		pd-gpios = <&pinctrl RZG2L_GPIO(3, 0) GPIO_ACTIVE_LOW>; // ADV_PD / DSI_EN J9-34 / P3_0
+ 		/*
+ 		 * With interrupts enabled and hdmi connected during boot,
+diff --git a/arch/arm64/boot/dts/renesas/rzv2l-hummingboard-ripple.dts b/arch/arm64/boot/dts/renesas/rzv2l-hummingboard-ripple.dts
+index 556a0332134f..3e10056a93b7 100644
+--- a/arch/arm64/boot/dts/renesas/rzv2l-hummingboard-ripple.dts
++++ b/arch/arm64/boot/dts/renesas/rzv2l-hummingboard-ripple.dts
+@@ -88,9 +88,7 @@ &i2c0 {
+ 	adv7535@3d {
+ 		compatible = "adi,adv7535";
+ 		reg = <0x3d>;
+-		adi,addr-cec = <0x3c>;
+ 		adi,dsi-lanes = <4>;
+-		adi,addr-edid = <0x3b>;
+ 		pd-gpios = <&pinctrl RZG2L_GPIO(3, 0) GPIO_ACTIVE_LOW>; // ADV_PD / DSI_EN J9-34 / P3_0
+ 		/*
+ 		 * With interrupts enabled and hdmi connected during boot,
+-- 
+2.41.0
+
