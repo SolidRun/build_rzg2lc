@@ -1,0 +1,129 @@
+From 23e652c794f9d8a35b86ca36a63111d084b67421 Mon Sep 17 00:00:00 2001
+From: Mikhail Anikin <mikhail.anikin@solid-run.com>
+Date: Mon, 11 Sep 2023 10:48:26 +0300
+Subject: [PATCH] Updated rzg common: remove implicit declarations
+
+---
+ board/solidrun/rzg-common/rzg-common.c  | 15 +++++++++------
+ board/solidrun/rzg2l/rzg2l-solidrun.c   |  4 +---
+ board/solidrun/rzg2lc/rzg2lc-solidrun.c |  1 +
+ board/solidrun/rzv2l/rzv2l-solidrun.c   |  2 +-
+ 4 files changed, 12 insertions(+), 10 deletions(-)
+
+diff --git a/board/solidrun/rzg-common/rzg-common.c b/board/solidrun/rzg-common/rzg-common.c
+index e3c5b932..e0177808 100644
+--- a/board/solidrun/rzg-common/rzg-common.c
++++ b/board/solidrun/rzg-common/rzg-common.c
+@@ -1,10 +1,14 @@
+ // SPDX-License-Identifier: GPL-2.0+
+ 
+ #include <common.h>
++#include <env.h>
++#include <dm/uclass.h>
+ #include <tlv_eeprom.h>
+ #include <linux/err.h>
+ #include "rzg-common.h"
+ 
++#define SD_EMMC_SEL_ENV "sdio_select"
++
+ static int get_tlv_udevice_by_alias(struct udevice **dev, const char *alias)
+ {
+ 	int node, ret;
+@@ -111,9 +115,9 @@ static void set_bootsource_env(int select_sd)
+ {
+ 	int ret;
+ 	if (select_sd)
+-		ret = env_set("boot_source", "sd");
++		ret = env_set(SD_EMMC_SEL_ENV, "sd");
+ 	else
+-		ret = env_set("boot_source", "emmc");
++		ret = env_set(SD_EMMC_SEL_ENV, "emmc");
+ 	if (ret)
+ 		pr_err("Failed to set boot_source env, err: %d \n", ret);
+ }
+@@ -135,12 +139,12 @@ void rzg_sd_emmc_init(void)
+ static bool preboot_check_sd_emmc(void)
+ {
+ 	int sd_select = 0;
+-	char *boot_source_env = from_env("boot_source");
+-	if (!boot_source_env)
++	char *sd_select_env = from_env(SD_EMMC_SEL_ENV); // here is the fail!!
++	if (!sd_select_env)
+ 	{
+ 		sd_select = board_check_sd_emmc();
+ 	}
+-	else if (strcmp(boot_source_env, "sd") == 0)
++	else if (strcmp(sd_select_env, "sd") == 0)
+ 	{
+ 		sd_select = 1;
+ 	}
+@@ -150,7 +154,6 @@ static bool preboot_check_sd_emmc(void)
+ 
+ int rzg_preboot_sd_emmc_setup(void *blob, struct bd_info *bd)
+ {
+-
+ 	int ret, node_sdhi0, node = 0;
+ 	bool enable_sdhc = preboot_check_sd_emmc();
+ 
+diff --git a/board/solidrun/rzg2l/rzg2l-solidrun.c b/board/solidrun/rzg2l/rzg2l-solidrun.c
+index 21068650..8e2a4bca 100644
+--- a/board/solidrun/rzg2l/rzg2l-solidrun.c
++++ b/board/solidrun/rzg2l/rzg2l-solidrun.c
+@@ -1,6 +1,7 @@
+ #include <common.h>
+ #include <init.h>
+ #include <asm/io.h>
++#include <env.h>
+ #include "../rzg-common/rzg-common.h"
+ #include "../rzg-common/rzg2l-regs.h"
+ 
+@@ -85,14 +86,11 @@ int board_check_sd_emmc(void)
+ 	int value = 0;
+ 	/* Read SD0_DEV_SEL_SW value - P22_1 */
+ 	/* eMMC/uSD Device Select - SD0_DEV_SEL_SW (LOW: uSD ; HIGH: eMMC) */
+-
+ 	generic_clear_bit(1, PFC_PMC26); /* P22_1 Port GPIO mode */
+ 	generic_set_bit(2, PFC_PM26);	 /* P22_1 GPIO input mode */
+-
+ 	value = ((u32)(((*(volatile u32 *)(PFC_PIN26)) & (1 << 1))) != 0); /* Port 22[1] read input value */
+ 	if (value == 0 || CONFIG_IS_ENABLED(SOLIDRUN_FORCE_SD_BOOT)) // Note: sd is LOW in g2l.
+ 		return 1;
+-
+ 	return 0;
+ }
+ 
+diff --git a/board/solidrun/rzg2lc/rzg2lc-solidrun.c b/board/solidrun/rzg2lc/rzg2lc-solidrun.c
+index 54ae0ee6..987c7a32 100644
+--- a/board/solidrun/rzg2lc/rzg2lc-solidrun.c
++++ b/board/solidrun/rzg2lc/rzg2lc-solidrun.c
+@@ -1,6 +1,7 @@
+ #include <common.h>
+ #include <init.h>
+ #include <asm/io.h>
++#include <env.h>
+ #include "../rzg-common/rzg-common.h"
+ #include "../rzg-common/rzg2l-regs.h"
+ 
+diff --git a/board/solidrun/rzv2l/rzv2l-solidrun.c b/board/solidrun/rzv2l/rzv2l-solidrun.c
+index 6a63e548..ec28144d 100644
+--- a/board/solidrun/rzv2l/rzv2l-solidrun.c
++++ b/board/solidrun/rzv2l/rzv2l-solidrun.c
+@@ -1,6 +1,7 @@
+ #include <common.h>
+ #include <init.h>
+ #include <asm/io.h>
++#include <env.h>
+ #include "../rzg-common/rzg-common.h"
+ #include "../rzg-common/rzg2l-regs.h"
+ 
+@@ -76,7 +77,6 @@ int board_check_sd_emmc(void)
+ 	int value = 0;
+ 	/* Read SD0_DEV_SEL_SW value - P22_1 */
+ 	/* eMMC/uSD Device Select - SD0_DEV_SEL_SW (LOW: uSD ; HIGH: eMMC) */
+-
+ 	generic_clear_bit(1, PFC_PMC26); /* P22_1 Port GPIO mode */
+ 	generic_set_bit(2, PFC_PM26);	 /* P22_1 GPIO input mode */
+ 
+-- 
+2.41.0
+

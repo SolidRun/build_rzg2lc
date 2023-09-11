@@ -25,15 +25,16 @@ KERNEL_DIR_DEFAULT='rz_linux-cip'
 
 ## Buildroot Options
 : ${BUILDROOT_VERSION:=2022.02.4}
-: ${BUILDROOT_DEFCONFIG:=${MACHINE}_defconfig}
+: ${BUILDROOT_DEFCONFIG:=rz-solidrun_defconfig}
 : ${BR2_PRIMARY_SITE:=} # custom buildroot mirror
 
 ## Debian Options
 : ${DEBIAN_VERSION:=bullseye}
 : ${DEBIAN_ROOTFS_SIZE:=936M}
 : ${DEBIAN_PACKAGES:="apt-transport-https,busybox,ca-certificates,can-utils,command-not-found,chrony,curl,e2fsprogs,ethtool,fdisk,gpiod,haveged,i2c-tools,ifupdown,iputils-ping,isc-dhcp-client,initramfs-tools,libiio-utils,lm-sensors,locales,nano,net-tools,ntpdate,openssh-server,psmisc,rfkill,sudo,systemd,systemd-sysv,dbus,tio,usbutils,wget,xterm,xz-utils"}
-# Kernel Modules:
+# Kernel Options:
 : ${INCLUDE_KERNEL_MODULES:=true}
+: ${LINUX_DEFCONFIG:=rz-solidrun_defconfig}
 
 : ${USE_CCACHE:=false}
 
@@ -275,7 +276,6 @@ echo "SD booloader image ready -> images/$BOOT_IMG"
 echo "================================="
 echo "*** Building Linux kernel..."
 echo "================================="
-LINUX_DEFCONFIG="${MACHINE}_defconfig"
 cd $ROOTDIR/build/rz_linux-cip
 cp $ROOTDIR/configs/linux/$LINUX_DEFCONFIG arch/arm64/configs
 make $LINUX_DEFCONFIG
