@@ -302,6 +302,8 @@ do_build_buildroot() {
 		echo "BR2_CCACHE_DIR=$ROOTDIR/ccache" >> $ROOTDIR/build/buildroot/configs/${BUILDROOT_DEFCONFIG}
 	fi
 	make ${BUILDROOT_DEFCONFIG}
+	#make menuconfig
+	make savedefconfig BR2_DEFCONFIG="${ROOTDIR}/build/buildroot/defconfig"
 	make -j${PARALLEL}
 	cp $ROOTDIR/build/buildroot/output/images/rootfs* $ROOTDIR/images/tmp/
 	# Preparing initrd
