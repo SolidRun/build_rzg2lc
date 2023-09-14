@@ -1,0 +1,32 @@
+From 34dd43b746e84df8e853e3ee501f400f4aaa4aa0 Mon Sep 17 00:00:00 2001
+From: Yazan Shhady <yazan.shhady@solid-run.com>
+Date: Thu, 14 Sep 2023 11:10:27 +0300
+Subject: [PATCH] mxl8611x - Enable activity LED0-1 blinking
+
+---
+ drivers/net/phy/mxl-8611x.c | 7 +++++--
+ 1 file changed, 5 insertions(+), 2 deletions(-)
+
+diff --git a/drivers/net/phy/mxl-8611x.c b/drivers/net/phy/mxl-8611x.c
+index 59482d096cb8..6698e2951308 100644
+--- a/drivers/net/phy/mxl-8611x.c
++++ b/drivers/net/phy/mxl-8611x.c
+@@ -205,10 +205,13 @@
+ 			MXL8611X_EXT_RGMII_CFG1_TX_10MB_100MB_DEFAULT
+ 
+ /* Adjust default LED settings */
+-#define MXL8611X_LED0_CFG_CUSTOM		(MXL8611X_LEDX_CFG_LINK_UP_TX_ACT_ON | \
++// BIT(13) | BIT(10) | BIT(9) | BIT(4) = 0x2610
++#define MXL8611X_LED0_CFG_CUSTOM		(MXL8611X_LEDX_CFG_TRAFFIC_ACT_BLINK_IND | \
++										MXL8611X_LEDX_CFG_LINK_UP_TX_ACT_ON | \
+ 										MXL8611X_LEDX_CFG_LINK_UP_RX_ACT_ON | \
+ 										MXL8611X_LEDX_CFG_LINK_UP_10MB_ON)
+-#define MXL8611X_LED1_CFG_CUSTOM		(MXL8611X_LEDX_CFG_LINK_UP_TX_ACT_ON | \
++#define MXL8611X_LED1_CFG_CUSTOM		(MXL8611X_LEDX_CFG_TRAFFIC_ACT_BLINK_IND | \
++										MXL8611X_LEDX_CFG_LINK_UP_TX_ACT_ON | \
+ 										MXL8611X_LEDX_CFG_LINK_UP_RX_ACT_ON | \
+ 										MXL8611X_LEDX_CFG_LINK_UP_100MB_ON)
+ #define MXL8611X_LED2_CFG_CUSTOM		(MXL8611X_LEDX_CFG_LINK_UP_TX_ACT_ON | \
+-- 
+2.25.1
+
