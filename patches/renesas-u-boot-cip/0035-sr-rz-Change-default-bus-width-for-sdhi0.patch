@@ -1,0 +1,62 @@
+From a507bebb4341743ed00f384344a45747c739283d Mon Sep 17 00:00:00 2001
+From: Jon Nettleton <jon@solid-run.com>
+Date: Sat, 23 Sep 2023 12:47:56 +0200
+Subject: [PATCH] sr-rz: Change default bus-width for sdhi0
+
+At the u-boot stage of boot we don't know if we are booting
+from eMMC or uSDHC. Having the bus-width set to 8 for eMMC
+provides more performacne but limits the uSDHC booting to 1-bit
+bus width which is slower. A bus width of 4 allows both
+boot configuration to operate at a reasonable speed. This will
+then be further optimized when booting Linux and devices will
+run at their full speed.
+
+Signed-off-by: Jon Nettleton <jon@solid-run.com>
+---
+ arch/arm/dts/rzg2l-solidrun.dts  | 2 +-
+ arch/arm/dts/rzg2lc-solidrun.dts | 2 +-
+ arch/arm/dts/rzv2l-solidrun.dts  | 2 +-
+ 3 files changed, 3 insertions(+), 3 deletions(-)
+
+diff --git a/arch/arm/dts/rzg2l-solidrun.dts b/arch/arm/dts/rzg2l-solidrun.dts
+index da524ab6..e995cc81 100644
+--- a/arch/arm/dts/rzg2l-solidrun.dts
++++ b/arch/arm/dts/rzg2l-solidrun.dts
+@@ -98,7 +98,7 @@
+ 	 * The SD0_PWR_EN pin is associated with P4_1.
+ 	 * A HIGH signal on SD0_PWR_EN will enable supply voltage for SD card.
+ 	*/
+-	bus-width = <8>;
++	bus-width = <4>;
+ 	status = "okay";
+ };
+ 
+diff --git a/arch/arm/dts/rzg2lc-solidrun.dts b/arch/arm/dts/rzg2lc-solidrun.dts
+index 76e053ae..40cfb8ab 100644
+--- a/arch/arm/dts/rzg2lc-solidrun.dts
++++ b/arch/arm/dts/rzg2lc-solidrun.dts
+@@ -80,7 +80,7 @@
+ 	 * The SD0_PWR_EN pin is associated with P4_1.
+ 	 * A HIGH signal on SD0_PWR_EN will enable supply voltage for SD card.
+ 	*/
+-	bus-width = <8>;
++	bus-width = <4>;
+ 	status = "okay";
+ };
+ 
+diff --git a/arch/arm/dts/rzv2l-solidrun.dts b/arch/arm/dts/rzv2l-solidrun.dts
+index 310b2e06..c2d2521c 100644
+--- a/arch/arm/dts/rzv2l-solidrun.dts
++++ b/arch/arm/dts/rzv2l-solidrun.dts
+@@ -97,7 +97,7 @@
+ 	 * The SD0_PWR_EN pin is associated with P4_1.
+ 	 * A HIGH signal on SD0_PWR_EN will enable supply voltage for SD card.
+ 	*/
+-	bus-width = <8>;
++	bus-width = <4>;
+ 	status = "okay";
+ };
+ 
+-- 
+2.41.0
+
