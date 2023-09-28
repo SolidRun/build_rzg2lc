@@ -1,7 +1,7 @@
-From 8d328d35713a4d90b87f922f2dfdaab0d25db766 Mon Sep 17 00:00:00 2001
+From 95e60bbebb320e859419c4c0e76efbaec40421d4 Mon Sep 17 00:00:00 2001
 From: Mikhail Anikin <mikhail.anikin@solid-run.com>
 Date: Tue, 20 Jun 2023 12:41:50 +0300
-Subject: [PATCH] Fixed usb for rzg2lc-solidrun
+Subject: [PATCH 18/45] Fixed usb for rzg2lc-solidrun
 
 ---
  arch/arm/dts/rzg2lc-solidrun.dts        | 28 +++++++++-
@@ -9,7 +9,7 @@ Subject: [PATCH] Fixed usb for rzg2lc-solidrun
  2 files changed, 99 insertions(+), 2 deletions(-)
 
 diff --git a/arch/arm/dts/rzg2lc-solidrun.dts b/arch/arm/dts/rzg2lc-solidrun.dts
-index d832b7767..75f8811a0 100644
+index d832b776..75f8811a 100644
 --- a/arch/arm/dts/rzg2lc-solidrun.dts
 +++ b/arch/arm/dts/rzg2lc-solidrun.dts
 @@ -29,7 +29,6 @@
@@ -62,7 +62,7 @@ index d832b7767..75f8811a0 100644
 +	phys = <&usb2_phy1>;
  };
 diff --git a/board/solidrun/rzg2lc/rzg2lc-solidrun.c b/board/solidrun/rzg2lc/rzg2lc-solidrun.c
-index a89aef438..6f3179c7c 100644
+index a89aef43..6f3179c7 100644
 --- a/board/solidrun/rzg2lc/rzg2lc-solidrun.c
 +++ b/board/solidrun/rzg2lc/rzg2lc-solidrun.c
 @@ -39,11 +39,30 @@ DECLARE_GLOBAL_DATA_PTR;
@@ -172,5 +172,5 @@ index a89aef438..6f3179c7c 100644
  	/* Clear Lapsed Time Register and clear Interrupt */
  	wdt_write(WDTINT_INTDISP, WDTINT);
 -- 
-2.34.1
+2.41.0
 

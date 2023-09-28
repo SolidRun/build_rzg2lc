@@ -1,7 +1,7 @@
-From b693a4484cc8c6e682c260dbdcc46a72fec4b120 Mon Sep 17 00:00:00 2001
+From 4e213134b5b8a187022168ebc30a259e7f53899e Mon Sep 17 00:00:00 2001
 From: Yazan Shhady <yazan.shhady@solid-run.com>
 Date: Mon, 10 Apr 2023 17:11:34 +0300
-Subject: [PATCH 1/2] add rzg2lc-compact dts support
+Subject: [PATCH 06/53] add rzg2lc-compact dts support
 
 ---
  .../renesas/rzg2lc-compact-pinfunction.dtsi   | 155 ++++++
@@ -12,7 +12,7 @@ Subject: [PATCH 1/2] add rzg2lc-compact dts support
 
 diff --git a/arch/arm64/boot/dts/renesas/rzg2lc-compact-pinfunction.dtsi b/arch/arm64/boot/dts/renesas/rzg2lc-compact-pinfunction.dtsi
 new file mode 100644
-index 000000000000..1d10844c7e6f
+index 000000000..1d10844c7
 --- /dev/null
 +++ b/arch/arm64/boot/dts/renesas/rzg2lc-compact-pinfunction.dtsi
 @@ -0,0 +1,155 @@
@@ -173,7 +173,7 @@ index 000000000000..1d10844c7e6f
 +
 diff --git a/arch/arm64/boot/dts/renesas/rzg2lc-compact.dts b/arch/arm64/boot/dts/renesas/rzg2lc-compact.dts
 new file mode 100644
-index 000000000000..202619fadc2e
+index 000000000..202619fad
 --- /dev/null
 +++ b/arch/arm64/boot/dts/renesas/rzg2lc-compact.dts
 @@ -0,0 +1,526 @@
@@ -704,5 +704,5 @@ index 000000000000..202619fadc2e
 +	status = "okay";
 +};
 -- 
-2.25.1
+2.41.0
 

@@ -1,7 +1,7 @@
-From 45eac66c73a423fe93f6b28a1f892766e659cc81 Mon Sep 17 00:00:00 2001
+From 5d15440d358a2f29fc0e761ed35575dc787c4418 Mon Sep 17 00:00:00 2001
 From: Yazan Shhady <yazan.shhady@solid-run.com>
 Date: Sun, 2 Jul 2023 12:16:31 +0300
-Subject: [PATCH] rzg2l_defconfig - set the default fdtfile to
+Subject: [PATCH 23/45] rzg2l_defconfig - set the default fdtfile to
  rzg2l-hummingboard-ripple.dtb
 
 ---
@@ -9,7 +9,7 @@ Subject: [PATCH] rzg2l_defconfig - set the default fdtfile to
  1 file changed, 1 insertion(+), 1 deletion(-)
 
 diff --git a/configs/rzg2l-solidrun_defconfig b/configs/rzg2l-solidrun_defconfig
-index 798b1429fb..18413dcea7 100644
+index 798b1429..18413dce 100644
 --- a/configs/rzg2l-solidrun_defconfig
 +++ b/configs/rzg2l-solidrun_defconfig
 @@ -17,7 +17,7 @@ CONFIG_FIT=y
@@ -22,5 +22,5 @@ index 798b1429fb..18413dcea7 100644
  CONFIG_HUSH_PARSER=y
  CONFIG_CMD_BOOTZ=y
 -- 
-2.25.1
+2.41.0
 

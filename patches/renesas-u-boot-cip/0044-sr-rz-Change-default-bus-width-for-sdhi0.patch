@@ -1,7 +1,7 @@
-From a507bebb4341743ed00f384344a45747c739283d Mon Sep 17 00:00:00 2001
+From 3d758ea07944ddf4802b4ad48007c64603063e62 Mon Sep 17 00:00:00 2001
 From: Jon Nettleton <jon@solid-run.com>
 Date: Sat, 23 Sep 2023 12:47:56 +0200
-Subject: [PATCH] sr-rz: Change default bus-width for sdhi0
+Subject: [PATCH 44/45] sr-rz: Change default bus-width for sdhi0
 
 At the u-boot stage of boot we don't know if we are booting
 from eMMC or uSDHC. Having the bus-width set to 8 for eMMC

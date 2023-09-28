@@ -1,7 +1,7 @@
-From db7a527aba0e9ef4dc6cf5c357a4d5be032343e6 Mon Sep 17 00:00:00 2001
+From 57556f9a7e1f1ba7f2f7bbf0827c803a3fa61f6c Mon Sep 17 00:00:00 2001
 From: Yazan Shhady <yazan.shhady@solid-run.com>
 Date: Mon, 27 Feb 2023 14:13:46 +0200
-Subject: [PATCH] edit rzg2lc-hummingboard.dts - add wifi support
+Subject: [PATCH 05/53] edit rzg2lc-hummingboard.dts - add wifi support
 
 ---
  .../boot/dts/renesas/rzg2lc-hummingboard.dts  |  4 ---
@@ -9,7 +9,7 @@ Subject: [PATCH] edit rzg2lc-hummingboard.dts - add wifi support
  2 files changed, 17 insertions(+), 22 deletions(-)
 
 diff --git a/arch/arm64/boot/dts/renesas/rzg2lc-hummingboard.dts b/arch/arm64/boot/dts/renesas/rzg2lc-hummingboard.dts
-index 9096049b1450..a15d795ef232 100644
+index 9096049b1..a15d795ef 100644
 --- a/arch/arm64/boot/dts/renesas/rzg2lc-hummingboard.dts
 +++ b/arch/arm64/boot/dts/renesas/rzg2lc-hummingboard.dts
 @@ -179,7 +179,3 @@ &spi1 {
@@ -21,7 +21,7 @@ index 9096049b1450..a15d795ef232 100644
 -	gpios = <&pinctrl RZG2L_GPIO(39, 1) GPIO_ACTIVE_HIGH>;
 -};
 diff --git a/arch/arm64/boot/dts/renesas/rzg2lc-sr-som.dtsi b/arch/arm64/boot/dts/renesas/rzg2lc-sr-som.dtsi
-index fa0b82073f91..ac25f0899783 100644
+index fa0b82073..ac25f0899 100644
 --- a/arch/arm64/boot/dts/renesas/rzg2lc-sr-som.dtsi
 +++ b/arch/arm64/boot/dts/renesas/rzg2lc-sr-som.dtsi
 @@ -248,13 +248,6 @@ gpio-sd1-bt_reg_on {
@@ -94,5 +94,5 @@ index fa0b82073f91..ac25f0899783 100644
  
  #if (!MTU3_PWM_SUPPORT)
 -- 
-2.25.1
+2.41.0
 

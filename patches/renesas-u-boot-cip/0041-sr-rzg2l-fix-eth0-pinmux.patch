@@ -1,7 +1,7 @@
-From a535b8739d44ced8cbaf5574675a7efb6a4a5645 Mon Sep 17 00:00:00 2001
+From 98f14037e3cac5a2301e74063d6ebb0f6d1f2a96 Mon Sep 17 00:00:00 2001
 From: Mikhail Anikin <mikhail.anikin@solid-run.com>
 Date: Sun, 27 Aug 2023 16:27:44 +0300
-Subject: [PATCH 2/2] sr-rzg2l: fix eth0 pinmux
+Subject: [PATCH 41/45] sr-rzg2l: fix eth0 pinmux
 
 ---
  arch/arm/dts/rzg2l-solidrun.dts | 30 +++++++++++++++---------------

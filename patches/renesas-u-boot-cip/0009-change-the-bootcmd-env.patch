@@ -1,14 +1,14 @@
-From e99fff0b804d489203c96ef37fd6160248ccba7e Mon Sep 17 00:00:00 2001
+From f65c7743dec71a233ab2f81c21587973bfee4e22 Mon Sep 17 00:00:00 2001
 From: Yazan Shhady <yazan.shhady@solid-run.com>
 Date: Wed, 28 Sep 2022 15:07:40 +0300
-Subject: [PATCH 9/9] change the bootcmd env
+Subject: [PATCH 09/45] change the bootcmd env
 
 ---
  include/configs/rzg2lc-solidrun.h | 2 +-
  1 file changed, 1 insertion(+), 1 deletion(-)
 
 diff --git a/include/configs/rzg2lc-solidrun.h b/include/configs/rzg2lc-solidrun.h
-index 53a39cf19f..fc5b702630 100644
+index 53a39cf1..fc5b7026 100644
 --- a/include/configs/rzg2lc-solidrun.h
 +++ b/include/configs/rzg2lc-solidrun.h
 @@ -70,7 +70,7 @@
@@ -21,5 +21,5 @@ index 53a39cf19f..fc5b702630 100644
  "booti 0x48080000 - 0x48000000"
  
 -- 
-2.25.1
+2.41.0
 

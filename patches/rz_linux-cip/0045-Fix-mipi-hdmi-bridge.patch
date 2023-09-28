@@ -1,7 +1,7 @@
-From 1b5926910ab21df24ed1b11e2132d4b3ca71308e Mon Sep 17 00:00:00 2001
+From 927218f6ef032140a77a605d028cff5454c4b305 Mon Sep 17 00:00:00 2001
 From: Mikhail Anikin <mikhail.anikin@solid-run.com>
 Date: Sun, 10 Sep 2023 11:24:31 +0300
-Subject: [PATCH] [sr som] Fix mipi-hdmi bridge
+Subject: [PATCH 45/53] Fix mipi-hdmi bridge
 
 ---
  .../boot/dts/renesas/rzg2l-hummingboard-extended.dts      | 8 +++-----
@@ -12,7 +12,7 @@ Subject: [PATCH] [sr som] Fix mipi-hdmi bridge
  5 files changed, 7 insertions(+), 17 deletions(-)
 
 diff --git a/arch/arm64/boot/dts/renesas/rzg2l-hummingboard-extended.dts b/arch/arm64/boot/dts/renesas/rzg2l-hummingboard-extended.dts
-index 1eabb78c03f2..55fb0af1b485 100644
+index 1eabb78c0..55fb0af1b 100644
 --- a/arch/arm64/boot/dts/renesas/rzg2l-hummingboard-extended.dts
 +++ b/arch/arm64/boot/dts/renesas/rzg2l-hummingboard-extended.dts
 @@ -86,19 +86,17 @@ gpio-lte_reset {
@@ -39,7 +39,7 @@ index 1eabb78c03f2..55fb0af1b485 100644
  		status = "okay";
  
 diff --git a/arch/arm64/boot/dts/renesas/rzg2l-hummingboard-ripple.dts b/arch/arm64/boot/dts/renesas/rzg2l-hummingboard-ripple.dts
-index 3e75bc95c5b9..20b94394bfce 100644
+index 3e75bc95c..20b94394b 100644
 --- a/arch/arm64/boot/dts/renesas/rzg2l-hummingboard-ripple.dts
 +++ b/arch/arm64/boot/dts/renesas/rzg2l-hummingboard-ripple.dts
 @@ -86,19 +86,17 @@ gpio-lte_reset {
@@ -66,7 +66,7 @@ index 3e75bc95c5b9..20b94394bfce 100644
  		status = "okay";
  
 diff --git a/arch/arm64/boot/dts/renesas/rzg2lc-hummingboard.dts b/arch/arm64/boot/dts/renesas/rzg2lc-hummingboard.dts
-index 2a3b39512e49..2e97f4073ef6 100644
+index 2a3b39512..2e97f4073 100644
 --- a/arch/arm64/boot/dts/renesas/rzg2lc-hummingboard.dts
 +++ b/arch/arm64/boot/dts/renesas/rzg2lc-hummingboard.dts
 @@ -42,11 +42,9 @@ gpio-lte_on {
@@ -83,7 +83,7 @@ index 2a3b39512e49..2e97f4073ef6 100644
  		/*
  		 * With interrupts enabled and hdmi connected during boot,
 diff --git a/arch/arm64/boot/dts/renesas/rzv2l-hummingboard-extended.dts b/arch/arm64/boot/dts/renesas/rzv2l-hummingboard-extended.dts
-index 7b2adb8ff2c6..320eb2560a8a 100644
+index 7b2adb8ff..320eb2560 100644
 --- a/arch/arm64/boot/dts/renesas/rzv2l-hummingboard-extended.dts
 +++ b/arch/arm64/boot/dts/renesas/rzv2l-hummingboard-extended.dts
 @@ -88,9 +88,7 @@ &i2c0 {
@@ -97,7 +97,7 @@ index 7b2adb8ff2c6..320eb2560a8a 100644
  		/*
  		 * With interrupts enabled and hdmi connected during boot,
 diff --git a/arch/arm64/boot/dts/renesas/rzv2l-hummingboard-ripple.dts b/arch/arm64/boot/dts/renesas/rzv2l-hummingboard-ripple.dts
-index 556a0332134f..3e10056a93b7 100644
+index 556a03321..3e10056a9 100644
 --- a/arch/arm64/boot/dts/renesas/rzv2l-hummingboard-ripple.dts
 +++ b/arch/arm64/boot/dts/renesas/rzv2l-hummingboard-ripple.dts
 @@ -88,9 +88,7 @@ &i2c0 {

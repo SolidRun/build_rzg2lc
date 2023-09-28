@@ -1,14 +1,14 @@
-From f614f2024f92b3cae7a662a9c1e4119ad856ad5f Mon Sep 17 00:00:00 2001
+From 1931354c7071fbb6726ac86ee46ecf8e3329f9c1 Mon Sep 17 00:00:00 2001
 From: Yazan Shhady <yazan.shhady@solid-run.com>
 Date: Wed, 24 May 2023 18:56:48 +0300
-Subject: [PATCH] remove DISTROBOOT flag from rzg2lc-solidrun_defconfig
+Subject: [PATCH 11/45] remove DISTROBOOT flag from rzg2lc-solidrun_defconfig
 
 ---
  configs/rzg2lc-solidrun_defconfig | 2 --
  1 file changed, 2 deletions(-)
 
 diff --git a/configs/rzg2lc-solidrun_defconfig b/configs/rzg2lc-solidrun_defconfig
-index 319425975f..f38bce41dc 100644
+index 31942597..f38bce41 100644
 --- a/configs/rzg2lc-solidrun_defconfig
 +++ b/configs/rzg2lc-solidrun_defconfig
 @@ -77,5 +77,3 @@ CONFIG_SYS_RELOC_GD_ENV_ADDR=y
@@ -18,5 +18,5 @@ index 319425975f..f38bce41dc 100644
 -CONFIG_DISTRO_DEFAULTS=y
 -CONFIG_SYSRESET=y
 -- 
-2.25.1
+2.41.0
 

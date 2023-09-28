@@ -1,7 +1,7 @@
-From e6effc0b50a41d8e4a3ed0123a53368ae4061076 Mon Sep 17 00:00:00 2001
+From c217f97b2d7408de71da49a9d7cf0c4c95bc5ad2 Mon Sep 17 00:00:00 2001
 From: Yazan Shhady <yazan.shhady@solid-run.com>
 Date: Mon, 20 Feb 2023 18:36:35 +0200
-Subject: [PATCH 1/2] add rzg2lc-hummingbaord DTS support
+Subject: [PATCH 01/53] add rzg2lc-hummingbaord DTS support
 
 ---
  .../boot/dts/renesas/rzg2lc-hummingbaord.dts  | 312 ++++++++
@@ -14,7 +14,7 @@ Subject: [PATCH 1/2] add rzg2lc-hummingbaord DTS support
 
 diff --git a/arch/arm64/boot/dts/renesas/rzg2lc-hummingbaord.dts b/arch/arm64/boot/dts/renesas/rzg2lc-hummingbaord.dts
 new file mode 100644
-index 000000000000..bf82f33ca51e
+index 000000000..bf82f33ca
 --- /dev/null
 +++ b/arch/arm64/boot/dts/renesas/rzg2lc-hummingbaord.dts
 @@ -0,0 +1,312 @@
@@ -332,7 +332,7 @@ index 000000000000..bf82f33ca51e
 +/* ==========================================================================*/
 diff --git a/arch/arm64/boot/dts/renesas/rzg2lc-sr-pinfunction.dtsi b/arch/arm64/boot/dts/renesas/rzg2lc-sr-pinfunction.dtsi
 new file mode 100644
-index 000000000000..1d10844c7e6f
+index 000000000..1d10844c7
 --- /dev/null
 +++ b/arch/arm64/boot/dts/renesas/rzg2lc-sr-pinfunction.dtsi
 @@ -0,0 +1,155 @@
@@ -493,7 +493,7 @@ index 000000000000..1d10844c7e6f
 +
 diff --git a/arch/arm64/boot/dts/renesas/rzg2lc-sr-som.dtsi b/arch/arm64/boot/dts/renesas/rzg2lc-sr-som.dtsi
 new file mode 100644
-index 000000000000..448c6a8cc037
+index 000000000..448c6a8cc
 --- /dev/null
 +++ b/arch/arm64/boot/dts/renesas/rzg2lc-sr-som.dtsi
 @@ -0,0 +1,706 @@
@@ -1204,5 +1204,5 @@ index 000000000000..448c6a8cc037
 +//TEST-2
 +#endif
 -- 
-2.25.1
+2.41.0
 

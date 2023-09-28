@@ -82,7 +82,7 @@ cd $ROOTDIR
 QORIQ_COMPONENTS="renesas-u-boot-cip rzg_trusted-firmware-a rz_linux-cip buildroot rzg2_flash_writer"
 UBOOT_REPO='https://github.com/renesas-rz/renesas-u-boot-cip -b v2021.10/rz'
 ATF_REPO='https://github.com/renesas-rz/rzg_trusted-firmware-a -b v2.9/rz'
-LINUX_REPO='https://github.com/renesas-rz/rz_linux-cip -b rz-5.10-cip29'
+LINUX_REPO='https://github.com/renesas-rz/rz_linux-cip -b rz-5.10-cip36'
 BUILDROOT_REPO="https://github.com/buildroot/buildroot.git -b $BUILDROOT_VERSION"
 FLASH_WRITER_REPO='https://github.com/renesas-rz/rzg2_flash_writer -b rz_g2l'
 
@@ -281,9 +281,8 @@ cp $ROOTDIR/configs/linux/$LINUX_DEFCONFIG arch/arm64/configs
 make $LINUX_DEFCONFIG
 make -j${PARALLEL} Image dtbs modules
 cp $ROOTDIR/build/rz_linux-cip/arch/arm64/boot/Image $ROOTDIR/images/tmp/
-cp $ROOTDIR/build/rz_linux-cip/arch/arm64/boot/dts/renesas/*smarc.dtb $ROOTDIR/images/tmp/
-cp $ROOTDIR/build/rz_linux-cip/arch/arm64/boot/dts/renesas/rzg2l*.dtb $ROOTDIR/images/tmp/
-cp $ROOTDIR/build/rz_linux-cip/arch/arm64/boot/dts/renesas/rzv2l*.dtb $ROOTDIR/images/tmp/
+cp $ROOTDIR/build/rz_linux-cip/arch/arm64/boot/dts/renesas/rzg2l*hummingboard*.dtb $ROOTDIR/images/tmp/
+cp $ROOTDIR/build/rz_linux-cip/arch/arm64/boot/dts/renesas/rzv2l*hummingboard*.dtb $ROOTDIR/images/tmp/
 rm -rf ${ROOTDIR}/images/tmp/modules # remove old modules
 make -j${PARALLEL} INSTALL_MOD_PATH="${ROOTDIR}/images/tmp/modules" modules_install
 
@@ -467,7 +466,7 @@ label primary
 	menu label primary kernel
 	linux /boot/Image
 	fdtdir /boot/
-	APPEND console=serial0,115200 console=ttySC0 root=/dev/mmcblk0p2 rw rootwait
+	APPEND \${bootargs}
 EOF
 fi
 

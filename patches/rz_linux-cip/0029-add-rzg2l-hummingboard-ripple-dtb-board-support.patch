@@ -1,7 +1,7 @@
-From c189fd8b5665ee61de27e1ca1587c520eb3b2f2a Mon Sep 17 00:00:00 2001
+From cdb8afe58303a4691b276e7a167822095c8ef5f5 Mon Sep 17 00:00:00 2001
 From: Yazan Shhady <yazan.shhady@solid-run.com>
 Date: Tue, 20 Jun 2023 19:28:26 +0300
-Subject: [PATCH 1/2] add rzg2l-hummingboard-ripple dtb board support
+Subject: [PATCH 29/53] add rzg2l-hummingboard-ripple dtb board support
 
 ---
  .../dts/renesas/rzg2l-hummingboard-ripple.dts | 134 ++++
@@ -14,7 +14,7 @@ Subject: [PATCH 1/2] add rzg2l-hummingboard-ripple dtb board support
 
 diff --git a/arch/arm64/boot/dts/renesas/rzg2l-hummingboard-ripple.dts b/arch/arm64/boot/dts/renesas/rzg2l-hummingboard-ripple.dts
 new file mode 100644
-index 000000000000..f7afc39fa8a1
+index 000000000..f7afc39fa
 --- /dev/null
 +++ b/arch/arm64/boot/dts/renesas/rzg2l-hummingboard-ripple.dts
 @@ -0,0 +1,134 @@
@@ -154,7 +154,7 @@ index 000000000000..f7afc39fa8a1
 +};
 diff --git a/arch/arm64/boot/dts/renesas/rzg2l-sr-pinfunction.dtsi b/arch/arm64/boot/dts/renesas/rzg2l-sr-pinfunction.dtsi
 new file mode 100644
-index 000000000000..a9faa77d8203
+index 000000000..a9faa77d8
 --- /dev/null
 +++ b/arch/arm64/boot/dts/renesas/rzg2l-sr-pinfunction.dtsi
 @@ -0,0 +1,125 @@
@@ -285,7 +285,7 @@ index 000000000000..a9faa77d8203
 +};
 diff --git a/arch/arm64/boot/dts/renesas/rzg2l-sr-som.dtsi b/arch/arm64/boot/dts/renesas/rzg2l-sr-som.dtsi
 new file mode 100644
-index 000000000000..9160f38c23ff
+index 000000000..9160f38c2
 --- /dev/null
 +++ b/arch/arm64/boot/dts/renesas/rzg2l-sr-som.dtsi
 @@ -0,0 +1,573 @@
@@ -863,5 +863,5 @@ index 000000000000..9160f38c23ff
 +	status = "okay";
 +};
 -- 
-2.25.1
+2.41.0
 

@@ -1,7 +1,7 @@
-From 64bfcb4a38203ab81f02442fce5aa9763e76cc78 Mon Sep 17 00:00:00 2001
+From 394af83f52121ff3a15e1ef10acfe20b9b8cf7ab Mon Sep 17 00:00:00 2001
 From: Yazan Shhady <yazan.shhady@solid-run.com>
 Date: Tue, 13 Jun 2023 14:01:34 +0300
-Subject: [PATCH] edit rz/g2lc dts - set scif2 pins and fix sd0_vdd
+Subject: [PATCH 19/53] edit rz/g2lc dts - set scif2 pins and fix sd0_vdd
 
 ---
  .../dts/renesas/rzg2lc-sr-pinfunction.dtsi    | 12 ++--
@@ -9,7 +9,7 @@ Subject: [PATCH] edit rz/g2lc dts - set scif2 pins and fix sd0_vdd
  2 files changed, 47 insertions(+), 24 deletions(-)
 
 diff --git a/arch/arm64/boot/dts/renesas/rzg2lc-sr-pinfunction.dtsi b/arch/arm64/boot/dts/renesas/rzg2lc-sr-pinfunction.dtsi
-index 7412d8c1cb7a..cb24e81266b8 100644
+index 7412d8c1c..cb24e8126 100644
 --- a/arch/arm64/boot/dts/renesas/rzg2lc-sr-pinfunction.dtsi
 +++ b/arch/arm64/boot/dts/renesas/rzg2lc-sr-pinfunction.dtsi
 @@ -39,12 +39,12 @@ scif1_pins: scif1 {
@@ -32,7 +32,7 @@ index 7412d8c1cb7a..cb24e81266b8 100644
  	sdhi1_pins: sd1 {
  		sd1_data {
 diff --git a/arch/arm64/boot/dts/renesas/rzg2lc-sr-som.dtsi b/arch/arm64/boot/dts/renesas/rzg2lc-sr-som.dtsi
-index 278dd4a1fa1d..ff102546dad9 100644
+index 278dd4a1f..ff102546d 100644
 --- a/arch/arm64/boot/dts/renesas/rzg2lc-sr-som.dtsi
 +++ b/arch/arm64/boot/dts/renesas/rzg2lc-sr-som.dtsi
 @@ -141,24 +141,14 @@ &eth0 {
@@ -132,5 +132,5 @@ index 278dd4a1fa1d..ff102546dad9 100644
    bluetooth {
      pinctrl-names = "default";
 -- 
-2.25.1
+2.41.0
 

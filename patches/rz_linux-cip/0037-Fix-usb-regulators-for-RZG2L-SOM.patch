@@ -1,7 +1,7 @@
-From b9ec5a8e8f24bbad85d69e94fd5fcf47c258ed79 Mon Sep 17 00:00:00 2001
+From 1c10fcb569eec07633c2199bb8ff4b84aab2561b Mon Sep 17 00:00:00 2001
 From: Mikhail Anikin <mikhail.anikin@solid-run.com>
 Date: Tue, 15 Aug 2023 14:37:52 +0300
-Subject: [PATCH] Fix usb regulators for RZG2L SOM
+Subject: [PATCH 37/53] Fix usb regulators for RZG2L SOM
 
 The USB VBUS gpio is set as push-pull output by default
 All hummingboards, including tutus and ripple, need open-drain vbus enable
@@ -13,7 +13,7 @@ All hummingboards, including tutus and ripple, need open-drain vbus enable
  4 files changed, 99 insertions(+), 89 deletions(-)
 
 diff --git a/arch/arm64/boot/dts/renesas/rzg2l-hummingboard-ripple.dts b/arch/arm64/boot/dts/renesas/rzg2l-hummingboard-ripple.dts
-index d18499cd71f9..fd3760234fee 100644
+index d18499cd7..fd3760234 100644
 --- a/arch/arm64/boot/dts/renesas/rzg2l-hummingboard-ripple.dts
 +++ b/arch/arm64/boot/dts/renesas/rzg2l-hummingboard-ripple.dts
 @@ -176,3 +176,13 @@ &spi1 {
@@ -31,7 +31,7 @@ index d18499cd71f9..fd3760234fee 100644
 +	gpio-open-drain;
 +};
 diff --git a/arch/arm64/boot/dts/renesas/rzg2l-hummingboard-tutus.dts b/arch/arm64/boot/dts/renesas/rzg2l-hummingboard-tutus.dts
-index 6dacd4c29312..0641cf527ab7 100644
+index 6dacd4c29..0641cf527 100644
 --- a/arch/arm64/boot/dts/renesas/rzg2l-hummingboard-tutus.dts
 +++ b/arch/arm64/boot/dts/renesas/rzg2l-hummingboard-tutus.dts
 @@ -97,3 +97,13 @@ &spi1 {
@@ -49,7 +49,7 @@ index 6dacd4c29312..0641cf527ab7 100644
 +	gpio-open-drain;
 +};
 diff --git a/arch/arm64/boot/dts/renesas/rzg2l-sr-pinfunction.dtsi b/arch/arm64/boot/dts/renesas/rzg2l-sr-pinfunction.dtsi
-index b202f08229c0..9dd647f095dc 100644
+index b202f0822..9dd647f09 100644
 --- a/arch/arm64/boot/dts/renesas/rzg2l-sr-pinfunction.dtsi
 +++ b/arch/arm64/boot/dts/renesas/rzg2l-sr-pinfunction.dtsi
 @@ -103,13 +103,4 @@ ssi1_pins: ssi1 {
@@ -67,7 +67,7 @@ index b202f08229c0..9dd647f095dc 100644
 -
  };
 diff --git a/arch/arm64/boot/dts/renesas/rzg2l-sr-som.dtsi b/arch/arm64/boot/dts/renesas/rzg2l-sr-som.dtsi
-index 5aea58b1d90c..95f277cf7bc4 100644
+index 5aea58b1d..95f277cf7 100644
 --- a/arch/arm64/boot/dts/renesas/rzg2l-sr-som.dtsi
 +++ b/arch/arm64/boot/dts/renesas/rzg2l-sr-som.dtsi
 @@ -14,17 +14,17 @@

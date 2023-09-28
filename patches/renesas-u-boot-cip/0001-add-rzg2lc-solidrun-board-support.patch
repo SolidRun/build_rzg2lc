@@ -1,7 +1,7 @@
-From 41d603f078a83ef34761a51ed2ab59ed8dd12124 Mon Sep 17 00:00:00 2001
+From f5c9c03d91a4b84f7ef0df843158bfe69efef1f9 Mon Sep 17 00:00:00 2001
 From: Yazan Shhady <yazan.shhady@solid-run.com>
 Date: Tue, 27 Sep 2022 04:27:55 +0300
-Subject: [PATCH 1/9] add rzg2lc-solidrun board support
+Subject: [PATCH 01/45] add rzg2lc-solidrun board support
 
 ---
  board/solidrun/rcar-common/common.c         | 160 ++++++++++++++++++++
@@ -22,7 +22,7 @@ Subject: [PATCH 1/9] add rzg2lc-solidrun board support
 
 diff --git a/board/solidrun/rcar-common/common.c b/board/solidrun/rcar-common/common.c
 new file mode 100644
-index 0000000000..ed0afde64f
+index 00000000..ed0afde6
 --- /dev/null
 +++ b/board/solidrun/rcar-common/common.c
 @@ -0,0 +1,160 @@
@@ -188,7 +188,7 @@ index 0000000000..ed0afde64f
 +#endif
 diff --git a/board/solidrun/rcar-common/gen3-spl.c b/board/solidrun/rcar-common/gen3-spl.c
 new file mode 100644
-index 0000000000..b02a946a21
+index 00000000..b02a946a
 --- /dev/null
 +++ b/board/solidrun/rcar-common/gen3-spl.c
 @@ -0,0 +1,60 @@
@@ -254,7 +254,7 @@ index 0000000000..b02a946a21
 +}
 diff --git a/board/solidrun/rzg2lc/Kconfig b/board/solidrun/rzg2lc/Kconfig
 new file mode 100644
-index 0000000000..43f6fa305f
+index 00000000..43f6fa30
 --- /dev/null
 +++ b/board/solidrun/rzg2lc/Kconfig
 @@ -0,0 +1,15 @@
@@ -275,7 +275,7 @@ index 0000000000..43f6fa305f
 +endif
 diff --git a/board/solidrun/rzg2lc/Makefile b/board/solidrun/rzg2lc/Makefile
 new file mode 100644
-index 0000000000..add536bd7e
+index 00000000..add536bd
 --- /dev/null
 +++ b/board/solidrun/rzg2lc/Makefile
 @@ -0,0 +1,13 @@
@@ -294,7 +294,7 @@ index 0000000000..add536bd7e
 +endif
 diff --git a/board/solidrun/rzg2lc/rzg2lc-hummingboard.c b/board/solidrun/rzg2lc/rzg2lc-hummingboard.c
 new file mode 100644
-index 0000000000..0894eef2e4
+index 00000000..0894eef2
 --- /dev/null
 +++ b/board/solidrun/rzg2lc/rzg2lc-hummingboard.c
 @@ -0,0 +1,92 @@
@@ -392,7 +392,7 @@ index 0000000000..0894eef2e4
 +}
 diff --git a/configs/rzg2lc-solidrun_defconfig b/configs/rzg2lc-solidrun_defconfig
 new file mode 100644
-index 0000000000..8abf9c9cf6
+index 00000000..8abf9c9c
 --- /dev/null
 +++ b/configs/rzg2lc-solidrun_defconfig
 @@ -0,0 +1,76 @@
@@ -474,7 +474,7 @@ index 0000000000..8abf9c9cf6
 +CONFIG_SYS_I2C_RZG2L_RIIC=y
 diff --git a/include/configs/rzg2lc-hummingboard.h b/include/configs/rzg2lc-hummingboard.h
 new file mode 100644
-index 0000000000..c3feee3c72
+index 00000000..c3feee3c
 --- /dev/null
 +++ b/include/configs/rzg2lc-hummingboard.h
 @@ -0,0 +1,73 @@
@@ -552,5 +552,5 @@ index 0000000000..c3feee3c72
 +
 +#endif /* __RZG2LC_DEV_H */
 -- 
-2.25.1
+2.41.0
 

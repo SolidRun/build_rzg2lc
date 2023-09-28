@@ -1,15 +1,16 @@
-From 3ae11ef32cdae183c55eee0d1255aa185ded9617 Mon Sep 17 00:00:00 2001
+From f7b5a582cd07fb89343965f4dbcf9bfa63eebc07 Mon Sep 17 00:00:00 2001
 From: Mikhail Anikin <mikhail.anikin@solid-run.com>
 Date: Tue, 1 Aug 2023 13:17:19 +0300
-Subject: [PATCH 1/2] rz/g2lc: fix pmic setup increase wifi/bluetooth stability
+Subject: [PATCH 24/53] rz/g2lc: fix pmic setup increase wifi/bluetooth
+ stability
 
 ---
- .../arm64/boot/dts/renesas/rzg2lc-sr-som.dtsi | 50 ++++++++-----------
+ .../arm64/boot/dts/renesas/rzg2lc-sr-som.dtsi | 48 ++++++++-----------
  drivers/mfd/raa215300.c                       | 18 +++++++
- 2 files changed, 38 insertions(+), 30 deletions(-)
+ 2 files changed, 37 insertions(+), 29 deletions(-)
 
 diff --git a/arch/arm64/boot/dts/renesas/rzg2lc-sr-som.dtsi b/arch/arm64/boot/dts/renesas/rzg2lc-sr-som.dtsi
-index e4de0542a0d0..1a454991e12f 100644
+index e4de0542a..60c5e0ed2 100644
 --- a/arch/arm64/boot/dts/renesas/rzg2lc-sr-som.dtsi
 +++ b/arch/arm64/boot/dts/renesas/rzg2lc-sr-som.dtsi
 @@ -114,12 +114,12 @@ usb1_vbus: regulator-usb1-vbus {
@@ -39,17 +40,15 @@ index e4de0542a0d0..1a454991e12f 100644
  	};
  
  	rtc: isl1208@6f {
-@@ -466,8 +467,8 @@ &scif2 {
+@@ -466,7 +467,7 @@ &scif2 {
  
    bluetooth {
      pinctrl-names = "default";
 -    max-speed = <460800>;
--	compatible = "brcm,bcm4329-bt";
 +    max-speed = <115200>;
-+	compatible = "brcm,bcm4329-bt";
+ 	compatible = "brcm,bcm4329-bt";
  	shutdown-gpios = <&pinctrl RZG2L_GPIO(23, 1) GPIO_ACTIVE_HIGH>;
    };
- };
 @@ -475,35 +476,24 @@ bluetooth {
  
  /* WiFi - CYW43439 */
@@ -98,7 +97,7 @@ index e4de0542a0d0..1a454991e12f 100644
  
  &spi1 {
 diff --git a/drivers/mfd/raa215300.c b/drivers/mfd/raa215300.c
-index a77e4195d129..ca2f48253d8f 100644
+index a77e4195d..ca2f48253 100644
 --- a/drivers/mfd/raa215300.c
 +++ b/drivers/mfd/raa215300.c
 @@ -16,10 +16,14 @@

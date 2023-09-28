@@ -1,7 +1,7 @@
-From 8aa468dca851341e0b5000b7f1a9b18d6b284904 Mon Sep 17 00:00:00 2001
+From a1599c4e31271d07f4ebd5baae51b897b62cf6e5 Mon Sep 17 00:00:00 2001
 From: Mikhail Anikin <mikhail.anikin@solid-run.com>
 Date: Tue, 15 Aug 2023 15:09:28 +0300
-Subject: [PATCH] rzg2l solidrun som usb support
+Subject: [PATCH 26/45] rzg2l solidrun som usb support
 
 ---
  arch/arm/dts/rzg2l-solidrun.dts       |  81 +++++++-----
@@ -10,7 +10,7 @@ Subject: [PATCH] rzg2l solidrun som usb support
  3 files changed, 145 insertions(+), 115 deletions(-)
 
 diff --git a/arch/arm/dts/rzg2l-solidrun.dts b/arch/arm/dts/rzg2l-solidrun.dts
-index cb94ee2c1f..814c7414c0 100644
+index cb94ee2c..814c7414 100644
 --- a/arch/arm/dts/rzg2l-solidrun.dts
 +++ b/arch/arm/dts/rzg2l-solidrun.dts
 @@ -44,44 +44,44 @@
@@ -113,7 +113,7 @@ index cb94ee2c1f..814c7414c0 100644
 +	phys = <&usb2_phy1>;
 +};
 diff --git a/board/solidrun/rzg2l/rzg2l-solidrun.c b/board/solidrun/rzg2l/rzg2l-solidrun.c
-index 7a25927cde..4aa78e6e0a 100644
+index 7a25927c..4aa78e6e 100644
 --- a/board/solidrun/rzg2l/rzg2l-solidrun.c
 +++ b/board/solidrun/rzg2l/rzg2l-solidrun.c
 @@ -22,75 +22,85 @@
@@ -368,7 +368,7 @@ index 7a25927cde..4aa78e6e0a 100644
 +	reset_wdt_start();
  }
 diff --git a/configs/rzg2l-solidrun_defconfig b/configs/rzg2l-solidrun_defconfig
-index 18413dcea7..52e3f8fd72 100644
+index 18413dce..52e3f8fd 100644
 --- a/configs/rzg2l-solidrun_defconfig
 +++ b/configs/rzg2l-solidrun_defconfig
 @@ -15,6 +15,7 @@ CONFIG_SMBIOS_PRODUCT_NAME=""

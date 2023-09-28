@@ -1,7 +1,7 @@
-From 524fc93568d0b53f61b157c6fca8877c2c12010f Mon Sep 17 00:00:00 2001
+From 2e748fea38ae88666be5cf50d185be220479f3e1 Mon Sep 17 00:00:00 2001
 From: Yazan Shhady <yazan.shhady@solid-run.com>
 Date: Tue, 27 Sep 2022 22:48:11 +0300
-Subject: [PATCH 4/9] update bootcmd default value
+Subject: [PATCH 04/45] update bootcmd default value
 
 ---
  include/configs/rzg2lc-hummingboard.h | 25 ++++++++++++++++---------
@@ -9,7 +9,7 @@ Subject: [PATCH 4/9] update bootcmd default value
  2 files changed, 20 insertions(+), 10 deletions(-)
 
 diff --git a/include/configs/rzg2lc-hummingboard.h b/include/configs/rzg2lc-hummingboard.h
-index c3feee3c72..ee1d674850 100644
+index c3feee3c..ee1d6748 100644
 --- a/include/configs/rzg2lc-hummingboard.h
 +++ b/include/configs/rzg2lc-hummingboard.h
 @@ -3,8 +3,8 @@
@@ -55,7 +55,7 @@ index c3feee3c72..ee1d674850 100644
 -#endif /* __RZG2LC_DEV_H */
 +#endif /* __SMARC_RZG2L_H */
 diff --git a/include/configs/smarc-rzg2lc.h b/include/configs/smarc-rzg2lc.h
-index 6707dba3ea..36f36349fb 100644
+index 6707dba3..36f36349 100644
 --- a/include/configs/smarc-rzg2lc.h
 +++ b/include/configs/smarc-rzg2lc.h
 @@ -69,7 +69,10 @@
@@ -71,5 +71,5 @@ index 6707dba3ea..36f36349fb 100644
  /* For board */
  /* Ethernet RAVB */
 -- 
-2.25.1
+2.41.0
 

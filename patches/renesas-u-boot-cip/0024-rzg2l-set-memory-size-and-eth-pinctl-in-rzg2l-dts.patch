@@ -1,7 +1,7 @@
-From c17fdad9f13d10b67137d8ae9170d0623b0b3a31 Mon Sep 17 00:00:00 2001
+From 74280c9a5f98e125b9f334f1470dc1ad43660dde Mon Sep 17 00:00:00 2001
 From: Yazan Shhady <yazan.shhady@solid-run.com>
 Date: Mon, 7 Aug 2023 20:39:26 +0300
-Subject: [PATCH] rzg2l: set memory size and eth pinctl in rzg2l dts
+Subject: [PATCH 24/45] rzg2l: set memory size and eth pinctl in rzg2l dts
 
 - set memory size for 1GB
 - set ethenret pinctl for eth0 & eth1
@@ -10,7 +10,7 @@ Subject: [PATCH] rzg2l: set memory size and eth pinctl in rzg2l dts
  1 file changed, 44 insertions(+), 8 deletions(-)
 
 diff --git a/arch/arm/dts/rzg2l-solidrun.dts b/arch/arm/dts/rzg2l-solidrun.dts
-index 79e9f8522c..47bb4cef77 100644
+index 79e9f852..47bb4cef 100644
 --- a/arch/arm/dts/rzg2l-solidrun.dts
 +++ b/arch/arm/dts/rzg2l-solidrun.dts
 @@ -27,33 +27,57 @@
@@ -107,5 +107,5 @@ index 79e9f8522c..47bb4cef77 100644
  	pinctrl-names = "default";
  	status = "okay";
 -- 
-2.25.1
+2.41.0
 

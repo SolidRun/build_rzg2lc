@@ -1,7 +1,7 @@
-From 4792cc7e0fcd60ec604941492581c507d69a7cb7 Mon Sep 17 00:00:00 2001
+From 9d6b78cecd8cd3148c523472310b731da50e8cae Mon Sep 17 00:00:00 2001
 From: Josua Mayer <josua@solid-run.com>
 Date: Sun, 28 May 2023 12:28:51 +0300
-Subject: [PATCH] enable micro-hdmi support for rz-g2lc hummingboard
+Subject: [PATCH 16/53] enable micro-hdmi support for rz-g2lc hummingboard
 
 Enable DSI to HDMI bridge.
 Disable Audio support as the signals are not wired to the bridge.
@@ -13,7 +13,7 @@ Signed-off-by: Josua Mayer <josua@solid-run.com>
  2 files changed, 25 insertions(+), 57 deletions(-)
 
 diff --git a/arch/arm64/boot/dts/renesas/rzg2lc-hummingboard.dts b/arch/arm64/boot/dts/renesas/rzg2lc-hummingboard.dts
-index 746acfe58d15..7c4ac1f19b3f 100644
+index 746acfe58..7c4ac1f19 100644
 --- a/arch/arm64/boot/dts/renesas/rzg2lc-hummingboard.dts
 +++ b/arch/arm64/boot/dts/renesas/rzg2lc-hummingboard.dts
 @@ -14,7 +14,6 @@
@@ -132,7 +132,7 @@ index 746acfe58d15..7c4ac1f19b3f 100644
  
  /*
 diff --git a/arch/arm64/boot/dts/renesas/rzg2lc-sr-som.dtsi b/arch/arm64/boot/dts/renesas/rzg2lc-sr-som.dtsi
-index 8bce9f904985..2f6034af1144 100644
+index 8bce9f904..2f6034af1 100644
 --- a/arch/arm64/boot/dts/renesas/rzg2lc-sr-som.dtsi
 +++ b/arch/arm64/boot/dts/renesas/rzg2lc-sr-som.dtsi
 @@ -241,12 +241,16 @@ qspi0-ctrl {
@@ -159,5 +159,5 @@ index 8bce9f904985..2f6034af1144 100644
    gpio-sd1-bt_reg_on {
      gpio-hog;
 -- 
-2.35.3
+2.41.0
 

@@ -1,7 +1,7 @@
-From 62ed3f7d06e4ad27bd1598de242d21b37800353d Mon Sep 17 00:00:00 2001
+From f5e8b5f8ae7917ed5f8a9a955914e476cfbb032a Mon Sep 17 00:00:00 2001
 From: Mikhail Anikin <mikhail.anikin@solid-run.com>
 Date: Sun, 13 Aug 2023 14:38:52 +0300
-Subject: [PATCH] add support to select eMMC/SD during boot - rzg2lc
+Subject: [PATCH 21/45] add support to select eMMC/SD during boot - rzg2lc
 
 Set eMMC/SD based on SD0_DEV_SEL_SW signal for rzg2lc solidrun boards
 ---
@@ -11,7 +11,7 @@ Set eMMC/SD based on SD0_DEV_SEL_SW signal for rzg2lc solidrun boards
  3 files changed, 246 insertions(+), 63 deletions(-)
 
 diff --git a/arch/arm/dts/rzg2lc-solidrun.dts b/arch/arm/dts/rzg2lc-solidrun.dts
-index cc2038cd44..9e3c592155 100644
+index cc2038cd..9e3c5921 100644
 --- a/arch/arm/dts/rzg2lc-solidrun.dts
 +++ b/arch/arm/dts/rzg2lc-solidrun.dts
 @@ -46,7 +46,6 @@
@@ -23,7 +23,7 @@ index cc2038cd44..9e3c592155 100644
  				<RZG2L_PINMUX(23, 1, 1)>,
  				<RZG2L_PINMUX(24, 0, 1)>,
 diff --git a/board/solidrun/rzg2lc/rzg2lc-solidrun.c b/board/solidrun/rzg2lc/rzg2lc-solidrun.c
-index 76abfca809..c8666775ce 100644
+index 76abfca8..c8666775 100644
 --- a/board/solidrun/rzg2lc/rzg2lc-solidrun.c
 +++ b/board/solidrun/rzg2lc/rzg2lc-solidrun.c
 @@ -11,6 +11,7 @@
@@ -387,7 +387,7 @@ index 76abfca809..c8666775ce 100644
  {
  	writel(val, WDT_BASE + reg);
 diff --git a/configs/rzg2lc-solidrun_defconfig b/configs/rzg2lc-solidrun_defconfig
-index 23daa1388b..8e006a5991 100644
+index 23daa138..8e006a59 100644
 --- a/configs/rzg2lc-solidrun_defconfig
 +++ b/configs/rzg2lc-solidrun_defconfig
 @@ -87,3 +87,4 @@ CONFIG_CMD_SYSBOOT=y

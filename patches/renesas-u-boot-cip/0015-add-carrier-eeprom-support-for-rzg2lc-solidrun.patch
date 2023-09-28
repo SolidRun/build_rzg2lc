@@ -1,14 +1,14 @@
-From c6393bd17fdfda0edb860572ca6d3addc72cd44b Mon Sep 17 00:00:00 2001
+From 2d596402da7d9d52b85648b7f2108fe432b342c2 Mon Sep 17 00:00:00 2001
 From: Yazan Shhady <yazan.shhady@solid-run.com>
 Date: Sun, 28 May 2023 13:16:36 +0300
-Subject: [PATCH] add carrier eeprom support for rzg2lc-solidrun
+Subject: [PATCH 15/45] add carrier eeprom support for rzg2lc-solidrun
 
 ---
  arch/arm/dts/rzg2lc-solidrun.dts | 9 ++++++++-
  1 file changed, 8 insertions(+), 1 deletion(-)
 
 diff --git a/arch/arm/dts/rzg2lc-solidrun.dts b/arch/arm/dts/rzg2lc-solidrun.dts
-index d26bf76470..d832b7767b 100644
+index d26bf764..d832b776 100644
 --- a/arch/arm/dts/rzg2lc-solidrun.dts
 +++ b/arch/arm/dts/rzg2lc-solidrun.dts
 @@ -109,10 +109,17 @@
@@ -31,5 +31,5 @@ index d26bf76470..d832b7767b 100644
  
  &ehci0 {
 -- 
-2.25.1
+2.41.0
 

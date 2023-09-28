@@ -1,0 +1,33 @@
+From 4f1b37a999adc00268793a3a6c9808cbdf29e94d Mon Sep 17 00:00:00 2001
+From: Jon Nettleton <jon@solid-run.com>
+Date: Mon, 25 Sep 2023 15:33:08 +0200
+Subject: [PATCH 49/53] cpufreq: ondemend: Enable io_is_busy by default for
+ Renesas Arch
+
+In order to make sure both storage and network transfers are
+not bottlenecked by cpu frequency on our Renesas platforms set
+io_is_busy by default with the ondemand governor. This can be
+disabled via sysfs if desired.
+
+Signed-off-by: Jon Nettleton <jon@solid-run.com>
+---
+ drivers/cpufreq/cpufreq_ondemand.c | 3 +++
+ 1 file changed, 3 insertions(+)
+
+diff --git a/drivers/cpufreq/cpufreq_ondemand.c b/drivers/cpufreq/cpufreq_ondemand.c
+index ac361a8b1..bcfe75e13 100644
+--- a/drivers/cpufreq/cpufreq_ondemand.c
++++ b/drivers/cpufreq/cpufreq_ondemand.c
+@@ -49,6 +49,9 @@ static int should_io_be_busy(void)
+ 			boot_cpu_data.x86 == 6 &&
+ 			boot_cpu_data.x86_model >= 15)
+ 		return 1;
++#endif
++#if defined(CONFIG_ARM64) && defined(CONFIG_ARCH_RENESAS)
++	return 1;
+ #endif
+ 	return 0;
+ }
+-- 
+2.41.0
+

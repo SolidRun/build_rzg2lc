@@ -1,7 +1,7 @@
-From f12b777d86ce297619dac4216a91deef99584089 Mon Sep 17 00:00:00 2001
+From 32fe253f6c35bdbda318396b7b5c1eb8c94db48e Mon Sep 17 00:00:00 2001
 From: Yazan Shhady <yazan.shhady@solid-run.com>
 Date: Wed, 31 May 2023 17:26:44 +0300
-Subject: [PATCH] add mxl8611x phy driver support
+Subject: [PATCH 27/53] add mxl8611x phy driver support
 
 ---
  drivers/net/phy/Kconfig     |    5 +
@@ -11,7 +11,7 @@ Subject: [PATCH] add mxl8611x phy driver support
  create mode 100644 drivers/net/phy/mxl-8611x.c
 
 diff --git a/drivers/net/phy/Kconfig b/drivers/net/phy/Kconfig
-index 698bea312adc..12b0f690e2f8 100644
+index 698bea312..12b0f690e 100644
 --- a/drivers/net/phy/Kconfig
 +++ b/drivers/net/phy/Kconfig
 @@ -74,6 +74,11 @@ config MESON_GXL_PHY
@@ -27,7 +27,7 @@ index 698bea312adc..12b0f690e2f8 100644
  	tristate "Analog Devices Industrial Ethernet PHYs"
  	help
 diff --git a/drivers/net/phy/Makefile b/drivers/net/phy/Makefile
-index a13e402074cf..e992a443c5c0 100644
+index a13e40207..e992a443c 100644
 --- a/drivers/net/phy/Makefile
 +++ b/drivers/net/phy/Makefile
 @@ -31,6 +31,7 @@ sfp-obj-$(CONFIG_SFP)		+= sfp-bus.o
@@ -40,7 +40,7 @@ index a13e402074cf..e992a443c5c0 100644
  ifdef CONFIG_HWMON
 diff --git a/drivers/net/phy/mxl-8611x.c b/drivers/net/phy/mxl-8611x.c
 new file mode 100644
-index 000000000000..1346c86711f4
+index 000000000..1346c8671
 --- /dev/null
 +++ b/drivers/net/phy/mxl-8611x.c
 @@ -0,0 +1,2012 @@
@@ -2057,5 +2057,5 @@ index 000000000000..1346c86711f4
 +
 +MODULE_DEVICE_TABLE(mdio, mxl_tbl);
 -- 
-2.25.1
+2.41.0
 

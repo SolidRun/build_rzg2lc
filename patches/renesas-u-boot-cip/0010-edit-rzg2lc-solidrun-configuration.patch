@@ -1,7 +1,7 @@
-From 0942c0c6c8c3043102791aaf7ef2c2e5959debb9 Mon Sep 17 00:00:00 2001
+From baab69c396e32a6cbb6ed74e92045df510b1ace1 Mon Sep 17 00:00:00 2001
 From: Yazan Shhady <yazan.shhady@solid-run.com>
 Date: Wed, 24 May 2023 17:49:36 +0300
-Subject: [PATCH] edit rzg2lc-solidrun configuration
+Subject: [PATCH 10/45] edit rzg2lc-solidrun configuration
 
 ---
  arch/arm/dts/rzg2lc-solidrun.dts  |  7 ++++++-
@@ -10,7 +10,7 @@ Subject: [PATCH] edit rzg2lc-solidrun configuration
  3 files changed, 19 insertions(+), 15 deletions(-)
 
 diff --git a/arch/arm/dts/rzg2lc-solidrun.dts b/arch/arm/dts/rzg2lc-solidrun.dts
-index be0dc6bbf7..81fff1d8c7 100644
+index be0dc6bb..81fff1d8 100644
 --- a/arch/arm/dts/rzg2lc-solidrun.dts
 +++ b/arch/arm/dts/rzg2lc-solidrun.dts
 @@ -32,6 +32,7 @@
@@ -46,7 +46,7 @@ index be0dc6bbf7..81fff1d8c7 100644
 +	status = "okay";
 +};
 diff --git a/configs/rzg2lc-solidrun_defconfig b/configs/rzg2lc-solidrun_defconfig
-index 83e7f58f78..319425975f 100644
+index 83e7f58f..31942597 100644
 --- a/configs/rzg2lc-solidrun_defconfig
 +++ b/configs/rzg2lc-solidrun_defconfig
 @@ -15,7 +15,7 @@ CONFIG_FIT=y
@@ -73,7 +73,7 @@ index 83e7f58f78..319425975f 100644
 +CONFIG_DISTRO_DEFAULTS=y
 +CONFIG_SYSRESET=y
 diff --git a/include/configs/rzg2lc-solidrun.h b/include/configs/rzg2lc-solidrun.h
-index fc5b702630..7852168645 100644
+index fc5b7026..78521686 100644
 --- a/include/configs/rzg2lc-solidrun.h
 +++ b/include/configs/rzg2lc-solidrun.h
 @@ -60,19 +60,15 @@
@@ -106,5 +106,5 @@ index fc5b702630..7852168645 100644
  /* For board */
  /* Ethernet RAVB */
 -- 
-2.25.1
+2.41.0
 

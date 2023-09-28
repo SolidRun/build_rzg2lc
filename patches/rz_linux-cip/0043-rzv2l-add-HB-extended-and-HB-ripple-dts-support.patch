@@ -1,7 +1,7 @@
-From 6a785676cff159272356d2f58040fb8e55c26135 Mon Sep 17 00:00:00 2001
+From 1405cfd52818d850f55aa8d3ce72b2432229c978 Mon Sep 17 00:00:00 2001
 From: Yazan Shhady <yazan.shhady@solid-run.com>
 Date: Tue, 5 Sep 2023 17:02:17 +0300
-Subject: [PATCH 1/2] rzv2l: add HB-extended and HB-ripple dts support
+Subject: [PATCH 43/53] rzv2l: add HB-extended and HB-ripple dts support
 
 ---
  .../renesas/rzv2l-hummingboard-extended.dts   | 188 ++++++
@@ -16,7 +16,7 @@ Subject: [PATCH 1/2] rzv2l: add HB-extended and HB-ripple dts support
 
 diff --git a/arch/arm64/boot/dts/renesas/rzv2l-hummingboard-extended.dts b/arch/arm64/boot/dts/renesas/rzv2l-hummingboard-extended.dts
 new file mode 100644
-index 000000000000..7b2adb8ff2c6
+index 000000000..7b2adb8ff
 --- /dev/null
 +++ b/arch/arm64/boot/dts/renesas/rzv2l-hummingboard-extended.dts
 @@ -0,0 +1,188 @@
@@ -210,7 +210,7 @@ index 000000000000..7b2adb8ff2c6
 +};
 diff --git a/arch/arm64/boot/dts/renesas/rzv2l-hummingboard-ripple.dts b/arch/arm64/boot/dts/renesas/rzv2l-hummingboard-ripple.dts
 new file mode 100644
-index 000000000000..556a0332134f
+index 000000000..556a03321
 --- /dev/null
 +++ b/arch/arm64/boot/dts/renesas/rzv2l-hummingboard-ripple.dts
 @@ -0,0 +1,192 @@
@@ -409,7 +409,7 @@ index 000000000000..556a0332134f
 \ No newline at end of file
 diff --git a/arch/arm64/boot/dts/renesas/rzv2l-sr-pinfunction.dtsi b/arch/arm64/boot/dts/renesas/rzv2l-sr-pinfunction.dtsi
 new file mode 100644
-index 000000000000..617239c325e4
+index 000000000..617239c32
 --- /dev/null
 +++ b/arch/arm64/boot/dts/renesas/rzv2l-sr-pinfunction.dtsi
 @@ -0,0 +1,106 @@
@@ -521,7 +521,7 @@ index 000000000000..617239c325e4
 +};
 diff --git a/arch/arm64/boot/dts/renesas/rzv2l-sr-som.dtsi b/arch/arm64/boot/dts/renesas/rzv2l-sr-som.dtsi
 new file mode 100644
-index 000000000000..382de34574cd
+index 000000000..382de3457
 --- /dev/null
 +++ b/arch/arm64/boot/dts/renesas/rzv2l-sr-som.dtsi
 @@ -0,0 +1,560 @@
@@ -1086,5 +1086,5 @@ index 000000000000..382de34574cd
 +	status = "okay";
 +};
 -- 
-2.25.1
+2.41.0
 

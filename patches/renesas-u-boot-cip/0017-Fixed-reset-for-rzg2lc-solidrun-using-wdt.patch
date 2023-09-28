@@ -1,14 +1,14 @@
-From 0d611ab633000a49cf7414d5b9d95a98775093cf Mon Sep 17 00:00:00 2001
+From 27e292bf282d67724532c992ca594bd6623b5212 Mon Sep 17 00:00:00 2001
 From: Mikhail Anikin <mikhail.anikin@solid-run.com>
 Date: Mon, 12 Jun 2023 16:48:47 +0300
-Subject: [PATCH] Fixed reset for rzg2lc-solidrun using wdt
+Subject: [PATCH 17/45] Fixed reset for rzg2lc-solidrun using wdt
 
 ---
  board/solidrun/rzg2lc/rzg2lc-solidrun.c | 32 ++++++++++++++++++++++++-
  1 file changed, 31 insertions(+), 1 deletion(-)
 
 diff --git a/board/solidrun/rzg2lc/rzg2lc-solidrun.c b/board/solidrun/rzg2lc/rzg2lc-solidrun.c
-index 224b666a8..a89aef438 100644
+index 224b666a..a89aef43 100644
 --- a/board/solidrun/rzg2lc/rzg2lc-solidrun.c
 +++ b/board/solidrun/rzg2lc/rzg2lc-solidrun.c
 @@ -45,6 +45,17 @@ DECLARE_GLOBAL_DATA_PTR;
@@ -58,5 +58,5 @@ index 224b666a8..a89aef438 100644
 +	reset_wdt_start();
  }
 -- 
-2.34.1
+2.41.0
 

@@ -1,7 +1,7 @@
-From e1e4ed776b857aca7e3c4bdeeccbebdeeb8ec0fa Mon Sep 17 00:00:00 2001
+From 99676563627e76b7285a3c54803623a9eaa76520 Mon Sep 17 00:00:00 2001
 From: Mikhail Anikin <mikhail.anikin@solid-run.com>
 Date: Sun, 27 Aug 2023 16:25:03 +0300
-Subject: [PATCH 1/2] ravb: support multiple interfaces
+Subject: [PATCH 40/45] ravb: support multiple interfaces
 
 Since ravb net driver uses obsolete mii bitbange driver,
 the mii bus enumeration was broken and only last probed device worked

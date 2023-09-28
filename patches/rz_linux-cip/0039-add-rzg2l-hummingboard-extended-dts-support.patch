@@ -1,7 +1,7 @@
-From 02c4f743746de079bdb5cc71b544016f53299326 Mon Sep 17 00:00:00 2001
+From 54100519d7b3ca7836e3b1d2d9a46f061b6c45b3 Mon Sep 17 00:00:00 2001
 From: Yazan Shhady <yazan.shhady@solid-run.com>
 Date: Mon, 21 Aug 2023 12:20:22 +0300
-Subject: [PATCH 1/2] add rzg2l-hummingboard-extended dts support
+Subject: [PATCH 39/53] add rzg2l-hummingboard-extended dts support
 
 ---
  .../renesas/rzg2l-hummingboard-extended.dts   | 188 ++++++++++++++++++
@@ -10,7 +10,7 @@ Subject: [PATCH 1/2] add rzg2l-hummingboard-extended dts support
 
 diff --git a/arch/arm64/boot/dts/renesas/rzg2l-hummingboard-extended.dts b/arch/arm64/boot/dts/renesas/rzg2l-hummingboard-extended.dts
 new file mode 100644
-index 000000000000..f3beaf577fb3
+index 000000000..f3beaf577
 --- /dev/null
 +++ b/arch/arm64/boot/dts/renesas/rzg2l-hummingboard-extended.dts
 @@ -0,0 +1,188 @@
@@ -203,5 +203,5 @@ index 000000000000..f3beaf577fb3
 +	gpio-open-drain;
 +};
 -- 
-2.25.1
+2.41.0
 
