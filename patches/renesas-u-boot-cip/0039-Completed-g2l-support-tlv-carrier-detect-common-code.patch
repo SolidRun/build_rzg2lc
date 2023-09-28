@@ -1,8 +1,8 @@
-From 417cd9c860a4beef0f85094ca59e7eb28925ebb4 Mon Sep 17 00:00:00 2001
+From 0f9ed65530f41f7d17b71f6b32c0d013df92044f Mon Sep 17 00:00:00 2001
 From: Mikhail Anikin <mikhail.anikin@solid-run.com>
 Date: Wed, 23 Aug 2023 14:10:25 +0300
-Subject: [PATCH] [g2l/g2lc] Completed g2l support, tlv carrier detect, common
- code split
+Subject: [PATCH 39/45] Completed g2l support, tlv carrier detect, common code
+ split
 
 G2L SOM supported on the same level as G2LC SOM
 Added TLV-based carrier detection.
@@ -41,7 +41,7 @@ Common G2L/G2LC code is moved to the common c file
  delete mode 100644 board/solidrun/rzg-common/update_fdt.c
 
 diff --git a/arch/arm/dts/rzg2l-solidrun.dts b/arch/arm/dts/rzg2l-solidrun.dts
-index 6afc230924..aebcaad5b0 100644
+index 6afc2309..aebcaad5 100644
 --- a/arch/arm/dts/rzg2l-solidrun.dts
 +++ b/arch/arm/dts/rzg2l-solidrun.dts
 @@ -18,6 +18,8 @@
@@ -54,7 +54,7 @@ index 6afc230924..aebcaad5b0 100644
  
  	chosen {
 diff --git a/arch/arm/dts/rzg2lc-solidrun.dts b/arch/arm/dts/rzg2lc-solidrun.dts
-index 9e3c592155..76e053aed7 100644
+index 9e3c5921..76e053ae 100644
 --- a/arch/arm/dts/rzg2lc-solidrun.dts
 +++ b/arch/arm/dts/rzg2lc-solidrun.dts
 @@ -18,6 +18,8 @@
@@ -94,7 +94,7 @@ index 9e3c592155..76e053aed7 100644
  
  &scif0 {
 diff --git a/arch/arm/mach-rmobile/Kconfig.64 b/arch/arm/mach-rmobile/Kconfig.64
-index 91dd9341e7..e39587a664 100644
+index 91dd9341..e39587a6 100644
 --- a/arch/arm/mach-rmobile/Kconfig.64
 +++ b/arch/arm/mach-rmobile/Kconfig.64
 @@ -254,6 +254,7 @@ source "board/renesas/rzg2lc-dev/Kconfig"
@@ -107,7 +107,7 @@ index 91dd9341e7..e39587a664 100644
  	default 0x80000 if TARGET_HIHOPE_RZG2
 diff --git a/board/solidrun/rzg-common/Kconfig b/board/solidrun/rzg-common/Kconfig
 new file mode 100644
-index 0000000000..b23ce9ed9b
+index 00000000..b23ce9ed
 --- /dev/null
 +++ b/board/solidrun/rzg-common/Kconfig
 @@ -0,0 +1,44 @@
@@ -157,7 +157,7 @@ index 0000000000..b23ce9ed9b
 +
 diff --git a/board/solidrun/rzg-common/Makefile b/board/solidrun/rzg-common/Makefile
 new file mode 100644
-index 0000000000..efc83ca7be
+index 00000000..efc83ca7
 --- /dev/null
 +++ b/board/solidrun/rzg-common/Makefile
 @@ -0,0 +1,5 @@
@@ -168,7 +168,7 @@ index 0000000000..efc83ca7be
 +obj-$(CONFIG_RZG_SOLIDRUN_COMMON) += rzg-common.o
 diff --git a/board/solidrun/rzg-common/common.h b/board/solidrun/rzg-common/common.h
 deleted file mode 100644
-index 1cea22e380..0000000000
+index 1cea22e3..00000000
 --- a/board/solidrun/rzg-common/common.h
 +++ /dev/null
 @@ -1,26 +0,0 @@
@@ -200,7 +200,7 @@ index 1cea22e380..0000000000
 -#endif //__RZG_COMMON_H__
 diff --git a/board/solidrun/rzg-common/rzg-common.c b/board/solidrun/rzg-common/rzg-common.c
 new file mode 100644
-index 0000000000..e3c5b93291
+index 00000000..e3c5b932
 --- /dev/null
 +++ b/board/solidrun/rzg-common/rzg-common.c
 @@ -0,0 +1,223 @@
@@ -430,7 +430,7 @@ index 0000000000..e3c5b93291
 \ No newline at end of file
 diff --git a/board/solidrun/rzg-common/rzg-common.h b/board/solidrun/rzg-common/rzg-common.h
 new file mode 100644
-index 0000000000..180e882d20
+index 00000000..180e882d
 --- /dev/null
 +++ b/board/solidrun/rzg-common/rzg-common.h
 @@ -0,0 +1,30 @@
@@ -466,7 +466,7 @@ index 0000000000..180e882d20
 +#endif //__RZG_COMMON_H__
 diff --git a/board/solidrun/rzg-common/rzg2l-regs.h b/board/solidrun/rzg-common/rzg2l-regs.h
 new file mode 100644
-index 0000000000..04852672dc
+index 00000000..04852672
 --- /dev/null
 +++ b/board/solidrun/rzg-common/rzg2l-regs.h
 @@ -0,0 +1,77 @@
@@ -549,7 +549,7 @@ index 0000000000..04852672dc
 +#endif // __RZG2L_REGS_H__
 diff --git a/board/solidrun/rzg-common/update_fdt.c b/board/solidrun/rzg-common/update_fdt.c
 deleted file mode 100644
-index ecd4fca20c..0000000000
+index ecd4fca2..00000000
 --- a/board/solidrun/rzg-common/update_fdt.c
 +++ /dev/null
 @@ -1,245 +0,0 @@
@@ -799,7 +799,7 @@ index ecd4fca20c..0000000000
 -}
 -#endif // __RZG_UPDATE_FDT__
 diff --git a/board/solidrun/rzg2l/Makefile b/board/solidrun/rzg2l/Makefile
-index 91091e01ad..f7a4e66ec0 100644
+index 91091e01..f7a4e66e 100644
 --- a/board/solidrun/rzg2l/Makefile
 +++ b/board/solidrun/rzg2l/Makefile
 @@ -10,4 +10,5 @@ ifdef CONFIG_SPL_BUILD
@@ -809,7 +809,7 @@ index 91091e01ad..f7a4e66ec0 100644
 +obj-y 	+= ../rzg-common/
  endif
 diff --git a/board/solidrun/rzg2l/rzg2l-solidrun.c b/board/solidrun/rzg2l/rzg2l-solidrun.c
-index 4aa78e6e0a..2106865018 100644
+index 4aa78e6e..21068650 100644
 --- a/board/solidrun/rzg2l/rzg2l-solidrun.c
 +++ b/board/solidrun/rzg2l/rzg2l-solidrun.c
 @@ -1,89 +1,11 @@
@@ -1088,7 +1088,7 @@ index 4aa78e6e0a..2106865018 100644
  	/* Clear Lapsed Time Register and clear Interrupt */
  	wdt_write(WDTINT_INTDISP, WDTINT);
 diff --git a/board/solidrun/rzg2lc/Makefile b/board/solidrun/rzg2lc/Makefile
-index effa51e31e..f37bf0f3af 100644
+index effa51e3..f37bf0f3 100644
 --- a/board/solidrun/rzg2lc/Makefile
 +++ b/board/solidrun/rzg2lc/Makefile
 @@ -10,4 +10,5 @@ ifdef CONFIG_SPL_BUILD
@@ -1098,7 +1098,7 @@ index effa51e31e..f37bf0f3af 100644
 +obj-y 	+= ../rzg-common/
  endif
 diff --git a/board/solidrun/rzg2lc/rzg2lc-solidrun.c b/board/solidrun/rzg2lc/rzg2lc-solidrun.c
-index c8666775ce..54ae0ee68d 100644
+index c8666775..54ae0ee6 100644
 --- a/board/solidrun/rzg2lc/rzg2lc-solidrun.c
 +++ b/board/solidrun/rzg2lc/rzg2lc-solidrun.c
 @@ -1,196 +1,77 @@
@@ -1561,7 +1561,7 @@ index c8666775ce..54ae0ee68d 100644
  {
  	writel(val, WDT_BASE + reg);
 diff --git a/configs/rzg2l-solidrun_defconfig b/configs/rzg2l-solidrun_defconfig
-index 52e3f8fd72..ab5381f72b 100644
+index 52e3f8fd..ab5381f7 100644
 --- a/configs/rzg2l-solidrun_defconfig
 +++ b/configs/rzg2l-solidrun_defconfig
 @@ -82,4 +82,6 @@ CONFIG_NET_RANDOM_ETHADDR=y
@@ -1572,7 +1572,7 @@ index 52e3f8fd72..ab5381f72b 100644
  CONFIG_CMD_TLV_EEPROM=y
 +CONFIG_OF_SYSTEM_SETUP=y
 diff --git a/configs/rzg2lc-solidrun_defconfig b/configs/rzg2lc-solidrun_defconfig
-index 8e006a5991..6430c03850 100644
+index 8e006a59..6430c038 100644
 --- a/configs/rzg2lc-solidrun_defconfig
 +++ b/configs/rzg2lc-solidrun_defconfig
 @@ -88,3 +88,4 @@ CONFIG_CMD_PART=y

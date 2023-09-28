@@ -1,7 +1,7 @@
-From ef0bc8e98eed15a186b9e289edccba606d07bbaa Mon Sep 17 00:00:00 2001
+From 3a6c431e9fe707d875197be60c4d50584ec3d6a5 Mon Sep 17 00:00:00 2001
 From: Yazan Shhady <yazan.shhady@solid-run.com>
 Date: Wed, 28 Sep 2022 00:36:47 +0300
-Subject: [PATCH 8/9] update solidrun/rzg2lc/Kconfig - fix the sys_board name
+Subject: [PATCH 08/45] update solidrun/rzg2lc/Kconfig - fix the sys_board name
  to rzg2lc
 
 ---
@@ -9,7 +9,7 @@ Subject: [PATCH 8/9] update solidrun/rzg2lc/Kconfig - fix the sys_board name
  1 file changed, 1 insertion(+), 1 deletion(-)
 
 diff --git a/board/solidrun/rzg2lc/Kconfig b/board/solidrun/rzg2lc/Kconfig
-index f48ef2023a..87a6b9ba27 100644
+index f48ef202..87a6b9ba 100644
 --- a/board/solidrun/rzg2lc/Kconfig
 +++ b/board/solidrun/rzg2lc/Kconfig
 @@ -4,7 +4,7 @@ config SYS_SOC
@@ -22,5 +22,5 @@ index f48ef2023a..87a6b9ba27 100644
  config SYS_VENDOR
  	default "solidrun"
 -- 
-2.25.1
+2.41.0
 

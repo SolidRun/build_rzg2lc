@@ -1,7 +1,7 @@
-From 5768e090b6f5c2d5d0d36bac9f9ff0c6ae655193 Mon Sep 17 00:00:00 2001
+From fce9636163aae6acb62877df217782e3e2b624c8 Mon Sep 17 00:00:00 2001
 From: Yazan Shhady <yazan.shhady@solid-run.com>
 Date: Tue, 27 Sep 2022 23:21:45 +0300
-Subject: [PATCH 5/9] change board name to rzg2lc-solidrun
+Subject: [PATCH 05/45] change board name to rzg2lc-solidrun
 
 ---
  arch/arm/mach-rmobile/Kconfig.64              |   6 +
@@ -19,7 +19,7 @@ Subject: [PATCH 5/9] change board name to rzg2lc-solidrun
  rename include/configs/{rzg2lc-hummingboard.h => rzg2lc-solidrun.h} (91%)
 
 diff --git a/arch/arm/mach-rmobile/Kconfig.64 b/arch/arm/mach-rmobile/Kconfig.64
-index 6e74123014..d68115d5e4 100644
+index 6e741230..d68115d5 100644
 --- a/arch/arm/mach-rmobile/Kconfig.64
 +++ b/arch/arm/mach-rmobile/Kconfig.64
 @@ -202,6 +202,12 @@ config TARGET_SMARC_RZG2LC
@@ -37,7 +37,7 @@ index 6e74123014..d68115d5e4 100644
  	help
 diff --git a/board/solidrun/rzg-common/common.h b/board/solidrun/rzg-common/common.h
 new file mode 100644
-index 0000000000..1cea22e380
+index 00000000..1cea22e3
 --- /dev/null
 +++ b/board/solidrun/rzg-common/common.h
 @@ -0,0 +1,26 @@
@@ -69,7 +69,7 @@ index 0000000000..1cea22e380
 +#endif //__RZG_COMMON_H__
 diff --git a/board/solidrun/rzg-common/update_fdt.c b/board/solidrun/rzg-common/update_fdt.c
 new file mode 100644
-index 0000000000..ecd4fca20c
+index 00000000..ecd4fca2
 --- /dev/null
 +++ b/board/solidrun/rzg-common/update_fdt.c
 @@ -0,0 +1,245 @@
@@ -319,7 +319,7 @@ index 0000000000..ecd4fca20c
 +}
 +#endif // __RZG_UPDATE_FDT__
 diff --git a/board/solidrun/rzg2lc/Kconfig b/board/solidrun/rzg2lc/Kconfig
-index 43f6fa305f..f48ef2023a 100644
+index 43f6fa30..f48ef202 100644
 --- a/board/solidrun/rzg2lc/Kconfig
 +++ b/board/solidrun/rzg2lc/Kconfig
 @@ -1,15 +1,15 @@
@@ -342,7 +342,7 @@ index 43f6fa305f..f48ef2023a 100644
  
  endif
 diff --git a/board/solidrun/rzg2lc/Makefile b/board/solidrun/rzg2lc/Makefile
-index add536bd7e..effa51e31e 100644
+index add536bd..effa51e3 100644
 --- a/board/solidrun/rzg2lc/Makefile
 +++ b/board/solidrun/rzg2lc/Makefile
 @@ -9,5 +9,5 @@
@@ -356,7 +356,7 @@ diff --git a/board/solidrun/rzg2lc/rzg2lc-hummingboard.c b/board/solidrun/rzg2lc
 similarity index 98%
 rename from board/solidrun/rzg2lc/rzg2lc-hummingboard.c
 rename to board/solidrun/rzg2lc/rzg2lc-solidrun.c
-index 0894eef2e4..224b666a8d 100644
+index 0894eef2..224b666a 100644
 --- a/board/solidrun/rzg2lc/rzg2lc-hummingboard.c
 +++ b/board/solidrun/rzg2lc/rzg2lc-solidrun.c
 @@ -50,7 +50,7 @@ void s_init(void)
@@ -369,7 +369,7 @@ index 0894eef2e4..224b666a8d 100644
  #else
  	*(volatile u32 *)(PFC_P37) = (*(volatile u32 *)(PFC_P37) & 0xFFFFFFF9) | 0x4;	/* Port 39[2:1] output value 0b10*/
 diff --git a/configs/rzg2lc-solidrun_defconfig b/configs/rzg2lc-solidrun_defconfig
-index ccbd358a37..75be1c4a70 100644
+index ccbd358a..75be1c4a 100644
 --- a/configs/rzg2lc-solidrun_defconfig
 +++ b/configs/rzg2lc-solidrun_defconfig
 @@ -2,13 +2,13 @@ CONFIG_ARM=y
@@ -403,7 +403,7 @@ diff --git a/include/configs/rzg2lc-hummingboard.h b/include/configs/rzg2lc-soli
 similarity index 91%
 rename from include/configs/rzg2lc-hummingboard.h
 rename to include/configs/rzg2lc-solidrun.h
-index ee1d674850..53a39cf19f 100644
+index ee1d6748..53a39cf1 100644
 --- a/include/configs/rzg2lc-hummingboard.h
 +++ b/include/configs/rzg2lc-solidrun.h
 @@ -3,8 +3,8 @@
@@ -436,5 +436,5 @@ index ee1d674850..53a39cf19f 100644
 -#endif /* __SMARC_RZG2L_H */
 +#endif /* __RZG2LC_SOLIDRUN_H */
 -- 
-2.25.1
+2.41.0
 

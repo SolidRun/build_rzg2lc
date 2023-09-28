@@ -1,14 +1,14 @@
-From 23c0cd48fb84bc6ded5148b800b02b2813932ad7 Mon Sep 17 00:00:00 2001
+From caad0caf79a9d9216dd70b3f6197c3a27946e67c Mon Sep 17 00:00:00 2001
 From: Yazan Shhady <yazan.shhady@solid-run.com>
 Date: Wed, 28 Sep 2022 00:06:33 +0300
-Subject: [PATCH 6/9] update rzg2lc-solidrun defconfig
+Subject: [PATCH 06/45] update rzg2lc-solidrun defconfig
 
 ---
  configs/rzg2lc-solidrun_defconfig | 6 ++++--
  1 file changed, 4 insertions(+), 2 deletions(-)
 
 diff --git a/configs/rzg2lc-solidrun_defconfig b/configs/rzg2lc-solidrun_defconfig
-index 75be1c4a70..83e7f58f78 100644
+index 75be1c4a..83e7f58f 100644
 --- a/configs/rzg2lc-solidrun_defconfig
 +++ b/configs/rzg2lc-solidrun_defconfig
 @@ -13,7 +13,7 @@ CONFIG_SMBIOS_PRODUCT_NAME=""
@@ -37,5 +37,5 @@ index 75be1c4a70..83e7f58f78 100644
 +CONFIG_SYS_MMC_ENV_PART=2
  CONFIG_SYS_I2C_RZG2L_RIIC=y
 -- 
-2.25.1
+2.41.0
 

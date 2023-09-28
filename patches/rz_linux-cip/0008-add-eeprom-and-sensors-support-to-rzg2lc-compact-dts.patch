@@ -1,7 +1,7 @@
-From 354da027ea0f38f82646550189ed048c75a96485 Mon Sep 17 00:00:00 2001
+From a14893fc36d9becac0b157d583c5fe05b5466829 Mon Sep 17 00:00:00 2001
 From: Yazan Shhady <yazan.shhady@solid-run.com>
 Date: Mon, 10 Apr 2023 18:21:56 +0300
-Subject: [PATCH] add eeprom and sensors support to rzg2lc-compact dts
+Subject: [PATCH 08/53] add eeprom and sensors support to rzg2lc-compact dts
 
 - Add Eeprom CAT24AA01TDI-GT3 1-kb (128 B x 8) suport [I2C0-0x50]
 - Add Accelerometer I2C sensor support [I2C0-0x1d]
@@ -11,7 +11,7 @@ Subject: [PATCH] add eeprom and sensors support to rzg2lc-compact dts
  1 file changed, 19 insertions(+)
 
 diff --git a/arch/arm64/boot/dts/renesas/rzg2lc-compact.dts b/arch/arm64/boot/dts/renesas/rzg2lc-compact.dts
-index 202619fadc2e..8d160bc60755 100644
+index 202619fad..8d160bc60 100644
 --- a/arch/arm64/boot/dts/renesas/rzg2lc-compact.dts
 +++ b/arch/arm64/boot/dts/renesas/rzg2lc-compact.dts
 @@ -359,6 +359,25 @@ &i2c0 {
@@ -41,5 +41,5 @@ index 202619fadc2e..8d160bc60755 100644
  
  &i2c1 {
 -- 
-2.25.1
+2.41.0
 

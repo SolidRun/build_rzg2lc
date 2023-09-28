@@ -1,0 +1,45 @@
+From 855e445e20dfcabda98270644207593bbff0a1ec Mon Sep 17 00:00:00 2001
+From: Josua Mayer <josua@solid-run.com>
+Date: Tue, 16 May 2023 11:16:12 +0300
+Subject: [PATCH 35/45] cmd: tlv_eeprom: fix signature for
+ populate_serial_number function
+
+populate_serial_number is not used internally for the tlv_eeprom
+command, but rather provided as a library function for external use..
+Remove the devnum that had recently been added by mistake, returning the
+function to its original signature.
+
+Instead place a 0-initialised member variable inside the function to
+same purpose, along with a node that it only supports reading from the
+first EEPROM in the system.
+
+Fixes: dfda0c0 ("cmd: tlv_eeprom: remove use of global variable current_dev")
+Signed-off-by: Josua Mayer <josua@solid-run.com>
+Cc: Stefan Roese <sr@denx.de>
+Cc: Baruch Siach <baruch@tkos.co.il>
+Cc: Heinrich Schuchardt <xypron.glpk@gmx.de>
+---
+ cmd/tlv_eeprom.c | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+diff --git a/cmd/tlv_eeprom.c b/cmd/tlv_eeprom.c
+index 79796394..0ca4d714 100644
+--- a/cmd/tlv_eeprom.c
++++ b/cmd/tlv_eeprom.c
+@@ -1100,11 +1100,12 @@ int mac_read_from_eeprom(void)
+  *
+  *  This function must be called after relocation.
+  */
+-int populate_serial_number(int devnum)
++int populate_serial_number(void)
+ {
+ 	char serialstr[257];
+ 	int eeprom_index;
+ 	struct tlvinfo_tlv *eeprom_tlv;
++	int devnum = 0; // TODO: support multiple EEPROMs
+ 
+ 	if (env_get("serial#"))
+ 		return 0;
+-- 
+2.41.0
+

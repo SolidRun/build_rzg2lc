@@ -1,7 +1,7 @@
-From 37779529e0f7f3cee1d09924fbf65d34f413dbd0 Mon Sep 17 00:00:00 2001
+From bf6e652695eaceb8ae5586784e3f7b9d05636644 Mon Sep 17 00:00:00 2001
 From: Yazan Shhady <yazan.shhady@solid-run.com>
 Date: Thu, 10 Aug 2023 20:16:45 +0300
-Subject: [PATCH] fix rzg2l eeprom settings
+Subject: [PATCH 34/53] fix rzg2l eeprom settings
 
 ---
  .../boot/dts/renesas/rzg2l-hummingboard-tutus.dts   |  6 ------
@@ -9,7 +9,7 @@ Subject: [PATCH] fix rzg2l eeprom settings
  2 files changed, 6 insertions(+), 13 deletions(-)
 
 diff --git a/arch/arm64/boot/dts/renesas/rzg2l-hummingboard-tutus.dts b/arch/arm64/boot/dts/renesas/rzg2l-hummingboard-tutus.dts
-index eee605795d11..108751b78c59 100644
+index eee605795..108751b78 100644
 --- a/arch/arm64/boot/dts/renesas/rzg2l-hummingboard-tutus.dts
 +++ b/arch/arm64/boot/dts/renesas/rzg2l-hummingboard-tutus.dts
 @@ -84,12 +84,6 @@ rtc@69 {
@@ -26,7 +26,7 @@ index eee605795d11..108751b78c59 100644
  
  &dsi0 {
 diff --git a/arch/arm64/boot/dts/renesas/rzg2l-sr-som.dtsi b/arch/arm64/boot/dts/renesas/rzg2l-sr-som.dtsi
-index 4aa0973f852c..5aea58b1d90c 100644
+index 4aa0973f8..5aea58b1d 100644
 --- a/arch/arm64/boot/dts/renesas/rzg2l-sr-som.dtsi
 +++ b/arch/arm64/boot/dts/renesas/rzg2l-sr-som.dtsi
 @@ -437,6 +437,12 @@ &i2c0 {
@@ -57,5 +57,5 @@ index 4aa0973f852c..5aea58b1d90c 100644
  
  &i2c3 {
 -- 
-2.25.1
+2.41.0
 

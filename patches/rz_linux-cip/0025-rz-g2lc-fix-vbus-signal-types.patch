@@ -1,7 +1,7 @@
-From ffd97db2eac9f930bc10ccd23e560948bbccbf32 Mon Sep 17 00:00:00 2001
+From fd47636da1bc6b3ebde256de0c04a1ea04b7df56 Mon Sep 17 00:00:00 2001
 From: Mikhail Anikin <mikhail.anikin@solid-run.com>
 Date: Tue, 1 Aug 2023 13:17:55 +0300
-Subject: [PATCH 2/2] rz/g2lc: fix vbus signal types
+Subject: [PATCH 25/53] rz/g2lc: fix vbus signal types
 
 There was a mistake in the pinmux configuration. The USB1 VBUS was actually configured as OVCUR.
 It worked on the hummingboard because hummingboard needs open-drain vbus signals.
@@ -13,7 +13,7 @@ Now by default som has push-pull vbus signals and the hummingboard dts overrides
  3 files changed, 19 insertions(+), 19 deletions(-)
 
 diff --git a/arch/arm64/boot/dts/renesas/rzg2lc-hummingboard.dts b/arch/arm64/boot/dts/renesas/rzg2lc-hummingboard.dts
-index 86ee0312be43..55cc20e7b002 100644
+index 86ee0312b..55cc20e7b 100644
 --- a/arch/arm64/boot/dts/renesas/rzg2lc-hummingboard.dts
 +++ b/arch/arm64/boot/dts/renesas/rzg2lc-hummingboard.dts
 @@ -132,3 +132,13 @@ &spi1 {
@@ -31,7 +31,7 @@ index 86ee0312be43..55cc20e7b002 100644
 +	gpio-open-drain;
 +};
 diff --git a/arch/arm64/boot/dts/renesas/rzg2lc-sr-pinfunction.dtsi b/arch/arm64/boot/dts/renesas/rzg2lc-sr-pinfunction.dtsi
-index d60cb2e0700d..fc06036e21d0 100644
+index d60cb2e07..fc06036e2 100644
 --- a/arch/arm64/boot/dts/renesas/rzg2lc-sr-pinfunction.dtsi
 +++ b/arch/arm64/boot/dts/renesas/rzg2lc-sr-pinfunction.dtsi
 @@ -96,13 +96,4 @@ ssi0_pins: ssi0 {
@@ -49,7 +49,7 @@ index d60cb2e0700d..fc06036e21d0 100644
 -
  };
 diff --git a/arch/arm64/boot/dts/renesas/rzg2lc-sr-som.dtsi b/arch/arm64/boot/dts/renesas/rzg2lc-sr-som.dtsi
-index 1a454991e12f..45e6f0a7e8e4 100644
+index 60c5e0ed2..a6c3d114c 100644
 --- a/arch/arm64/boot/dts/renesas/rzg2lc-sr-som.dtsi
 +++ b/arch/arm64/boot/dts/renesas/rzg2lc-sr-som.dtsi
 @@ -104,13 +104,17 @@ usb0_vbus_otg: regulator-usb0-vbus-otg {

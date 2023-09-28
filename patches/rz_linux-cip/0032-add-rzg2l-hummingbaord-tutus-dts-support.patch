@@ -1,7 +1,7 @@
-From 7e52b8466efd960b767a886cfe558f33c63506a6 Mon Sep 17 00:00:00 2001
+From a5b53956d215779f34bf68f8eb63b82b328fa00c Mon Sep 17 00:00:00 2001
 From: Yazan Shhady <yazan.shhady@solid-run.com>
 Date: Wed, 9 Aug 2023 11:38:53 +0300
-Subject: [PATCH 2/3] add rzg2l-hummingbaord-tutus dts support
+Subject: [PATCH 32/53] add rzg2l-hummingbaord-tutus dts support
 
 ---
  .../dts/renesas/rzg2l-hummingboard-tutus.dts  | 119 ++++++++++++++++++
@@ -10,7 +10,7 @@ Subject: [PATCH 2/3] add rzg2l-hummingbaord-tutus dts support
 
 diff --git a/arch/arm64/boot/dts/renesas/rzg2l-hummingboard-tutus.dts b/arch/arm64/boot/dts/renesas/rzg2l-hummingboard-tutus.dts
 new file mode 100644
-index 000000000000..eee605795d11
+index 000000000..eee605795
 --- /dev/null
 +++ b/arch/arm64/boot/dts/renesas/rzg2l-hummingboard-tutus.dts
 @@ -0,0 +1,119 @@
@@ -134,5 +134,5 @@ index 000000000000..eee605795d11
 +	status = "disabled";
 +};
 -- 
-2.25.1
+2.41.0
 

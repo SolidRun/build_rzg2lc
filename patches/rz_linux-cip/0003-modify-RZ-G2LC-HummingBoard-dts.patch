@@ -1,7 +1,7 @@
-From f46cb861034f470d926d2df39ad5aa3bcbbe102c Mon Sep 17 00:00:00 2001
+From 82a4ce797d7a93793600babf6e22bb834ce8d813 Mon Sep 17 00:00:00 2001
 From: Yazan Shhady <yazan.shhady@solid-run.com>
 Date: Sun, 26 Feb 2023 14:49:20 +0200
-Subject: [PATCH 3/3] modify RZ/G2LC HummingBoard dts
+Subject: [PATCH 03/53] modify RZ/G2LC HummingBoard dts
 
 -rename rzg2lc-hummingboard.dts
 -remove unused dts nodes from rzg2lc-hummingboard.dts
@@ -15,7 +15,7 @@ Signed-off-by: Yazan Shhady <yazan.shhady@solid-run.com>
  rename arch/arm64/boot/dts/renesas/{rzg2lc-hummingbaord.dts => rzg2lc-hummingboard.dts} (58%)
 
 diff --git a/arch/arm64/boot/dts/renesas/Makefile b/arch/arm64/boot/dts/renesas/Makefile
-index 7c9884781db0..ef3e29e08034 100644
+index 7acfd037e..79487787d 100644
 --- a/arch/arm64/boot/dts/renesas/Makefile
 +++ b/arch/arm64/boot/dts/renesas/Makefile
 @@ -88,7 +88,7 @@ dtb-$(CONFIG_ARCH_R9A07G043) += r9a07g043u11-smarc.dtb
@@ -31,7 +31,7 @@ diff --git a/arch/arm64/boot/dts/renesas/rzg2lc-hummingbaord.dts b/arch/arm64/bo
 similarity index 58%
 rename from arch/arm64/boot/dts/renesas/rzg2lc-hummingbaord.dts
 rename to arch/arm64/boot/dts/renesas/rzg2lc-hummingboard.dts
-index bf82f33ca51e..9096049b1450 100644
+index bf82f33ca..9096049b1 100644
 --- a/arch/arm64/boot/dts/renesas/rzg2lc-hummingbaord.dts
 +++ b/arch/arm64/boot/dts/renesas/rzg2lc-hummingboard.dts
 @@ -5,26 +5,9 @@
@@ -317,7 +317,7 @@ index bf82f33ca51e..9096049b1450 100644
 -
 -/* ==========================================================================*/
 diff --git a/arch/arm64/boot/dts/renesas/rzg2lc-sr-som.dtsi b/arch/arm64/boot/dts/renesas/rzg2lc-sr-som.dtsi
-index 448c6a8cc037..fa0b82073f91 100644
+index 448c6a8cc..fa0b82073 100644
 --- a/arch/arm64/boot/dts/renesas/rzg2lc-sr-som.dtsi
 +++ b/arch/arm64/boot/dts/renesas/rzg2lc-sr-som.dtsi
 @@ -6,23 +6,12 @@
@@ -570,5 +570,5 @@ index 448c6a8cc037..fa0b82073f91 100644
 -//TEST-2
 -#endif
 -- 
-2.25.1
+2.41.0
 

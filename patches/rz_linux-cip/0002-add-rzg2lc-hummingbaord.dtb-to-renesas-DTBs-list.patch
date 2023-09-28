@@ -1,14 +1,14 @@
-From 74381e6856f06354586a0ca0e7d6c73bdf0929f2 Mon Sep 17 00:00:00 2001
+From 1fc14452eb9d3ce121c9d3c9742bcf528707cad3 Mon Sep 17 00:00:00 2001
 From: Yazan Shhady <yazan.shhady@solid-run.com>
 Date: Mon, 20 Feb 2023 18:37:30 +0200
-Subject: [PATCH 2/2] add rzg2lc-hummingbaord.dtb to renesas DTBs list
+Subject: [PATCH 02/53] add rzg2lc-hummingbaord.dtb to renesas DTBs list
 
 ---
  arch/arm64/boot/dts/renesas/Makefile | 1 +
  1 file changed, 1 insertion(+)
 
 diff --git a/arch/arm64/boot/dts/renesas/Makefile b/arch/arm64/boot/dts/renesas/Makefile
-index 65754c43292b..7c9884781db0 100644
+index 30b88d5fc..7acfd037e 100644
 --- a/arch/arm64/boot/dts/renesas/Makefile
 +++ b/arch/arm64/boot/dts/renesas/Makefile
 @@ -88,6 +88,7 @@ dtb-$(CONFIG_ARCH_R9A07G043) += r9a07g043u11-smarc.dtb
@@ -20,5 +20,5 @@ index 65754c43292b..7c9884781db0 100644
  dtb-$(CONFIG_ARCH_R9A07G044) += r9a07g044l2-smarc.dtb
  dtb-$(CONFIG_ARCH_R9A07G044) += r9a07g044l2-dev.dtb
 -- 
-2.25.1
+2.41.0
 

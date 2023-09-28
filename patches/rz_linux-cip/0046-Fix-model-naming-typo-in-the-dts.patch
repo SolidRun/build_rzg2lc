@@ -1,7 +1,7 @@
-From 0991e23aa2ad7be8c495cf4b27199365b9ced45c Mon Sep 17 00:00:00 2001
+From 2838c9cd839867796fccf36f90d83c4d148ec4a5 Mon Sep 17 00:00:00 2001
 From: Mikhail Anikin <mikhail.anikin@solid-run.com>
 Date: Sun, 10 Sep 2023 17:36:41 +0300
-Subject: [PATCH] Fix model naming typo in the dts
+Subject: [PATCH 46/53] Fix model naming typo in the dts
 
 ---
  arch/arm64/boot/dts/renesas/rzg2l-hummingboard-extended.dts | 2 +-
@@ -12,7 +12,7 @@ Subject: [PATCH] Fix model naming typo in the dts
  5 files changed, 5 insertions(+), 5 deletions(-)
 
 diff --git a/arch/arm64/boot/dts/renesas/rzg2l-hummingboard-extended.dts b/arch/arm64/boot/dts/renesas/rzg2l-hummingboard-extended.dts
-index 55fb0af1b485..563e39f0d940 100644
+index 55fb0af1b..563e39f0d 100644
 --- a/arch/arm64/boot/dts/renesas/rzg2l-hummingboard-extended.dts
 +++ b/arch/arm64/boot/dts/renesas/rzg2l-hummingboard-extended.dts
 @@ -21,7 +21,7 @@
@@ -25,7 +25,7 @@ index 55fb0af1b485..563e39f0d940 100644
  
  	x1_clk: x1-clock {
 diff --git a/arch/arm64/boot/dts/renesas/rzg2l-hummingboard-ripple.dts b/arch/arm64/boot/dts/renesas/rzg2l-hummingboard-ripple.dts
-index 20b94394bfce..55130d16f56f 100644
+index 20b94394b..55130d16f 100644
 --- a/arch/arm64/boot/dts/renesas/rzg2l-hummingboard-ripple.dts
 +++ b/arch/arm64/boot/dts/renesas/rzg2l-hummingboard-ripple.dts
 @@ -21,7 +21,7 @@
@@ -38,7 +38,7 @@ index 20b94394bfce..55130d16f56f 100644
  
  	x1_clk: x1-clock {
 diff --git a/arch/arm64/boot/dts/renesas/rzg2l-hummingboard-tutus.dts b/arch/arm64/boot/dts/renesas/rzg2l-hummingboard-tutus.dts
-index b1dc76723c3d..727214ccbf02 100644
+index b1dc76723..727214ccb 100644
 --- a/arch/arm64/boot/dts/renesas/rzg2l-hummingboard-tutus.dts
 +++ b/arch/arm64/boot/dts/renesas/rzg2l-hummingboard-tutus.dts
 @@ -22,7 +22,7 @@
@@ -51,7 +51,7 @@ index b1dc76723c3d..727214ccbf02 100644
  
  	x1_clk: x1-clock {
 diff --git a/arch/arm64/boot/dts/renesas/rzv2l-hummingboard-extended.dts b/arch/arm64/boot/dts/renesas/rzv2l-hummingboard-extended.dts
-index 320eb2560a8a..55c415adf395 100644
+index 320eb2560..55c415adf 100644
 --- a/arch/arm64/boot/dts/renesas/rzv2l-hummingboard-extended.dts
 +++ b/arch/arm64/boot/dts/renesas/rzv2l-hummingboard-extended.dts
 @@ -21,7 +21,7 @@
@@ -64,7 +64,7 @@ index 320eb2560a8a..55c415adf395 100644
  
  	x1_clk: x1-clock {
 diff --git a/arch/arm64/boot/dts/renesas/rzv2l-hummingboard-ripple.dts b/arch/arm64/boot/dts/renesas/rzv2l-hummingboard-ripple.dts
-index 3e10056a93b7..87fb633b5f16 100644
+index 3e10056a9..87fb633b5 100644
 --- a/arch/arm64/boot/dts/renesas/rzv2l-hummingboard-ripple.dts
 +++ b/arch/arm64/boot/dts/renesas/rzv2l-hummingboard-ripple.dts
 @@ -21,7 +21,7 @@

@@ -1,14 +1,14 @@
-From 213a31e909e1db3afbc9444dc95973303499e241 Mon Sep 17 00:00:00 2001
+From 1137ecb15e20e4318d246e3a182224115791bcd8 Mon Sep 17 00:00:00 2001
 From: Yazan Shhady <yazan.shhady@solid-run.com>
 Date: Tue, 20 Jun 2023 19:28:55 +0300
-Subject: [PATCH 2/2] add rzg2l-hummingboard-ripple.dtb to renesas dtb list
+Subject: [PATCH 30/53] add rzg2l-hummingboard-ripple.dtb to renesas dtb list
 
 ---
  arch/arm64/boot/dts/renesas/Makefile | 1 +
  1 file changed, 1 insertion(+)
 
 diff --git a/arch/arm64/boot/dts/renesas/Makefile b/arch/arm64/boot/dts/renesas/Makefile
-index be240573eb7e..137d3fb77ba0 100644
+index c1a46b319..335e1b502 100644
 --- a/arch/arm64/boot/dts/renesas/Makefile
 +++ b/arch/arm64/boot/dts/renesas/Makefile
 @@ -89,6 +89,7 @@ dtb-$(CONFIG_ARCH_R9A07G043) += r9a07g043u11-dev.dtb
@@ -20,5 +20,5 @@ index be240573eb7e..137d3fb77ba0 100644
  dtb-$(CONFIG_ARCH_R9A07G044) += r9a07g044c2-dev.dtb
  dtb-$(CONFIG_ARCH_R9A07G044) += r9a07g044l2-smarc.dtb
 -- 
-2.25.1
+2.41.0
 

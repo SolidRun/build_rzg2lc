@@ -1,14 +1,14 @@
-From 5c08b70cee5b0ef44f2aa09325bb0f93d617f285 Mon Sep 17 00:00:00 2001
+From b49edb454558ba1dab5d9d19d4eee721b3940e34 Mon Sep 17 00:00:00 2001
 From: Yazan Shhady <yazan.shhady@solid-run.com>
 Date: Tue, 13 Jun 2023 14:42:06 +0300
-Subject: [PATCH] edit rz/g2lc dts - fix sd/emmc vdd select
+Subject: [PATCH 20/53] edit rz/g2lc dts - fix sd/emmc vdd select
 
 ---
  .../arm64/boot/dts/renesas/rzg2lc-sr-som.dtsi | 56 ++++++++++---------
  1 file changed, 30 insertions(+), 26 deletions(-)
 
 diff --git a/arch/arm64/boot/dts/renesas/rzg2lc-sr-som.dtsi b/arch/arm64/boot/dts/renesas/rzg2lc-sr-som.dtsi
-index ff102546dad9..8371c4401429 100644
+index ff102546d..8371c4401 100644
 --- a/arch/arm64/boot/dts/renesas/rzg2lc-sr-som.dtsi
 +++ b/arch/arm64/boot/dts/renesas/rzg2lc-sr-som.dtsi
 @@ -219,6 +219,36 @@ qspi0-ctrl {
@@ -89,5 +89,5 @@ index ff102546dad9..8371c4401429 100644
  
  &wdt0 {
 -- 
-2.25.1
+2.41.0
 

@@ -1,7 +1,7 @@
-From 23e652c794f9d8a35b86ca36a63111d084b67421 Mon Sep 17 00:00:00 2001
+From 4b4dddd8e09e1805c8a2ba88c393e328522d0b60 Mon Sep 17 00:00:00 2001
 From: Mikhail Anikin <mikhail.anikin@solid-run.com>
 Date: Mon, 11 Sep 2023 10:48:26 +0300
-Subject: [PATCH] Updated rzg common: remove implicit declarations
+Subject: [PATCH 43/45] Updated rzg common: remove implicit declarations
 
 ---
  board/solidrun/rzg-common/rzg-common.c  | 15 +++++++++------

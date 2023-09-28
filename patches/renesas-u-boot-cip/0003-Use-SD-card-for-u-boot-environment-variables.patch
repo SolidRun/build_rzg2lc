@@ -1,14 +1,14 @@
-From eab2204f2fcb3ef33caa48ec9c6dc90d8ad3b550 Mon Sep 17 00:00:00 2001
+From ec96993dfaaf0ea96e6021f11a1b9de7ccb87e9d Mon Sep 17 00:00:00 2001
 From: Yazan Shhady <yazan.shhady@solid-run.com>
 Date: Tue, 27 Sep 2022 04:45:14 +0300
-Subject: [PATCH 3/9] Use SD card for u-boot environment variables
+Subject: [PATCH 03/45] Use SD card for u-boot environment variables
 
 ---
  configs/rzg2lc-solidrun_defconfig | 4 ++--
  1 file changed, 2 insertions(+), 2 deletions(-)
 
 diff --git a/configs/rzg2lc-solidrun_defconfig b/configs/rzg2lc-solidrun_defconfig
-index 8abf9c9cf6..ccbd358a37 100644
+index 8abf9c9c..ccbd358a 100644
 --- a/configs/rzg2lc-solidrun_defconfig
 +++ b/configs/rzg2lc-solidrun_defconfig
 @@ -2,8 +2,8 @@ CONFIG_ARM=y
@@ -23,5 +23,5 @@ index 8abf9c9cf6..ccbd358a37 100644
  CONFIG_RCAR_GEN3=y
  CONFIG_R9A07G044C=y
 -- 
-2.25.1
+2.41.0
 

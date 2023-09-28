@@ -1,7 +1,7 @@
-From 9e2363b3719bcf1d31d653a15647a18220d77517 Mon Sep 17 00:00:00 2001
+From 5b86f8c9293555186ab76385aa478268ba60c908 Mon Sep 17 00:00:00 2001
 From: Yazan Shhady <yazan.shhady@solid-run.com>
 Date: Sun, 3 Sep 2023 14:28:41 +0300
-Subject: [PATCH] add RZ/V2L SR-SOM board support
+Subject: [PATCH 42/45] add RZ/V2L SR-SOM board support
 
 ---
  arch/arm/dts/Makefile                 |   1 +
@@ -728,5 +728,5 @@ index 00000000..b07569af
 +
 +#endif /* __RZV2L_DEV_H */
 -- 
-2.25.1
+2.41.0
 

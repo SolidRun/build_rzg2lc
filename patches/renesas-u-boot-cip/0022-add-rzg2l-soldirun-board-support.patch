@@ -1,7 +1,7 @@
-From b7234477244e9e526a8556037e7ea992edd0f494 Mon Sep 17 00:00:00 2001
+From 677d51e0362abf2409580be1b68e08f20067d30d Mon Sep 17 00:00:00 2001
 From: Yazan Shhady <yazan.shhady@solid-run.com>
 Date: Sun, 2 Jul 2023 10:25:03 +0300
-Subject: [PATCH] add rzg2l soldirun board support
+Subject: [PATCH 22/45] add rzg2l soldirun board support
 
 ---
  arch/arm/dts/Makefile                 |   1 +
@@ -21,7 +21,7 @@ Subject: [PATCH] add rzg2l soldirun board support
  create mode 100644 include/configs/rzg2l-solidrun.h
 
 diff --git a/arch/arm/dts/Makefile b/arch/arm/dts/Makefile
-index 0c8c70d1b6..c49c9c8e81 100644
+index 0c8c70d1..c49c9c8e 100644
 --- a/arch/arm/dts/Makefile
 +++ b/arch/arm/dts/Makefile
 @@ -923,6 +923,7 @@ dtb-$(CONFIG_RCAR_GEN3) += \
@@ -34,7 +34,7 @@ index 0c8c70d1b6..c49c9c8e81 100644
  	smarc-rzv2l.dtb \
 diff --git a/arch/arm/dts/rzg2l-solidrun.dts b/arch/arm/dts/rzg2l-solidrun.dts
 new file mode 100644
-index 0000000000..79e9f8522c
+index 00000000..79e9f852
 --- /dev/null
 +++ b/arch/arm/dts/rzg2l-solidrun.dts
 @@ -0,0 +1,103 @@
@@ -142,7 +142,7 @@ index 0000000000..79e9f8522c
 +	};
 +};
 diff --git a/arch/arm/mach-rmobile/Kconfig.64 b/arch/arm/mach-rmobile/Kconfig.64
-index 69d8b7e13b..91dd9341e7 100644
+index 69d8b7e1..91dd9341 100644
 --- a/arch/arm/mach-rmobile/Kconfig.64
 +++ b/arch/arm/mach-rmobile/Kconfig.64
 @@ -177,6 +177,11 @@ config TARGET_RZG2L_DEV
@@ -167,7 +167,7 @@ index 69d8b7e13b..91dd9341e7 100644
  	default 0x80000 if TARGET_HIHOPE_RZG2
 diff --git a/board/solidrun/rzg2l/Kconfig b/board/solidrun/rzg2l/Kconfig
 new file mode 100644
-index 0000000000..9dac8b3f6c
+index 00000000..9dac8b3f
 --- /dev/null
 +++ b/board/solidrun/rzg2l/Kconfig
 @@ -0,0 +1,15 @@
@@ -188,7 +188,7 @@ index 0000000000..9dac8b3f6c
 +endif
 diff --git a/board/solidrun/rzg2l/Makefile b/board/solidrun/rzg2l/Makefile
 new file mode 100644
-index 0000000000..91091e01ad
+index 00000000..91091e01
 --- /dev/null
 +++ b/board/solidrun/rzg2l/Makefile
 @@ -0,0 +1,13 @@
@@ -207,7 +207,7 @@ index 0000000000..91091e01ad
 +endif
 diff --git a/board/solidrun/rzg2l/rzg2l-solidrun.c b/board/solidrun/rzg2l/rzg2l-solidrun.c
 new file mode 100644
-index 0000000000..7a25927cde
+index 00000000..7a25927c
 --- /dev/null
 +++ b/board/solidrun/rzg2l/rzg2l-solidrun.c
 @@ -0,0 +1,187 @@
@@ -400,7 +400,7 @@ index 0000000000..7a25927cde
 +}
 diff --git a/configs/rzg2l-solidrun_defconfig b/configs/rzg2l-solidrun_defconfig
 new file mode 100644
-index 0000000000..798b1429fb
+index 00000000..798b1429
 --- /dev/null
 +++ b/configs/rzg2l-solidrun_defconfig
 @@ -0,0 +1,84 @@
@@ -490,7 +490,7 @@ index 0000000000..798b1429fb
 +CONFIG_CMD_TLV_EEPROM=y
 diff --git a/include/configs/rzg2l-solidrun.h b/include/configs/rzg2l-solidrun.h
 new file mode 100644
-index 0000000000..b5063a4cfb
+index 00000000..b5063a4c
 --- /dev/null
 +++ b/include/configs/rzg2l-solidrun.h
 @@ -0,0 +1,88 @@
@@ -583,5 +583,5 @@ index 0000000000..b5063a4cfb
 +
 +#endif /* __RZG2L_SOLIDRUN_H */
 -- 
-2.25.1
+2.41.0
 

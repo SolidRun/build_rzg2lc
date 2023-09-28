@@ -1,7 +1,7 @@
-From 46b17dc1a578fe39ee4c35506cdb2b233a052362 Mon Sep 17 00:00:00 2001
+From 8e9e6b032013da9d19a41cb70242a9604be15cf0 Mon Sep 17 00:00:00 2001
 From: Mikhail Anikin <mikhail.anikin@solid-run.com>
 Date: Tue, 1 Aug 2023 13:13:05 +0300
-Subject: [PATCH] Fix USB VBUS signal types
+Subject: [PATCH 20/45] Fix USB VBUS signal types
 
 ---
  arch/arm/dts/rzg2lc-solidrun.dts        | 13 -----
@@ -10,7 +10,7 @@ Subject: [PATCH] Fix USB VBUS signal types
  3 files changed, 43 insertions(+), 44 deletions(-)
 
 diff --git a/arch/arm/dts/rzg2lc-solidrun.dts b/arch/arm/dts/rzg2lc-solidrun.dts
-index 9236155ac3..cc2038cd44 100644
+index 9236155a..cc2038cd 100644
 --- a/arch/arm/dts/rzg2lc-solidrun.dts
 +++ b/arch/arm/dts/rzg2lc-solidrun.dts
 @@ -60,15 +60,6 @@
@@ -46,7 +46,7 @@ index 9236155ac3..cc2038cd44 100644
  	phys = <&usb2_phy1>;
  };
 diff --git a/board/solidrun/rzg2lc/rzg2lc-solidrun.c b/board/solidrun/rzg2lc/rzg2lc-solidrun.c
-index 6f3179c7c9..76abfca809 100644
+index 6f3179c7..76abfca8 100644
 --- a/board/solidrun/rzg2lc/rzg2lc-solidrun.c
 +++ b/board/solidrun/rzg2lc/rzg2lc-solidrun.c
 @@ -47,8 +47,12 @@ DECLARE_GLOBAL_DATA_PTR;
@@ -173,7 +173,7 @@ index 6f3179c7c9..76abfca809 100644
  {
  	writel(val, WDT_BASE + reg);
 diff --git a/configs/rzg2lc-solidrun_defconfig b/configs/rzg2lc-solidrun_defconfig
-index 69a009a01d..23daa1388b 100644
+index 69a009a0..23daa138 100644
 --- a/configs/rzg2lc-solidrun_defconfig
 +++ b/configs/rzg2lc-solidrun_defconfig
 @@ -12,6 +12,7 @@ CONFIG_DEFAULT_DEVICE_TREE="rzg2lc-solidrun"

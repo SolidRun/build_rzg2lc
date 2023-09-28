@@ -1,14 +1,14 @@
-From a9498cc99904e8be6a88b7573bc69cba83bf7486 Mon Sep 17 00:00:00 2001
+From bdef955421b82c9dc3646f22ae78e929979dc50e Mon Sep 17 00:00:00 2001
 From: Yazan Shhady <yazan.shhady@solid-run.com>
 Date: Thu, 14 Sep 2023 20:22:18 +0300
-Subject: [PATCH] rzv2l-sr-som : update reserved memory areas
+Subject: [PATCH 48/53] rzv2l-sr-som : update reserved memory areas
 
 ---
  arch/arm64/boot/dts/renesas/rzv2l-sr-som.dtsi | 5 ++---
  1 file changed, 2 insertions(+), 3 deletions(-)
 
 diff --git a/arch/arm64/boot/dts/renesas/rzv2l-sr-som.dtsi b/arch/arm64/boot/dts/renesas/rzv2l-sr-som.dtsi
-index 382de34574cd..29887f5ef70c 100644
+index 382de3457..29887f5ef 100644
 --- a/arch/arm64/boot/dts/renesas/rzv2l-sr-som.dtsi
 +++ b/arch/arm64/boot/dts/renesas/rzv2l-sr-som.dtsi
 @@ -34,8 +34,7 @@ chosen {
@@ -31,5 +31,5 @@ index 382de34574cd..29887f5ef70c 100644
  
  			image_buf0: image_buf@0 {
 -- 
-2.25.1
+2.41.0
 
