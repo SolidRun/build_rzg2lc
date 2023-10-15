@@ -478,7 +478,7 @@ mmd -i tmp/part1.fat32 ::/extlinux
 mmd -i tmp/part1.fat32 ::/boot
 mcopy -i tmp/part1.fat32 $ROOTDIR/images/tmp/Image ::/boot/Image
 mcopy -s -i tmp/part1.fat32 $ROOTDIR/images/tmp/*.dtb ::/boot/
-mcopy -s -i tmp/part1.fat32 $ROOTDIR/images/tmp/initrd.img ::/boot/initrd.img
+#mcopy -s -i tmp/part1.fat32 $ROOTDIR/images/tmp/initrd.img ::/boot/initrd.img //just for Buildroot Distro
 mcopy -i tmp/part1.fat32 $ROOTDIR/images/tmp/extlinux.conf ::/extlinux/extlinux.conf
 
 # EXT4 Partion
