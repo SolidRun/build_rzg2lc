@@ -6,7 +6,7 @@ set +x
 # General configurations
 ###############################################################################
 
-UBOOT_COMMIT_HASH=83b2ea37f4b2dd52accce8491af86cbb280f6774
+# UBOOT_COMMIT_HASH=2a199e8be84086d5abbafd0e445c6238c7789030
 : ${BOOTLOADER_MENU:=false}
 : ${SHALLOW:=true}
 # Choose machine RZ/G2LC rzg2lc-solidrun | rzg2l-solidrun | rzv2l-solidrun
@@ -15,8 +15,8 @@ UBOOT_COMMIT_HASH=83b2ea37f4b2dd52accce8491af86cbb280f6774
 REPO_PREFIX=`git log -1 --pretty=format:%h`
 
 TFA_DIR_DEFAULT='rzg_trusted-firmware-a'
-UBOOT_DIR_DEFAULT='renesas-u-boot-cip'
-KERNEL_DIR_DEFAULT='rz_linux-cip'
+UBOOT_DIR_DEFAULT='u-boot'
+KERNEL_DIR_DEFAULT='linux-stable'
 
 # Distribution for rootfs
 # - buildroot
@@ -79,17 +79,17 @@ cd $ROOTDIR
 ###############################################################################
 
 #QORIQ_COMPONENTS="${TFA_DIR_DEFAULT} ${UBOOT_DIR_DEFAULT} ${KERNEL_DIR_DEFAULT} buildroot"
-QORIQ_COMPONENTS="renesas-u-boot-cip rzg_trusted-firmware-a rz_linux-cip buildroot rzg2_flash_writer"
-UBOOT_REPO='https://github.com/renesas-rz/renesas-u-boot-cip -b v2021.10/rz'
+QORIQ_COMPONENTS="u-boot rzg_trusted-firmware-a linux-stable buildroot rzg2_flash_writer"
+UBOOT_REPO='https://github.com/SolidRun/u-boot.git -b v2021.10/rz-sr'
 ATF_REPO='https://github.com/renesas-rz/rzg_trusted-firmware-a -b v2.9/rz'
-LINUX_REPO='https://github.com/renesas-rz/rz_linux-cip -b rz-5.10-cip36'
+LINUX_REPO='https://github.com/SolidRun/linux-stable.git -b rz-5.10-cip36-sr'
 BUILDROOT_REPO="https://github.com/buildroot/buildroot.git -b $BUILDROOT_VERSION"
 FLASH_WRITER_REPO='https://github.com/renesas-rz/rzg2_flash_writer -b rz_g2l'
 
 #├── build_dir
-#│   ├── renesas-u-boot-cip/        <<<<<<
+#│   ├── u-boot/        <<<<<<
 #│   ├── rzg_trusted-firmware-a/    <<<<<<
-#│   ├── rz_linux-cip/              <<<<<<
+#│   ├── linux-stable/              <<<<<<
 #│   ├── buildroot/                 <<<<<<
 #│   ├── build.sh
 #│   ├── build_xxxx.sh
@@ -104,17 +104,18 @@ for i in $QORIQ_COMPONENTS; do
 		echo "$i source code clonig ..."
 		cd $ROOTDIR/build
     	# ================ Clone U-Boot =========== #
-		if [ "x$i" == "xrenesas-u-boot-cip" ]; then
+		if [ "x$i" == "xu-boot" ]; then
 			git clone $SHALLOW_FLAG $UBOOT_REPO
-			cd $ROOTDIR/build/renesas-u-boot-cip && git checkout $UBOOT_COMMIT_HASH
-			cd $ROOTDIR/build/
+			
+			# cd $ROOTDIR/build/renesas-u-boot-cip && git checkout $UBOOT_COMMIT_HASH
+			# cd $ROOTDIR/build/
 		fi
 		# ================ Clone ATF ============= #
 		if [ "x$i" == "xrzg_trusted-firmware-a" ]; then
 		git clone $SHALLOW_FLAG $ATF_REPO
 		fi
 		# ================ Clone Linux =========== #
-		if [ "x$i" == "xrz_linux-cip" ]; then
+		if [ "x$i" == "xlinux-stable" ]; then
 		git clone $SHALLOW_FLAG $LINUX_REPO
 		fi
 		# Clone Buildroot
@@ -145,11 +146,11 @@ for i in $QORIQ_COMPONENTS; do
 done
 
 # Creating symolinks for ATF/U-Boo	t/Linux
-cd ${ROOTDIR}/build/
-ln -sn renesas-u-boot-cip u-boot
-ln -sn rzg_trusted-firmware-a atf
-ln -sn rz_linux-cip linux
-cd ${ROOTDIR}/
+# cd ${ROOTDIR}/build/
+# ln -sn renesas-u-boot-cip u-boot
+# ln -sn rzg_trusted-firmware-a atf
+# ln -sn rz_linux-cip linux
+# cd ${ROOTDIR}/
 
 # we don't have status code checks for each step - use "-e" with a trap instead
 function error() {
@@ -276,13 +277,13 @@ echo "SD booloader image ready -> images/$BOOT_IMG"
 echo "================================="
 echo "*** Building Linux kernel..."
 echo "================================="
-cd $ROOTDIR/build/rz_linux-cip
+cd $ROOTDIR/build/linux-stable
 cp $ROOTDIR/configs/linux/$LINUX_DEFCONFIG arch/arm64/configs
 make $LINUX_DEFCONFIG
 make -j${PARALLEL} Image dtbs modules
-cp $ROOTDIR/build/rz_linux-cip/arch/arm64/boot/Image $ROOTDIR/images/tmp/
-cp $ROOTDIR/build/rz_linux-cip/arch/arm64/boot/dts/renesas/rzg2l*hummingboard*.dtb $ROOTDIR/images/tmp/
-cp $ROOTDIR/build/rz_linux-cip/arch/arm64/boot/dts/renesas/rzv2l*hummingboard*.dtb $ROOTDIR/images/tmp/
+cp $ROOTDIR/build/linux-stable/arch/arm64/boot/Image $ROOTDIR/images/tmp/
+cp $ROOTDIR/build/linux-stable/arch/arm64/boot/dts/renesas/rzg2l*hummingboard*.dtb $ROOTDIR/images/tmp/
+cp $ROOTDIR/build/linux-stable/arch/arm64/boot/dts/renesas/rzv2l*hummingboard*.dtb $ROOTDIR/images/tmp/
 rm -rf ${ROOTDIR}/images/tmp/modules # remove old modules
 make -j${PARALLEL} INSTALL_MOD_PATH="${ROOTDIR}/images/tmp/modules" modules_install
 
