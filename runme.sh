@@ -366,7 +366,7 @@ EOF
 			-m 1G \
 			-M virt \
 			-cpu cortex-a57 \
-			-smp 1 \
+			-smp 4 \
 			-netdev user,id=eth0 \
 			-device virtio-net-device,netdev=eth0 \
 			-drive file=rootfs.e2.orig,if=none,format=raw,id=hd0 \
@@ -445,7 +445,7 @@ default primary
 menu title RZ/G2* boot options
 label primary
 	menu label initrd boot
-	linux /boot/Image
+	linux /boot/Image.gz
 	fdtdir /boot/
 	initrd /boot/initrd.img
 	APPEND console=serial0,115200 console=ttySC0
@@ -464,18 +464,20 @@ timeout 3
 default primary
 label primary
 	menu label primary kernel
-	linux /boot/Image
+	linux /boot/Image.gz
 	fdtdir /boot/
 	APPEND \${bootargs}
 EOF
 fi
+
+gzip -9 -k -f $ROOTDIR/images/tmp/Image
 
 # FAT Partion
 dd if=/dev/zero of=tmp/part1.fat32 bs=1M count=148
 env PATH="$PATH:/sbin:/usr/sbin" mkdosfs tmp/part1.fat32
 mmd -i tmp/part1.fat32 ::/extlinux
 mmd -i tmp/part1.fat32 ::/boot
-mcopy -i tmp/part1.fat32 $ROOTDIR/images/tmp/Image ::/boot/Image
+mcopy -i tmp/part1.fat32 $ROOTDIR/images/tmp/Image.gz ::/boot/Image.gz
 mcopy -s -i tmp/part1.fat32 $ROOTDIR/images/tmp/*.dtb ::/boot/
 if [ "$DISTRO" == "buildroot" ]; then
 mcopy -s -i tmp/part1.fat32 $ROOTDIR/images/tmp/initrd.img ::/boot/initrd.img
