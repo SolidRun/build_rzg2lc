@@ -1,12 +1,19 @@
-# build_rzg2l
-# SolidRun's RZ/G2L & RZ/G2LC based build scripts
+# build_rz
+# SolidRun's RZ/G2 and RZ/V2 based build scripts
 
 ## Introduction
 
-Main intention of this repository is to produce a reference system for RZ/G2L & RZ/G2LC based products.
-Automatic binary releases are available on our website [RZ/G2LC](https://images.solid-run.com/RZG2LC) & [RZ/G2L](https://images.solid-run.com/RZG2L) for download.
+Main intention of this repository is to produce a reference system for RZ/G2 and RZ/V2 based products.
+Automatic binary releases are available on our website [RZ_Images](https://images.solid-run.com/RZG2LC/rzg2lc_build) for download.
 
 The build script can support two Linux distrebutions **Debian/Buildroot**.
+
+## Source code versions
+
+- [U-boot 2021.10](https://github.com/renesas-rz/renesas-u-boot-cip/commits/v2021.10/rz)
+- [Linux kernel 5.10](https://github.com/renesas-rz/rz_linux-cip/commits/rz-5.10-cip36)
+- [Buildroot 2022.02.4](https://github.com/buildroot/buildroot/tree/2022.02.4)
+- [Debian bullseye](https://deb.debian.org/debian)
 
 ## Get Started
 
@@ -29,18 +36,30 @@ sudo dd if=images/rzg2l*-<hash>.img of=/dev/sdX
 If you use **HummingBoard** Carrier board:
 - set the dip switch to boot from SD (In order to configure the boot media, please refer to [HummingBoard RZ/G2L Boot Select]( https://solidrun.atlassian.net/wiki/spaces/developer/pages/411861143).)
 - install same above image on USB-DISK (for mounting the Root-FS)
-- connect the USB-DISJ t the lower USB interface
+- connect the USB-DISK
+```
+sudo dd if=images/rzxxxx_solidrun_buildroot-sd-xxxxxxx.img of=/dev/sdX bs=1M
+```
 - stop it in U-Boot and run the commands below:
 ```
-setenv bootargs 'root=/dev/sda2 rootwait'; mmc dev 0; fatload mmc 0:1 0x48080000 Image; fatload mmc 0:1 0x48000000 rzg2lc-hummingboard.dtb;
+setenv bootargs 'rw rootwait earlycon root=/dev/sda2'
+usb start
+load usb 0:1 $kernel_addr_r boot/Image
+load usb 0:1 $fdt_addr_r boot/rzxxx-hummingboard.dtb
 ```
-- set the dip switch S3 to enable the eMMC -> **S3** = {1-5:N/C, **6:off**}
+**Note:** make sure to choose the correct dtb file according to your device.
+- enable/select eMMC to have access in Linux
+```
+setenv sdio_select emmc
+```
 - run the U-Boot command below to boot
 ```
-booti 0x48080000 - 0x48000000
+booti $kernel_addr_r - $fdt_addr_r
 ```
+**Note:** After that step, the board will boot using the rootfs placed on the second USB drive partition.
+- follow the instructions in [here](https://solidrun.atlassian.net/wiki/spaces/developer/pages/476741633/HummingBoard+RZ+family+Boot+options#Flashing-bootloaders-and-rootfs-from-Linux) to flash the eMMC.
+- set the dip switch to boot from eMMC (In order to configure the boot media, please refer to [HummingBoard RZ/G2L Boot Select]( https://solidrun.atlassian.net/wiki/spaces/developer/pages/411861143).)
 ---
-
 
 ### Booting from Network
 
@@ -145,13 +164,6 @@ tftpboot rzg2lc-hummingboard.dtb
 ```
 boot
 ```
-
-## Source code versions
-
-- [U-boot 2021.10](https://github.com/renesas-rz/renesas-u-boot-cip/commits/v2021.10/rz)
-- [Linux kernel 5.10](https://github.com/renesas-rz/rz_linux-cip/commits/rz-5.10-cip22-rt9)
-- [Buildroot 2022.02.4](https://github.com/buildroot/buildroot/tree/2022.02.4)
-- [Debian bullseye](https://deb.debian.org/debian)
 
 ## Compiling Image from Source
 
