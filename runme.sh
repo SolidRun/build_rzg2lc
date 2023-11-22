@@ -258,18 +258,25 @@ fi
 
 # make the SD-Image
 cd $ROOTDIR/images/
-BOOT_IMG=${MACHINE}-sd-bootloader-${REPO_PREFIX}.img
-rm -rf $ROOTDIR/images/${BOOT_IMG}
-dd if=/dev/zero of=${BOOT_IMG} bs=1M count=2
+BOOT_IMG_SD=${MACHINE}-sd-bootloader-${REPO_PREFIX}.img
+BOOT_IMG_EMMC=${MACHINE}-mmc-bootloader-${REPO_PREFIX}.img
+rm -rf $ROOTDIR/images/${BOOT_IMG_SD} $ROOTDIR/images/${BOOT_IMG_EMMC}
+dd if=/dev/zero of=${BOOT_IMG_SD} bs=1M count=2
+dd if=/dev/zero of=${BOOT_IMG_EMMC} bs=1M count=2
 
-# Boot loader
+# eMMC/SD Bootloader
 if [ -f tmp/bootparams-${MACHINE}.bin ] && [ -f tmp/bl2-${MACHINE}.bin ] && [ -f tmp/fip-${MACHINE}.bin ]; then
   echo "Find Solidrun boot files..."; sleep 1
-  dd if=$ROOTDIR/images/tmp/bootparams-${MACHINE}.bin of=$BOOT_IMG bs=512 seek=1 count=1 conv=notrunc
-  dd if=$ROOTDIR/images/tmp/bl2-${MACHINE}.bin of=$BOOT_IMG bs=512 seek=8 conv=notrunc
-  dd if=$ROOTDIR/images/tmp/fip-${MACHINE}.bin of=$BOOT_IMG bs=512 seek=128 conv=notrunc
+  # SD Card
+  dd if=$ROOTDIR/images/tmp/bootparams-${MACHINE}.bin of=$BOOT_IMG_SD bs=512 seek=1 count=1 conv=notrunc
+  dd if=$ROOTDIR/images/tmp/bl2-${MACHINE}.bin of=$BOOT_IMG_SD bs=512 seek=8 conv=notrunc
+  dd if=$ROOTDIR/images/tmp/fip-${MACHINE}.bin of=$BOOT_IMG_SD bs=512 seek=128 conv=notrunc
+  # eMMC
+  dd if=$ROOTDIR/images/tmp/bl2_bp-${MACHINE}.bin of=$BOOT_IMG_EMMC bs=512 seek=1 conv=notrunc
+  dd if=$ROOTDIR/images/tmp/fip-${MACHINE}.bin of=$BOOT_IMG_EMMC bs=512 seek=256 conv=notrunc
 fi
-echo "SD booloader image ready -> images/$BOOT_IMG"
+echo "SD bootloader image is ready -> images/$BOOT_IMG_SD"
+echo "eMMC bootloader image is ready -> images/$BOOT_IMG_EMMC"
 
 ###############################################################################
 # Building Linux
