@@ -486,6 +486,7 @@ env PATH="$PATH:/sbin:/usr/sbin" mkdosfs tmp/part1.fat32
 mmd -i tmp/part1.fat32 ::/extlinux
 mmd -i tmp/part1.fat32 ::/boot
 mcopy -i tmp/part1.fat32 $ROOTDIR/images/tmp/Image.gz ::/boot/Image.gz
+mcopy -i tmp/part1.fat32 $ROOTDIR/images/tmp/Image ::/boot/Image
 mcopy -s -i tmp/part1.fat32 $ROOTDIR/images/tmp/*.dtb ::/boot/
 if [ "$DISTRO" == "buildroot" ]; then
 mcopy -s -i tmp/part1.fat32 $ROOTDIR/images/tmp/initrd.img ::/boot/initrd.img
