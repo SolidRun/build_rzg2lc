@@ -324,7 +324,7 @@ do_build_debian() {
 	mkdir -p $ROOTDIR/build/debian
 	cd $ROOTDIR/build/debian
 
-	# (re-)generate only if rootfs doesn't exist or runme script has changed
+# (re-)generate only if rootfs doesn't exist or runme script has changed
 	if [ ! -f rootfs.e2.orig ] || [[ ${ROOTDIR}/${BASH_SOURCE[0]} -nt rootfs.e2.orig ]]; then
 		rm -f rootfs.e2.orig
 
@@ -390,7 +390,16 @@ EOF
 		tune2fs -O extents,uninit_bg,dir_index,has_journal rootfs.e2.orig
 	fi;
 
+
+	ROOTFS=$ROOTDIR/images/tmp/rootfs.ext4
 	# export final rootfs for next steps
+	e2cp ${ROOTFS}:etc/hosts hosts_src
+	new_line="127.0.0.1 localhost ${MACHINE}"
+	e2cp -G 0 -O 0 ${ROOTFS}:etc/hosts hosts_src
+	head -n -1 hosts_src > hosts_dist && echo "$new_line" >> hosts_dist
+	e2cp -G 0 -O 0 hosts_dist ${ROOTFS}:/etc/hosts 
+	echo "${MACHINE}" > hostname
+	e2cp -G 0 -O 0 hostname ${ROOTFS}:/etc/hostname
 	cp rootfs.e2.orig "${ROOTDIR}/images/tmp/rootfs.ext4"
 
 	# apply overlay (configuration + data files only - can't "chmod +x")
