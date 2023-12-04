@@ -6,7 +6,9 @@ set +x
 # General configurations
 ###############################################################################
 
-# UBOOT_COMMIT_HASH=2a199e8be84086d5abbafd0e445c6238c7789030
+UBOOT_COMMIT_HASH=2a199e8be84086d5abbafd0e445c6238c7789030
+KERNEL_COMMIT_HASH=9c4f93a7bb19f0e41e6ac2e60bad48bae2bfa9d5
+
 : ${BOOTLOADER_MENU:=false}
 : ${SHALLOW:=true}
 # Choose machine RZ/G2LC rzg2lc-solidrun | rzg2l-solidrun | rzv2l-solidrun
@@ -106,9 +108,8 @@ for i in $QORIQ_COMPONENTS; do
     	# ================ Clone U-Boot =========== #
 		if [ "x$i" == "xu-boot" ]; then
 			git clone $SHALLOW_FLAG $UBOOT_REPO
-			
-			# cd $ROOTDIR/build/renesas-u-boot-cip && git checkout $UBOOT_COMMIT_HASH
-			# cd $ROOTDIR/build/
+			cd $ROOTDIR/build/u-boot && git checkout $UBOOT_COMMIT_HASH
+			cd $ROOTDIR/build/
 		fi
 		# ================ Clone ATF ============= #
 		if [ "x$i" == "xrzg_trusted-firmware-a" ]; then
@@ -116,7 +117,9 @@ for i in $QORIQ_COMPONENTS; do
 		fi
 		# ================ Clone Linux =========== #
 		if [ "x$i" == "xlinux-stable" ]; then
-		git clone $SHALLOW_FLAG $LINUX_REPO
+			git clone $SHALLOW_FLAG $LINUX_REPO
+			cd $ROOTDIR/build/linux-stable && git checkout $KERNEL_COMMIT_HASH
+			cd $ROOTDIR/build/
 		fi
 		# Clone Buildroot
 		if [ "x$i" == "xbuildroot" ]; then
