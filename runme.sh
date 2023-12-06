@@ -351,10 +351,6 @@ do_build_debian() {
 # set empty root password
 passwd -d root
 
-#Set hosts
-echo "${MACHINE}" | sudo tee /etc/hostname
-echo "127.0.0.1 localhost ${MACHINE}" | sudo tee -a /etc/hosts
-
 # delete self
 rm -f /stage2.sh
 
@@ -394,19 +390,17 @@ EOF
 	fi;
 
 
-	ROOTFS=$ROOTDIR/images/tmp/rootfs.ext4
-	# export final rootfs for next steps
-	e2cp ${ROOTFS}:etc/hosts hosts_src
-	new_line="127.0.0.1 localhost ${MACHINE}"
-	e2cp -G 0 -O 0 ${ROOTFS}:etc/hosts hosts_src
-	head -n -1 hosts_src > hosts_dist && echo "$new_line" >> hosts_dist
-	e2cp -G 0 -O 0 hosts_dist ${ROOTFS}:/etc/hosts 
+	local ROOTFS=${ROOTDIR}/images/tmp/rootfs.ext4
+
 	echo "${MACHINE}" > hostname
+	echo "127.0.0.1 localhost ${MACHINE}" > hosts
+
+	cp rootfs.e2.orig ${ROOTFS}
+	e2cp -G 0 -O 0 hosts ${ROOTFS}:/etc/hosts 
 	e2cp -G 0 -O 0 hostname ${ROOTFS}:/etc/hostname
-	cp rootfs.e2.orig "${ROOTDIR}/images/tmp/rootfs.ext4"
 
 	# apply overlay (configuration + data files only - can't "chmod +x")
-	find "${ROOTDIR}/overlay/${DISTRO}" -type f -printf "%P\n" | e2cp -G 0 -O 0 -s "${ROOTDIR}/overlay/${DISTRO}" -d "${ROOTDIR}/images/tmp/rootfs.ext4:" -a
+	find "${ROOTDIR}/overlay/${DISTRO}" -type f -printf "%P\n" | e2cp -G 0 -O 0 -s "${ROOTDIR}/overlay/${DISTRO}" -d "${ROOTFS}:" -a
 }
 
 # BUILD selected Distro buildroot/debian
