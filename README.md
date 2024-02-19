@@ -181,10 +181,11 @@ The build script supports several customisation options that can be applied thro
   - 2020.02.4 (default)
 - MACHINE: Choose specific cmachine name
   - rzg2lc-solidrun (default)
+  - rzg2ul-solidrun
   - rzg2l-solidrun
+  - rzv2l-solidrun
 - BUILDROOT_DEFCONFIG: Choose specific config file name from `config/` folder
-  - rzg2lc-solidrun_defconfig (default)
-  - rzg2l-solidrun_defconfig
+  - rz-solidrun_defconfig (default)
 - BR2_PRIMARY_SITE: Use specific (local) buildroot mirror
 - DEBIAN_VERSION
   - bullseye (default)
@@ -192,11 +193,11 @@ The build script supports several customisation options that can be applied thro
   - 936M (default)
 - RAMFS: Choose RAMFS or normal FS
    - true
-   - false (default)
+   - false (default: Normal FS)
 #### Example
-   generating buildroot image for RZ/G2L Based platform 
+   generating buildroot image for RZ/G2UL Based platform 
    ```
-   MACHINE=rzg2l-solidrun ./runme.sh
+   MACHINE=rzg2ul-solidrun ./runme.sh
    ```
    generating debian image for RZ/G2L Based platform 
    ```

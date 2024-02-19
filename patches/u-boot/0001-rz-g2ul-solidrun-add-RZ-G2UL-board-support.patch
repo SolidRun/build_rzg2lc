@@ -1,0 +1,775 @@
+From a131d09a81ce4444c0afb74d51ece50b175add23 Mon Sep 17 00:00:00 2001
+From: Yazan Shhady <yazan.shhady@solid-run.com>
+Date: Sun, 11 Feb 2024 10:37:59 +0200
+Subject: [PATCH 1/2] rz/g2ul: solidrun:  add RZ/G2UL board support
+
+- Based on Renesas RZ/G2UL Type-2 SoC
+- RZ/G2UL SOM & Hummingbaord based board
+---
+ arch/arm/dts/rzg2ul-solidrun.dts        | 157 +++++++++++++++
+ arch/arm/mach-rmobile/Kconfig.64        |   6 +
+ board/solidrun/rzg-common/Kconfig       |   4 +-
+ board/solidrun/rzg-common/rzg2l-regs.h  |  23 +++
+ board/solidrun/rzg2ul/Kconfig           |  15 ++
+ board/solidrun/rzg2ul/Makefile          |  14 ++
+ board/solidrun/rzg2ul/rzg2ul-solidrun.c | 255 ++++++++++++++++++++++++
+ configs/rzg2ul-solidrun_defconfig       |  93 +++++++++
+ include/configs/rzg2ul-solidrun.h       |  96 +++++++++
+ 9 files changed, 660 insertions(+), 3 deletions(-)
+ create mode 100644 arch/arm/dts/rzg2ul-solidrun.dts
+ create mode 100644 board/solidrun/rzg2ul/Kconfig
+ create mode 100644 board/solidrun/rzg2ul/Makefile
+ create mode 100644 board/solidrun/rzg2ul/rzg2ul-solidrun.c
+ create mode 100644 configs/rzg2ul-solidrun_defconfig
+ create mode 100644 include/configs/rzg2ul-solidrun.h
+
+diff --git a/arch/arm/dts/rzg2ul-solidrun.dts b/arch/arm/dts/rzg2ul-solidrun.dts
+new file mode 100644
+index 00000000..2f43cde7
+--- /dev/null
++++ b/arch/arm/dts/rzg2ul-solidrun.dts
+@@ -0,0 +1,157 @@
++// SPDX-License-Identifier: GPL-2.0
++/*
++ * Device Tree Source for the GR-Peach board
++ *
++ * Copyright (C) 2017 Jacopo Mondi <jacopo+renesas@jmondi.org>
++ * Copyright (C) 2016 Renesas Electronics
++ */
++
++/dts-v1/;
++#include <dt-bindings/gpio/gpio.h>
++#include "r9a07g043u12.dtsi"
++#include "r9a07g043u12-u-boot.dtsi"
++#include <dt-bindings/pinctrl/rzg2l-pinctrl.h>
++
++/ {
++	model = "rzg2ul-solidrun";
++	compatible = "solidrun,hummingboard", "solidrun,rzg2ul-som";
++
++	aliases {
++		serial0 = &scif0;
++		eeprom_som = &eeprom_som;
++		eeprom_carrier = &eeprom_carrier;
++	};
++
++	chosen {
++		stdout-path = "serial0:115200n8";
++	};
++
++	memory@48000000 {
++		device_type = "memory";
++		/* first 128MB is reserved for secure area. */
++		reg = <0 0x48000000 0 0x38000000>;
++	};
++};
++
++&ehci0 {
++	status = "okay";
++	phys = <&usb2_phy0>;
++};
++
++&ehci1 {
++	status = "okay";
++	phys = <&usb2_phy1>;
++};
++
++&eth0 {
++	pinctrl-names = "default";
++	pinctrl-0 = <&eth0_pins>;
++	phy-handle = <&phy0>;
++	phy-mode = "rgmii";
++	status = "okay";
++
++	phy0: ethernet-phy@0 {
++		reg = <0>;
++	};
++};
++
++&i2c0 {
++	pinctrl-names = "default";
++	status = "okay";
++
++	eeprom_som: m24c02@50 {
++		compatible = "atmel,24c02";
++		reg = <0x50>;
++	};
++
++	eeprom_carrier: eeprom@57 {
++		compatible = "st,24c02", "atmel,24c02";
++		reg = <0x57>;
++		pagesize = <8>;
++	};
++
++};
++
++&i2c2 {
++	pinctrl-names = "default";
++	status = "okay";
++};
++
++&pinctrl {
++	pinctrl-names = "default";
++	pinctrl-0 = <&pinctrl_hog>;
++
++	pinctrl_hog: hoggrp {
++		pinmux = <RZG2L_PINMUX(2, 1, 0)>; /* SD0_DEV_SEL_SW */
++		//P0_1 (P18_1 in G2LC A3) GPIO_SD0_PWR_EN//
++	};
++
++	eth0_pins: eth0 {
++		pinmux = <RZG2L_PINMUX(1, 0, 1)>,
++			<RZG2L_PINMUX(1, 1, 1)>,
++			<RZG2L_PINMUX(1, 2, 1)>,
++			<RZG2L_PINMUX(1, 3, 1)>,
++			<RZG2L_PINMUX(1, 4, 1)>,
++			<RZG2L_PINMUX(2, 0, 1)>,
++			<RZG2L_PINMUX(3, 0, 1)>,
++			<RZG2L_PINMUX(3, 1, 1)>,
++			<RZG2L_PINMUX(3, 2, 1)>,
++			<RZG2L_PINMUX(3, 3, 1)>,
++			<RZG2L_PINMUX(4, 0, 1)>,
++			<RZG2L_PINMUX(4, 1, 1)>,
++			<RZG2L_PINMUX(4, 3, 1)>,
++			<RZG2L_PINMUX(4, 4, 1)>,
++			<RZG2L_PINMUX(4, 5, 1)>;
++	};
++	/*
++	Soc RZ/G2UL(Type2) -> Px_x // Function Name (1)
++		M2	P1_0	ET0_TXC/TX_CLK
++		L1	P1_1	ET0_TX_CTL/TX_EN
++		L2	P1_2	ET0_TXD0
++		K1	P1_3	ET0_TXD1
++		J1	P1_4	ET0_TXD2
++		J2	P2_0	ET0_TXD3
++		P2	P3_0	ET0_RXC/RX_CLK
++		N2	P3_1	ET0_RX_CTL/RX_DV
++		N3	P3_2	ET0_RXD0
++		P3	P3_3	ET0_RXD1
++		R1	P4_0	ET0_RXD2
++		P1	P4_1	ET0_RXD3
++		T1	P4_3	ET0_MDC
++		R2	P4_4	ET0_MDIO
++		N1	P4_5	ET0_LINKSTA
++	*/
++};
++
++&scif0 {
++	status = "okay";
++	clock = <100000000>;
++};
++
++&sdhi0 {
++	/* pinctrl placeholder
++	 * If this channel is used for interfacing with a SD card, a power enable
++	 * pin (SD0_PWR_EN) must be defined.
++	 * The SD0_PWR_EN pin is associated with P4_1.
++	 * A HIGH signal on SD0_PWR_EN will enable supply voltage for SD card.
++	*/
++	bus-width = <8>;
++	mutual-channel;
++	status = "okay";
++};
++
++&sdhi1 {
++	status = "disabled";
++};
++
++&usb2_phy0 {
++	status = "okay";
++};
++
++&usb2_phy1 {
++	status = "okay";
++};
++
++&xinclk {
++	clock-frequency = <24000000>;
++};
+diff --git a/arch/arm/mach-rmobile/Kconfig.64 b/arch/arm/mach-rmobile/Kconfig.64
+index 882b7bf7..36910f56 100644
+--- a/arch/arm/mach-rmobile/Kconfig.64
++++ b/arch/arm/mach-rmobile/Kconfig.64
+@@ -238,6 +238,11 @@ config TARGET_SMARC_RZG2UL
+ 	help
+           Support for Renesas RZ/G2UL Dev Platform
+ 
++config TARGET_RZG2UL_SOLIDRUN
++        bool "RZ/G2UL SolidRun board"
++        help
++          Support for Solidrun RZ/G2UL Dev Platform
++
+ endchoice
+ 
+ config SYS_SOC
+@@ -259,6 +264,7 @@ source "board/renesas/rzg2lc-dev/Kconfig"
+ source "board/renesas/rzg2ul-dev/Kconfig"
+ source "board/solidrun/rzg2lc/Kconfig"
+ source "board/solidrun/rzg2l/Kconfig"
++source "board/solidrun/rzg2ul/Kconfig"
+ source "board/solidrun/rzv2l/Kconfig"
+ source "board/solidrun/rzg-common/Kconfig"
+ 
+diff --git a/board/solidrun/rzg-common/Kconfig b/board/solidrun/rzg-common/Kconfig
+index 5d07d31e..bf4cfd7f 100644
+--- a/board/solidrun/rzg-common/Kconfig
++++ b/board/solidrun/rzg-common/Kconfig
+@@ -1,6 +1,6 @@
+ config RZG_SOLIDRUN_COMMON
+     bool "Common configuration for RZG2L_SOLIDRUN targets"
+-    depends on TARGET_RZG2L_SOLIDRUN || TARGET_RZG2LC_SOLIDRUN || TARGET_RZV2L_SOLIDRUN
++    depends on TARGET_RZG2L_SOLIDRUN || TARGET_RZG2LC_SOLIDRUN || TARGET_RZG2UL_SOLIDRUN || TARGET_RZV2L_SOLIDRUN
+     default y
+     help
+       This option enables common board support code for both RZG2L/RZG2LC solidrun SOMs.
+@@ -40,5 +40,3 @@ config SOLIDRUN_FORCE_MMC_BOOT
+     default n
+     help
+       Force the SD/eMMC selection to always use SD.
+-
+-
+diff --git a/board/solidrun/rzg-common/rzg2l-regs.h b/board/solidrun/rzg-common/rzg2l-regs.h
+index 04852672..28f3d900 100644
+--- a/board/solidrun/rzg-common/rzg2l-regs.h
++++ b/board/solidrun/rzg-common/rzg2l-regs.h
+@@ -40,11 +40,34 @@
+ #define PFC_PMC15 (PFC_BASE + 0x215)
+ #define PFC_PFC15 (PFC_BASE + 0x454)
+ 
++#define PFC_PFC16 (PFC_BASE + 0x0458)
++
+ #define PFC_P3A (PFC_BASE + 0x003A)
+ #define PFC_PM3A (PFC_BASE + 0x0174)
+ #define PFC_PMC3A (PFC_BASE + 0x23A)
+ #define PFC_PFC3A (PFC_BASE + 0x4E8)
+ 
++#define	PFC_P10	(PFC_BASE + 0x0010)
++#define	PFC_PM10 (PFC_BASE + 0x0120)
++#define	PFC_PMC10 (PFC_BASE + 0x0210)
++
++#define	PFC_P16	(PFC_BASE + 0x0016)
++#define	PFC_PM16 (PFC_BASE + 0x012C)
++#define	PFC_PMC16 (PFC_BASE + 0x0216)
++
++#define	PFC_P22	(PFC_BASE + 0x0022)
++#define	PFC_PM22 (PFC_BASE + 0x0144)
++#define	PFC_PMC22 (PFC_BASE + 0x0222)
++
++#define	PFC_P1D	(PFC_BASE + 0x001D)
++#define	PFC_PM1D (PFC_BASE + 0x013A)
++#define	PFC_PMC1D (PFC_BASE + 0x021D)
++
++#define	PFC_P12	(PFC_BASE + 0x0012)
++#define	PFC_PM12 (PFC_BASE + 0x0124)
++#define	PFC_PMC12 (PFC_BASE + 0x0212)
++#define	PFC_PIN12 (PFC_BASE + 0x812)
++
+ #define USBPHY_BASE (0x11c40000)
+ #define USB0_BASE (0x11c50000)
+ #define USB1_BASE (0x11c70000)
+diff --git a/board/solidrun/rzg2ul/Kconfig b/board/solidrun/rzg2ul/Kconfig
+new file mode 100644
+index 00000000..f232e10c
+--- /dev/null
++++ b/board/solidrun/rzg2ul/Kconfig
+@@ -0,0 +1,15 @@
++if TARGET_RZG2UL_SOLIDRUN
++
++config SYS_SOC
++	default "rmobile"
++
++config SYS_BOARD
++	default "rzg2ul"
++
++config SYS_VENDOR
++	default "solidrun"
++
++config SYS_CONFIG_NAME
++	default "rzg2ul-solidrun"
++
++endif
+diff --git a/board/solidrun/rzg2ul/Makefile b/board/solidrun/rzg2ul/Makefile
+new file mode 100644
+index 00000000..c3192bf3
+--- /dev/null
++++ b/board/solidrun/rzg2ul/Makefile
+@@ -0,0 +1,14 @@
++#
++# board/renesas/salvator-x/Makefile
++#
++# Copyright (C) 2015 Renesas Electronics Corporation
++#
++# SPDX-License-Identifier: GPL-2.0+
++#
++
++ifdef CONFIG_SPL_BUILD
++obj-y	:= ../rcar-common/gen3-spl.o
++else
++obj-y	:= rzg2ul-solidrun.o ../rcar-common/common.o
++obj-y 	+= ../rzg-common/
++endif
+diff --git a/board/solidrun/rzg2ul/rzg2ul-solidrun.c b/board/solidrun/rzg2ul/rzg2ul-solidrun.c
+new file mode 100644
+index 00000000..ea2bc335
+--- /dev/null
++++ b/board/solidrun/rzg2ul/rzg2ul-solidrun.c
+@@ -0,0 +1,255 @@
++#include <common.h>
++#include <init.h>
++#include <hang.h>
++#include <asm/io.h>
++#include <env.h>
++#include "../rzg-common/rzg-common.h"
++#include "../rzg-common/rzg2l-regs.h"
++
++DECLARE_GLOBAL_DATA_PTR;
++
++void s_init(void)
++{
++	/* can go in board_eht_init() once enabled */
++	*(volatile u32 *)(ETH_CH0) = (*(volatile u32 *)(ETH_CH0)&0xFFFFFFFC) | ETH_PVDD_1800;
++	//*(volatile u32 *)(ETH_CH0) = (*(volatile u32 *)(ETH_CH0) & 0xFFFFFFFC) | ETH_PVDD_2500;
++	/* Enable RGMII for ETH0 */
++	*(volatile u32 *)(ETH_MII_RGMII) = (*(volatile u32 *)(ETH_MII_RGMII)&0xFFFFFFFC);
++	/* ETH CLK */
++	*(volatile u32 *)(CPG_RESET_ETH) = 0x30001;
++	/* I2C CLK */
++	*(volatile u32 *)(CPG_RESET_I2C) = 0xF000F;
++	/* I2C pin non GPIO enable */
++	*(volatile u32 *)(I2C_CH1) = 0x01010101;
++	/* SD CLK */
++	*(volatile u32 *)(CPG_PL2_SDHI_DSEL) = 0x00110011;
++	while (*(volatile u32 *)(CPG_CLK_STATUS) != 0)
++		;
++}
++
++int board_check_sd_emmc(void)
++{
++	int value = 0;
++	/* Read SD0_DEV_SEL_SW value - P22_1 */
++	/* eMMC/uSD Device Select - SD0_DEV_SEL_SW (High: uSD ; Low: eMMC) */
++	generic_clear_bit(1, PFC_PMC12); /* P2_1 Port GPIO mode */
++	generic_set_bit(2, PFC_PM12);	 /* P2_1 GPIO input mode */
++
++	value = ((u32)(((*(volatile u32 *)(PFC_PIN12)) & (1 << 1))) != 0); /* Port 2[1] read input value */
++	printf("SD0_DEV_SEL_SW = %d \n", value);
++	if (value == 1 || CONFIG_IS_ENABLED(SOLIDRUN_FORCE_SD_BOOT))
++		return 1;
++
++	return 0;
++}
++
++/* 
++RZ/G2LC -> RZ/G2UL (TYPE-2)
++(A13) P39_0 -> P13_2 [P1D: H'001D ; PM1D: H'013A ; PMC1D : H'021D]
++(K2) P22_1 -> P2_1 [P12: H'0012 ; PM12: H'0124 ; PMC12 : H'0212]
++*/
++void board_select_sd_emmc(int select_sd)
++{
++	if (select_sd == 0 || CONFIG_IS_ENABLED(SOLIDRUN_FORCE_EMMC_BOOT))
++	{
++		printf("%s: select emmc.\n", __func__);
++		/* Enable eMMC */
++		/* Set SD0 VDD = 1.8v -> PFC-eMMC - LDO_SEL1 (High: 3.3v ; Low: 1.8v) */
++		generic_clear_bit(1, PFC_PMC12); /* P2_1 Port GPIO mode */
++		generic_set_bit(3, PFC_PM12);	 /* P2_1 GPIO output mode */
++		generic_clear_bit(1, PFC_P12);	 /* P2_1 GPIO out LOW */
++
++		/* Select eMMC */
++		generic_clear_bit(2, PFC_PMC1D); /* P13_2 Port GPIO mode */
++		generic_set_bit(5, PFC_PM1D);	 /* P13_2 GPIO output mode */
++		generic_clear_bit(2, PFC_P1D);	 /* P13_2 GPIO out LOW */
++	}
++	else if (select_sd != 0 || CONFIG_IS_ENABLED(SOLIDRUN_FORCE_SD_BOOT))
++	{
++		printf("%s: select uSD.\n", __func__);
++		/* Enable uSD */
++		generic_clear_bit(1, PFC_PMC12); /* P2_1 Port GPIO mode */
++		generic_set_bit(3, PFC_PM12);	 /* P2_1 GPIO output mode */
++		generic_set_bit(1, PFC_P12);	 /* P2_1 GPIO out HIGH */
++
++		/* Select uSD */
++		generic_clear_bit(2, PFC_PMC1D); /* P13_2 Port GPIO mode */
++		generic_set_bit(5, PFC_PM1D);	 /* P13_2 GPIO output mode */
++		generic_set_bit(2, PFC_P1D);	 /* P13_2 GPIO out HIGH */
++	}
++}
++
++static void board_usb_init(int pin_type)
++{
++	/*Enable USB*/
++	(*(volatile u32 *)CPG_RST_USB) = 0x000f000f;
++	(*(volatile u32 *)CPG_CLKON_USB) = 0x000f000f;
++
++	// /* Setup  */
++	// /* Disable GPIO Write Protect */
++	(*(volatile u32 *)PFC_PWPR) &= ~(0x1u << 7); /* PWPR.BOWI = 0 */
++	(*(volatile u32 *)PFC_PWPR) |= (0x1u << 6);	 /* PWPR.PFCWE = 1 */
++
++
++	/* TODO
++	RZ/G2LC -> G2UL 
++	P4_0 (AE5) -> P5_0
++	P5_0 (AD4) -> P5_2
++	*/
++#if 1
++	/* set P5_0 as Func.1 for VBUSEN */
++	(*(volatile u8 *)PFC_PMC15) |= (0x1u << 0);
++	(*(volatile u8 *)PFC_PFC15) &= ~(0x7u << 0);
++	(*(volatile u8 *)PFC_PFC15) |= (0x1u << 0);
++
++	/* set P5_2 as Func.1 for OVERCUR */
++	(*(volatile u8 *)PFC_PMC15) |= 0x4;
++	(*(volatile u8 *)PFC_PFC15) &= ~(0x7u << 8);
++	(*(volatile u8 *)PFC_PFC15) |= (0x1u << 8);
++
++	/* set P6_0 as Func.1 for VBUSEN */
++	(*(volatile u8 *)PFC_PMC16) |= (0x1u << 0);
++	(*(volatile u8 *)PFC_PFC16) &= ~(0x7u << 0);
++	(*(volatile u8 *)PFC_PFC16) |= (0x1u << 0);
++
++	/* set P5_4 as Func.5 for OVERCUR */
++	(*(volatile u8 *)PFC_PMC15) = (*(volatile u8 *)PFC_PMC15 & 0xEF) | 0x10;
++	(*(volatile u32 *)PFC_PFC15) &= ~(0x7u << 16);
++	(*(volatile u32 *)PFC_PFC15) |= (0x5u << 16);
++
++# else
++	if (pin_type == VBUS_OUT_OD || CONFIG_IS_ENABLED(SOLIDRUN_VBUS_OUT_OD))
++	{
++		/* Humming board has pulled up signals, enabled by default */
++		/* set P5_0 and P5_2 as GPIO Input */
++		(*(volatile u8 *)PFC_PM15) = 0;
++	}
++	else if (pin_type == VBUS_OUT_PP || CONFIG_IS_ENABLED(SOLIDRUN_VBUS_OUT_PP))
++	{
++		/* set P5_0 as GPIO Output High VBUSEN */
++		generic_clear_bit(0, PFC_PMC15); /* P5_0 Port GPIO mode */
++		generic_set_bit(1, PFC_PM15);	 /* P5_0 GPIO output mode */
++		generic_set_bit(0, PFC_P15);	 /* P5_0 GPIO out HIGH */	
++		// /* set P5_2 as GPIO Output High */
++		generic_clear_bit(2, PFC_PMC15); /* P5_2 Port GPIO mode */
++		generic_set_bit(5, PFC_PM15);	 /* P5_2 GPIO output mode */
++		generic_set_bit(2, PFC_P15);	 /* P5_2 GPIO out HIGH */		
++	}
++#endif
++
++	/* Enable write protect */
++	(*(volatile u32 *)PFC_PWPR) &= ~(0x1u << 6); /* PWPR.PFCWE = 0 */
++	(*(volatile u32 *)PFC_PWPR) |= (0x1u << 7);	 /* PWPR.BOWI = 1 */
++
++	/*Enable 2 USB ports*/
++	(*(volatile u32 *)USBPHY_RESET) = 0x00001000u;
++	/*USB0 is HOST*/
++	(*(volatile u32 *)(USB0_BASE + COMMCTRL)) = 0;
++	/*USB1 is HOST*/
++	(*(volatile u32 *)(USB1_BASE + COMMCTRL)) = 0;
++	/* Set USBPHY normal operation (Function only) */
++	(*(volatile u16 *)(USBF_BASE + LPSTS)) |= (0x1u << 14); /* USBPHY.SUSPM = 1 (func only) */
++	/* Overcurrent is not supported */
++	(*(volatile u32 *)(USB0_BASE + HcRhDescriptorA)) |= (0x1u << 12); /* NOCP = 1 */
++	(*(volatile u32 *)(USB1_BASE + HcRhDescriptorA)) |= (0x1u << 12); /* NOCP = 1 */
++}
++
++int board_early_init_f(void)
++{
++
++	return 0;
++}
++
++int board_init(void)
++{
++	/* adress of boot parameters */
++	gd->bd->bi_boot_params = CONFIG_SYS_TEXT_BASE + 0x50000;
++
++	return 0;
++}
++
++static void carrier_usb_init(int carrier)
++{
++	switch (carrier)
++	{
++	case CARRIER_HB_MATE:
++	case CARRIER_HB_RIPPLE:
++	case CARRIER_HB_PULSE:
++	case CARRIER_HB_PRO:
++		board_usb_init(VBUS_OUT_OD);
++		break;
++	default:
++		board_usb_init(VBUS_OUT_PP);
++		break;
++	}
++}
++
++static void carrier_select_fdt(int carrier)
++{
++	pr_info("Selecting fdt file for board %d...\n", carrier);
++	switch (carrier)
++	{
++	case CARRIER_HB_MATE:
++	case CARRIER_HB_RIPPLE:
++	case CARRIER_HB_PULSE:
++	case CARRIER_HB_PRO:
++		env_set("fdtfile", "rzg2ul-hummingboard-ripple.dtb");
++		break;
++	default:
++		pr_warn("Leaving default fdtfile \n");
++		break;
++	}
++}
++
++int board_late_init(void)
++{
++#ifndef CONFIG_SOLIDRUN_DISABLE_TLV
++	int carrier = get_carrier();
++	if (carrier < 0)
++	{
++		pr_err("Can't recognize the carrier board \n");
++	}
++	carrier_usb_init(carrier);
++	carrier_select_fdt(carrier);
++#else
++	board_usb_init(0);
++#endif
++
++	rzg_sd_emmc_init();
++
++	return 0;
++}
++
++#if defined(CONFIG_OF_LIBFDT) && defined(CONFIG_OF_BOARD_SETUP) && defined(CONFIG_OF_SYSTEM_SETUP)
++
++int ft_system_setup(void *blob, struct bd_info *bd)
++{
++	return rzg_preboot_sd_emmc_setup(blob, bd);
++}
++
++void ft_board_setup_ex(void *blob, struct bd_info *bd) {}
++#endif
++
++static void wdt_write(u32 val, unsigned int reg)
++{
++	writel(val, WDT_BASE + reg);
++}
++
++static int reset_wdt_start(void)
++{
++	/* Clear Lapsed Time Register and clear Interrupt */
++	wdt_write(WDTINT_INTDISP, WDTINT);
++	/* 2 consecutive overflow cycle needed to trigger reset */
++	wdt_write(0, WDTSET);
++	/* Initialize watchdog counter register */
++	wdt_write(0, WDTTIM);
++	/* Enable watchdog timer*/
++	wdt_write(WDTCNT_WDTEN, WDTCNT);
++
++	return 0;
++}
++
++void reset_cpu(void)
++{
++	reset_wdt_start();
++}
+diff --git a/configs/rzg2ul-solidrun_defconfig b/configs/rzg2ul-solidrun_defconfig
+new file mode 100644
+index 00000000..65fc1d9a
+--- /dev/null
++++ b/configs/rzg2ul-solidrun_defconfig
+@@ -0,0 +1,93 @@
++CONFIG_ARM=y
++CONFIG_ARCH_CPU_INIT=y
++CONFIG_ARCH_RMOBILE=y
++CONFIG_SYS_TEXT_BASE=0x50000000
++CONFIG_ENV_SIZE=0x20000
++CONFIG_ENV_OFFSET=0xFFFE0000
++CONFIG_DM_GPIO=y
++CONFIG_RCAR_GEN3=y
++CONFIG_R9A07G043U=y
++CONFIG_TARGET_RZG2UL_SOLIDRUN=y
++CONFIG_DEFAULT_DEVICE_TREE="rzg2ul-solidrun"
++CONFIG_SMBIOS_PRODUCT_NAME=""
++CONFIG_SPL=n
++CONFIG_FIT=y
++CONFIG_BOARD_LATE_INIT=y
++CONFIG_USE_BOOTARGS=y
++CONFIG_BOOTARGS="rw rootwait root=/dev/mmcblk0p2"
++CONFIG_USE_BOOTCOMMAND=y
++CONFIG_BOOTCOMMAND="run custom_cmd;run distro_bootcmd"
++CONFIG_SUPPORT_RAW_INITRD=y
++CONFIG_DEFAULT_FDT_FILE="rzg2ul-hummingboard-ripple.dtb"
++CONFIG_VERSION_VARIABLE=y
++CONFIG_HUSH_PARSER=y
++CONFIG_CMD_BOOTZ=y
++CONFIG_CMD_GPIO=y
++CONFIG_CMD_I2C=y
++CONFIG_CMD_MMC=y
++CONFIG_CMD_PCI=y
++CONFIG_CMD_USB=y
++CONFIG_CMD_DHCP=y
++CONFIG_CMD_MII=y
++CONFIG_CMD_PING=y
++CONFIG_CMD_EXT2=y
++CONFIG_CMD_EXT4=y
++CONFIG_CMD_EXT4_WRITE=y
++CONFIG_CMD_FAT=y
++CONFIG_CMD_FS_GENERIC=y
++CONFIG_OF_CONTROL=y
++CONFIG_OF_PLATDATA=y
++CONFIG_OF_LIST="rzg2ul-solidrun"
++CONFIG_MULTI_DTB_FIT_LZO=y
++CONFIG_MULTI_DTB_FIT_USER_DEFINED_AREA=y
++CONFIG_ENV_OVERWRITE=y
++CONFIG_SYS_RELOC_GD_ENV_ADDR=y
++CONFIG_REGMAP=y
++CONFIG_SYSCON=y
++CONFIG_CLK=y
++CONFIG_CLK_RENESAS=y
++CONFIG_CLK_R9A07G044L=y
++CONFIG_CLK_R9A07G043U=y
++CONFIG_CMD_RZG2L_ECC=y
++CONFIG_RCAR_GPIO=y
++CONFIG_PINCTRL_PFC_RZG2L=y
++CONFIG_RZG2L_GPIO=y
++CONFIG_DM_I2C=y
++CONFIG_SYS_I2C_RCAR_IIC=y
++CONFIG_SH_SDHI=y
++CONFIG_BITBANGMII=y
++CONFIG_PHY_MICREL=y
++CONFIG_PHY_MICREL_KSZ90X1=y
++CONFIG_DM_ETH=y
++CONFIG_RENESAS_RAVB=y
++CONFIG_PCI=y
++CONFIG_DM_PCI=y
++CONFIG_PCI_RCAR_GEN3=y
++CONFIG_DM_REGULATOR=y
++CONFIG_DM_REGULATOR_FIXED=y
++CONFIG_DM_REGULATOR_GPIO=y
++CONFIG_SCIF_CONSOLE=y
++CONFIG_TEE=y
++CONFIG_OPTEE=y
++CONFIG_USB=y
++CONFIG_DM_USB=y
++CONFIG_USB_XHCI_HCD=y
++CONFIG_USB_EHCI_HCD=y
++CONFIG_USB_EHCI_GENERIC=y
++CONFIG_USB_STORAGE=y
++CONFIG_OF_LIBFDT_OVERLAY=y
++CONFIG_SMBIOS_MANUFACTURER=""
++CONFIG_ENV_IS_IN_MMC=y
++CONFIG_SYS_MMC_ENV_DEV=0
++CONFIG_SYS_MMC_ENV_PART=1
++CONFIG_SYS_I2C_RZG2L_RIIC=y
++CONFIG_NET_RANDOM_ETHADDR=y
++CONFIG_MISC=y
++CONFIG_I2C_EEPROM=y
++CONFIG_CMD_TLV_EEPROM=y
++CONFIG_CMD_SYSBOOT=y
++CONFIG_CMD_PART=y
++CONFIG_CMD_FS_UUID=y
++CONFIG_PARTITION_UUIDS=y
++CONFIG_OF_SYSTEM_SETUP=y
++CONFIG_EEPROM_TLV_LIB=y
+diff --git a/include/configs/rzg2ul-solidrun.h b/include/configs/rzg2ul-solidrun.h
+new file mode 100644
+index 00000000..5097d028
+--- /dev/null
++++ b/include/configs/rzg2ul-solidrun.h
+@@ -0,0 +1,96 @@
++/* SPDX-License-Identifier: GPL-2.0+ */
++/*
++ * Copyright (C) 2015 Renesas Electronics Corporation
++ */
++
++#ifndef __RZG2UL_SOLIDRUN_H
++#define __RZG2UL_SOLIDRUN_H
++
++#include <asm/arch/rmobile.h>
++
++#define CONFIG_REMAKE_ELF
++
++#ifdef CONFIG_SPL
++#define CONFIG_SPL_TARGET	"spl/u-boot-spl.scif"
++#endif
++
++/* boot option */
++
++#define CONFIG_CMDLINE_TAG
++#define CONFIG_SETUP_MEMORY_TAGS
++#define CONFIG_INITRD_TAG
++
++/* Generic Interrupt Controller Definitions */
++/* RZ/G2L use GIC-v3 */
++#define CONFIG_GICV3
++#define GICD_BASE	0x11900000
++#define GICR_BASE	0x11960000
++
++/* console */
++#define CONFIG_SYS_CBSIZE		2048
++#define CONFIG_SYS_BARGSIZE		CONFIG_SYS_CBSIZE
++#define CONFIG_SYS_MAXARGS		64
++#define CONFIG_SYS_BAUDRATE_TABLE	{ 115200, 38400 }
++
++/* PHY needs a longer autoneg timeout */
++#define PHY_ANEG_TIMEOUT		20000
++
++/* MEMORY */
++#define CONFIG_SYS_INIT_SP_ADDR		CONFIG_SYS_TEXT_BASE
++
++/* SDHI clock freq */
++#define CONFIG_SH_SDHI_FREQ		133000000
++
++#define DRAM_RSV_SIZE			0x08000000
++#define CONFIG_SYS_SDRAM_BASE		(0x40000000 + DRAM_RSV_SIZE)
++#define CONFIG_SYS_SDRAM_SIZE		(0x40000000u - DRAM_RSV_SIZE) // total 1GB
++#define CONFIG_SYS_LOAD_ADDR		0x58000000
++#define CONFIG_LOADADDR			CONFIG_SYS_LOAD_ADDR // Default load address for tfpt,bootp...
++#define CONFIG_VERY_BIG_RAM
++#define CONFIG_MAX_MEM_MAPPED		(0x40000000u - DRAM_RSV_SIZE)
++
++#define CONFIG_SYS_MONITOR_BASE		0x00000000
++#define CONFIG_SYS_MONITOR_LEN		(1 * 1024 * 1024)
++#define CONFIG_SYS_MALLOC_LEN		(64 * 1024 * 1024)
++#define CONFIG_SYS_BOOTM_LEN		(64 << 20)
++
++/* The HF/QSPI layout permits up to 1 MiB large bootloader blob */
++#define CONFIG_BOARD_SIZE_LIMIT		1048576
++
++/* ENV setting */
++
++#define BOOT_TARGET_DEVICES(func) \
++        func(MMC, mmc, 0) \
++        func(USB, usb, 0) \
++        func(DHCP, dhcp, na)
++
++#include <config_distro_bootcmd.h>
++
++#define KERNEL_ADDR_R       __stringify(0x48000000)
++#define KERNEL_COMP_ADDR_R  __stringify(0x4a000000)
++#define FDT_ADDR_R          __stringify(0x4c000000)
++#define SCRIPT_ADDR_R       __stringify(0x4c100000)
++#define PXEFILE_ADDR_R      __stringify(0x4c200000)
++#define RAMDISK_ADDR_R      __stringify(0x4c800000)
++#define KERNEL_COMP_SIZE    __stringify(0xb00000)
++
++#define CONFIG_EXTRA_ENV_SETTINGS \
++    "kernel_addr_r=" KERNEL_ADDR_R "\0" \
++    "fdt_addr_r=" FDT_ADDR_R "\0" \
++    "ramdisk_addr_r=" RAMDISK_ADDR_R "\0" \
++    "scriptaddr=" SCRIPT_ADDR_R "\0" \
++    "pxefile_addr_r=" PXEFILE_ADDR_R "\0" \
++    "fdt_high=0xffffffffffffffff\0"	\
++    "initrd_high=0xffffffffffffffff\0" \
++    "fdtfile=" CONFIG_DEFAULT_FDT_FILE "\0" \
++    "kernel_comp_addr_r=" KERNEL_COMP_ADDR_R "\0" \
++    "kernel_comp_size=" KERNEL_COMP_SIZE "\0" \
++    "sdio_toggle=gpio toggle gpio-221; gpio toggle gpio-390; mmc rescan 1\0" \
++BOOTENV
++
++
++/* For board */
++/* Ethernet RAVB */
++#define CONFIG_BITBANGMII_MULTI
++
++#endif /* __RZG2UL_SOLIDRUN_H */
+-- 
+2.25.1
+

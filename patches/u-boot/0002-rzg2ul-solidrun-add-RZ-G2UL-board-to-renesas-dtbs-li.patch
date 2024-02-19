@@ -1,0 +1,26 @@
+From a31915f2af4522a167463c783a8aa16037637a6d Mon Sep 17 00:00:00 2001
+From: Yazan Shhady <yazan.shhady@solid-run.com>
+Date: Sun, 11 Feb 2024 15:08:36 +0200
+Subject: [PATCH 2/2] rzg2ul: solidrun: add RZ/G2UL board to renesas dtbs list
+
+---
+ arch/arm/dts/Makefile | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+diff --git a/arch/arm/dts/Makefile b/arch/arm/dts/Makefile
+index 57637a9a..7d8d0fd2 100644
+--- a/arch/arm/dts/Makefile
++++ b/arch/arm/dts/Makefile
+@@ -934,7 +934,8 @@ dtb-$(CONFIG_RCAR_GEN3) += \
+ 	rzg2ul-type1-dev.dtb \
+ 	rzg2ul-type1-ddr3l-dev.dtb \
+ 	rzg2ul-type2-dev.dtb \
+-	smarc-rzg2ul.dtb
++	smarc-rzg2ul.dtb \
++	rzg2ul-solidrun.dtb
+ 
+ ifdef CONFIG_RCAR_GEN3
+ DTC_FLAGS += -R 4 -p 0x1000
+-- 
+2.25.1
+

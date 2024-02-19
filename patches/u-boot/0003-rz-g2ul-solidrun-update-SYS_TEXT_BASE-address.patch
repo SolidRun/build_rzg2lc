@@ -1,0 +1,25 @@
+From 8b4f11ab91c62758199b6f264abe0aac419480f7 Mon Sep 17 00:00:00 2001
+From: Yazan Shhady <yazan.shhady@solid-run.com>
+Date: Mon, 19 Feb 2024 22:19:19 +0200
+Subject: [PATCH] rz/g2ul: solidrun: update SYS_TEXT_BASE address
+
+---
+ configs/rzg2ul-solidrun_defconfig | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/configs/rzg2ul-solidrun_defconfig b/configs/rzg2ul-solidrun_defconfig
+index 65fc1d9a..729465c4 100644
+--- a/configs/rzg2ul-solidrun_defconfig
++++ b/configs/rzg2ul-solidrun_defconfig
+@@ -1,7 +1,7 @@
+ CONFIG_ARM=y
+ CONFIG_ARCH_CPU_INIT=y
+ CONFIG_ARCH_RMOBILE=y
+-CONFIG_SYS_TEXT_BASE=0x50000000
++CONFIG_SYS_TEXT_BASE=0x55000000
+ CONFIG_ENV_SIZE=0x20000
+ CONFIG_ENV_OFFSET=0xFFFE0000
+ CONFIG_DM_GPIO=y
+-- 
+2.25.1
+

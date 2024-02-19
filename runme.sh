@@ -6,12 +6,12 @@ set +x
 # General configurations
 ###############################################################################
 
-UBOOT_COMMIT_HASH=7bc14383fd71fbaef4dc63892f87964c78d2cd1e
+UBOOT_COMMIT_HASH=a230e5df53a34de412a4defed1b3c430b2c4cceb
 KERNEL_COMMIT_HASH=8772d496cb1c6cc15d762fb942fc510dbc4db3d4
 
 : ${BOOTLOADER_MENU:=false}
 : ${SHALLOW:=true}
-# Choose machine RZ/G2LC rzg2lc-solidrun | rzg2l-solidrun | rzv2l-solidrun
+# Choose machine RZ/G2LC rzg2lc-solidrun | rzg2l-solidrun | rzv2l-solidrun | rzg2ul-solidrun
 : ${MACHINE:=rzg2lc-solidrun}
 : ${RAMFS:=false}
 REPO_PREFIX=`git log -1 --pretty=format:%h`
@@ -194,22 +194,33 @@ else
 			UBOOT_DEFCONFIG=rzg2lc-solidrun_defconfig
 			PLATFORM=g2l
 			BOARD=sr_rzg2lc_1g
+			TFA_OPT="BOARD=${BOARD}"
 			;;
 		"rzg2l-hummingboard" | "rzg2l-solidrun")
 			UBOOT_DEFCONFIG=rzg2l-solidrun_defconfig
             PLATFORM=g2l
             BOARD=sr_rzg2l_1g
+			TFA_OPT="BOARD=${BOARD}"
+			;;
+		"rzg2ul-hummingboard" | "rzg2ul-solidrun")
+			UBOOT_DEFCONFIG=rzg2ul-solidrun_defconfig
+			PLATFORM=g2ul
+			BOARD=sr_rzg2ul_1g
+			SOC_TYPE=2
+			TFA_OPT="BOARD=${BOARD} SOC_TYPE=2"
 			;;
 		"rzv2l-hummingboard" | "rzv2l-solidrun")
 			UBOOT_DEFCONFIG=rzv2l-solidrun_defconfig
 			PLATFORM=v2l
 			BOARD=sr_rzv2l_2g
+			TFA_OPT="BOARD=${BOARD}"
 			;;
 		*)
 			echo "Unknown Machine=$MACHINE -> default=rzg2lc-solidrun"
 			UBOOT_DEFCONFIG=rzg2lc-solidrun_defconfig
 			PLATFORM=g2l
 			BOARD=sr_rzg2lc_1g
+			TFA_OPT="BOARD=${BOARD}"
 	    ;;
 	esac
 
@@ -238,7 +249,7 @@ else
 	# cp $ROOTDIR/build/${UBOOT_DIR_DEFAULT}/.out/u-boot.bin $ROOTDIR/build/${TFA_DIR_DEFAULT}
 	U_BOOT_BIN=$(find $ROOTDIR/build/${UBOOT_DIR_DEFAULT} -iname u-boot.bin)
 	cp $U_BOOT_BIN $ROOTDIR/build/${TFA_DIR_DEFAULT}/
-	make -j${PARALLEL} bl2 bl31 PLAT=${PLATFORM} BOARD=${BOARD} RZG_DRAM_ECC_FULL=0 LOG_LEVEL=20 MBEDTLS_DIR=../mbedtls
+	make -j${PARALLEL} bl2 bl31 PLAT=${PLATFORM} ${TFA_OPT} RZG_DRAM_ECC_FULL=0 LOG_LEVEL=20 MBEDTLS_DIR=../mbedtls
 	# Binaries (bl2.bin and bl31.bin) are located in the build/g2l/release|debug folder.
 	cp create_bl2_with_bootparam.sh build/${PLATFORM}/release/
 	cd build/${PLATFORM}/release
@@ -294,6 +305,7 @@ make -j${PARALLEL} Image dtbs modules
 cp $ROOTDIR/build/linux-stable/arch/arm64/boot/Image $ROOTDIR/images/tmp/
 cp $ROOTDIR/build/linux-stable/arch/arm64/boot/dts/renesas/rzg2l*hummingboard*.dtb $ROOTDIR/images/tmp/
 cp $ROOTDIR/build/linux-stable/arch/arm64/boot/dts/renesas/rzv2l*hummingboard*.dtb $ROOTDIR/images/tmp/
+cp $ROOTDIR/build/linux-stable/arch/arm64/boot/dts/renesas/rzg2ul*.dtb $ROOTDIR/images/tmp/
 rm -rf ${ROOTDIR}/images/tmp/modules # remove old modules
 make -j${PARALLEL} INSTALL_MOD_PATH="${ROOTDIR}/images/tmp/modules" modules_install
 
@@ -428,6 +440,18 @@ make clean
 FLASH_WRITER_BUILD_ARGS="DEVICE=RZV2L DDR_TYPE=DDR4 DDR_SIZE=2GB_1PCS SWIZZLE=T1BC FILENAME_ADD=_RZV2L_HUMMINGBOARD"
 make $FLASH_WRITER_BUILD_ARGS -f makefile.linaro
 cp ./AArch64_output/Flash_Writer_SCIF_RZV2L_HUMMINGBOARD_DDR4_2GB_1PCS.mot $ROOTDIR/images
+# RZ/G2UL 1GB
+make clean
+FLASH_WRITER_BUILD_ARGS="DEVICE=RZG2UL DDR_TYPE=DDR4 DDR_SIZE=1GB_1PCS SWIZZLE=T3BC DEVICE_TYPE=2 FILENAME_ADD=_RZG2UL_HUMMINGBOARD"
+make $FLASH_WRITER_BUILD_ARGS -f makefile.linaro
+cp ./AArch64_output/Flash_Writer_SCIF_RZG2UL_HUMMINGBOARD_DDR4_1GB_1PCS.mot $ROOTDIR/images
+
+# RZ/G2UL 512MB
+make clean
+FLASH_WRITER_BUILD_ARGS="DEVICE=RZG2UL DDR_TYPE=DDR4 DDR_SIZE=512MB_1PCS SWIZZLE=T3BC DEVICE_TYPE=2 FILENAME_ADD=_RZG2UL_HUMMINGBOARD"
+make $FLASH_WRITER_BUILD_ARGS -f makefile.linaro
+cp ./AArch64_output/Flash_Writer_SCIF_RZG2UL_HUMMINGBOARD_DDR4_512MB_1PCS.mot $ROOTDIR/images
+
 
 if [ "x$USE_CCACHE" == "xtrue" ]; then
 	ccache --show-stats
