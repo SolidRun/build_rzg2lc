@@ -1,0 +1,752 @@
+From cd574a37da88cad422c1de13d68370133c91a528 Mon Sep 17 00:00:00 2001
+From: Josua Mayer <josua@solid-run.com>
+Date: Thu, 29 Feb 2024 12:40:17 +0100
+Subject: [PATCH] drivers: renesas: add rz-g2l i2c driver
+
+Implement i2c driver for renesas rz/g2l* socs based on u-boot driver.
+Currently writes are limited to 64 bytes (offset + data).
+
+Signed-off-by: Josua Mayer <josua@solid-run.com>
+---
+ docs/license.rst                              |   4 +
+ drivers/renesas/common/i2c/rzg2l_riic.c       | 686 ++++++++++++++++++
+ .../drivers/renesas/common/i2c/rzg2l_riic.h   |  19 +
+ 3 files changed, 709 insertions(+)
+ create mode 100644 drivers/renesas/common/i2c/rzg2l_riic.c
+ create mode 100644 include/drivers/renesas/common/i2c/rzg2l_riic.h
+
+diff --git a/docs/license.rst b/docs/license.rst
+index 80f11186..da25b8dd 100644
+--- a/docs/license.rst
++++ b/docs/license.rst
+@@ -85,6 +85,10 @@ license text is included in those source files.
+ 
+    See the original `Linux MIT license`_.
+ 
++-  Renesas RZ/G2L I2C Driver is GPL-2.0 adapted from u-boot project:
++
++   -  ``drivers/renesas/common/i2c/rzg2l_riic.c``
++
+ .. _FreeBSD: http://www.freebsd.org
+ .. _Linux MIT license: https://raw.githubusercontent.com/torvalds/linux/master/LICENSES/preferred/MIT
+ .. _SCC: http://www.simple-cc.org/
+diff --git a/drivers/renesas/common/i2c/rzg2l_riic.c b/drivers/renesas/common/i2c/rzg2l_riic.c
+new file mode 100644
+index 00000000..a3fb0f09
+--- /dev/null
++++ b/drivers/renesas/common/i2c/rzg2l_riic.c
+@@ -0,0 +1,686 @@
++// SPDX-License-Identifier: GPL-2.0+
++/*
++ * drivers/renesas/common/i2c/rzg2l_riic.c
++ *
++ * Copyright (C)  Hiep Pham <hiep.pham.zy@renesas.com>
++ * Copyright (C) 2021 Renesas Electronics Corp.
++ * Copyright (C) 2024 Josua Mayer <josua@solid-run.com>
++ *
++ */
++
++#include <common/debug.h>
++#include <drivers/renesas/common/i2c/rzg2l_riic.h>
++#include <errno.h>
++#include <lib/mmio.h>
++#include <stdint.h>
++#include <string.h>
++
++#include "micro_delay.h"
++
++#define debug(...) NOTICE(__VA_ARGS__)
++
++#define I2C_CLOCK_100K	100000
++#define I2C_CLOCK_400K	400000
++#define I2C_CLOCK_1M	1000000
++
++#define RIIC_ICCR1	0x00
++#define RIIC_ICCR2	0x04
++#define RIIC_ICMR1	0x08
++#define RIIC_ICMR2	0x0c
++#define RIIC_ICMR3	0x10
++#define RIIC_ICFER	0x14
++#define RIIC_ICSER	0x18
++#define RIIC_ICIER	0x1c
++#define RIIC_ICSR1	0x20
++#define RIIC_ICSR2	0x24
++#define RIIC_ICSAR0	0x28
++#define RIIC_ICBRL	0x34
++#define RIIC_ICBRH	0x38
++#define RIIC_ICDRT	0x3c
++#define RIIC_ICDRR	0x40
++
++/* ICCR1 */
++#define ICCR1_ICE	0x80
++#define ICCR1_IICRST	0x40
++#define ICCR1_CLO	0x20
++#define ICCR1_SOWP	0x10
++#define ICCR1_SCLO	0x08
++#define ICCR1_SDAO	0x04
++#define ICCR1_SCLI	0x02
++#define ICCR1_SDAI	0x01
++
++/* ICCR2 */
++#define ICCR2_BBSY	0x80
++#define ICCR2_MST	0x40
++#define ICCR2_TRS	0x20
++#define ICCR2_SP	0x08
++#define ICCR2_RS	0x04
++#define ICCR2_ST	0x02
++
++/* ICMR1 */
++#define ICMR1_MTWP	0x80
++#define ICMR1_CKS_MASK	0x70
++#define ICMR1_BCWP	0x08
++#define ICMR1_BC_MASK	0x07
++
++#define ICMR1_CKS(_x)	((_x << 4) & ICMR1_CKS_MASK)
++#define ICMR1_BC(_x)	(_x & ICMR1_BC_MASK)
++
++/* ICMR2 */
++#define ICMR2_DLCS	0x80
++#define ICMR2_SDDL_MASK	0x70
++#define ICMR2_TMOH	0x04
++#define ICMR2_TMOL	0x02
++#define ICMR2_TMOS	0x01
++
++/* ICMR3 */
++#define ICMR3_SMBS	0x80
++#define ICMR3_WAIT	0x40
++#define ICMR3_RDRFS	0x20
++#define ICMR3_ACKWP	0x10
++#define ICMR3_ACKBT	0x08
++#define ICMR3_ACKBR	0x04
++#define ICMR3_NF_MASK	0x03
++
++/* ICFER */
++#define ICFER_FMPE	0x80
++#define ICFER_SCLE	0x40
++#define ICFER_NFE	0x20
++#define ICFER_NACKE	0x10
++#define ICFER_SALE	0x08
++#define ICFER_NALE	0x04
++#define ICFER_MALE	0x02
++#define ICFER_TMOE	0x01
++
++/* ICSER */
++#define ICSER_HOAE	0x80
++#define ICSER_DIDE	0x20
++#define ICSER_GCAE	0x08
++#define ICSER_SAR2E	0x04
++#define ICSER_SAR1E	0x02
++#define ICSER_SAR0E	0x01
++
++/* ICIER */
++#define ICIER_TIE	0x80
++#define ICIER_TEIE	0x40
++#define ICIER_RIE	0x20
++#define ICIER_NAKIE	0x10
++#define ICIER_SPIE	0x08
++#define ICIER_STIE	0x04
++#define ICIER_ALIE	0x02
++#define ICIER_TMOIE	0x01
++
++/* ICSR1 */
++#define ICSR1_HOA	0x80
++#define ICSR1_DID	0x20
++#define ICSR1_GCA	0x08
++#define ICSR1_AAS2	0x04
++#define ICSR1_AAS1	0x02
++#define ICSR1_AAS0	0x01
++
++/* ICSR2 */
++#define ICSR2_TDRE	0x80
++#define ICSR2_TEND	0x40
++#define ICSR2_RDRF	0x20
++#define ICSR2_NACKF	0x10
++#define ICSR2_STOP	0x08
++#define ICSR2_START	0x04
++#define ICSR2_AL	0x02
++#define ICSR2_TMOF	0x01
++
++/* ICBRH */
++#define ICBRH_RESERVED	0xe0	/* The write value should always be 1 */
++#define ICBRH_BRH_MASK	0x1f
++
++/* ICBRL */
++#define ICBRL_RESERVED	0xe0	/* The write value should always be 1 */
++#define ICBRL_BRL_MASK	0x1f
++
++#define RIIC_TIMEOUT	(100000)	/* 100 msec */
++
++struct riic_priv {
++	uintptr_t base;
++	int offset;
++};
++
++static unsigned char riic_read(struct riic_priv *priv, unsigned long addr)
++{
++	return mmio_read_32(priv->base + addr);
++}
++
++static void riic_write(struct riic_priv *priv, unsigned char data,
++		       unsigned long addr)
++{
++	mmio_write_32(priv->base + addr, data);
++}
++
++static void riic_set_bit(struct riic_priv *priv, unsigned char val,
++			 unsigned long offset)
++{
++	unsigned char tmp;
++
++	tmp = riic_read(priv, offset) | val;
++	riic_write(priv, tmp, offset);
++}
++
++static void riic_clear_bit(struct riic_priv *priv, unsigned char val,
++			   unsigned long offset)
++{
++	unsigned char tmp;
++
++	tmp = riic_read(priv, offset) & ~val;
++	riic_write(priv, tmp, offset);
++}
++
++static int riic_set_clock(struct riic_priv *priv, int clock)
++{
++	switch (clock) {
++	case 100000:
++		riic_clear_bit(priv, ICFER_FMPE, RIIC_ICFER);
++		riic_clear_bit(priv, ICMR1_CKS_MASK, RIIC_ICMR1);
++		riic_set_bit(priv, ICMR1_CKS(3), RIIC_ICMR1);
++		riic_write(priv, ICBRH_RESERVED | 23, RIIC_ICBRH);
++		riic_write(priv, ICBRL_RESERVED | 23, RIIC_ICBRL);
++		break;
++	case 400000:
++		riic_clear_bit(priv, ICFER_FMPE, RIIC_ICFER);
++		riic_clear_bit(priv, ICMR1_CKS_MASK, RIIC_ICMR1);
++		riic_set_bit(priv, ICMR1_CKS(1), RIIC_ICMR1);
++		riic_write(priv, ICBRH_RESERVED | 20, RIIC_ICBRH);
++		riic_write(priv, ICBRL_RESERVED | 19, RIIC_ICBRL);
++		break;
++	case 1000000:
++		riic_set_bit(priv, ICFER_FMPE, RIIC_ICFER);
++		riic_clear_bit(priv, ICMR1_CKS_MASK, RIIC_ICMR1);
++		riic_set_bit(priv, ICMR1_CKS(0), RIIC_ICMR1);
++		riic_write(priv, ICBRH_RESERVED | 14, RIIC_ICBRH);
++		riic_write(priv, ICBRL_RESERVED | 14, RIIC_ICBRL);
++		break;
++
++	default:
++		debug("%s: unsupported clock (%dkHz)\n", __func__, clock);
++		return -EINVAL;
++	}
++
++	return 0;
++}
++
++static int riic_check_busy(struct riic_priv *priv)
++{
++	/* As for I2C specification, min. bus-free-time is
++		4.7 us(Sm) and 1.3 us(Fm). */
++
++	uint64_t start, timeout = (uint64_t)RIIC_TIMEOUT;
++
++	start = 0;
++	do {
++		if (!(riic_read(priv, RIIC_ICCR2) & ICCR2_BBSY))
++			return 0;
++
++		rcar_micro_delay(100);
++		start += 100;
++	} while (start < timeout);
++
++	debug("%s: i2c bus is busy.\n", __func__);
++	return -EBUSY;
++}
++
++static int riic_init_setting(struct riic_priv *priv, int clock)
++{
++	int ret;
++
++	riic_clear_bit(priv, ICCR1_ICE, RIIC_ICCR1);
++	riic_set_bit(priv, ICCR1_IICRST, RIIC_ICCR1);
++	riic_clear_bit(priv, ICCR1_IICRST, RIIC_ICCR1);
++	ret = riic_read(priv, RIIC_ICCR1);
++
++	riic_write(priv, ICSER_SAR0E, RIIC_ICSER);
++
++	riic_write(priv, ICMR1_BC(7), RIIC_ICMR1);
++	ret = riic_read(priv, RIIC_ICMR1);
++	ret = riic_set_clock(priv, clock);
++	if (ret < 0)
++		return ret;
++
++	riic_set_bit(priv, ICCR1_ICE, RIIC_ICCR1);	/* Enable RIIC */
++	riic_set_bit(priv, ICMR3_RDRFS | ICMR3_WAIT | ICMR3_ACKWP, RIIC_ICMR3);
++	ret = riic_read(priv, RIIC_ICMR3);
++
++	return 0;
++}
++
++static int riic_wait_for_icsr2(struct riic_priv *priv, unsigned short bit)
++{
++	unsigned long icsr2;
++	uint64_t start, timeout = (uint64_t)RIIC_TIMEOUT;
++
++	start = 0;
++	do {
++		icsr2 = riic_read(priv, RIIC_ICSR2);
++		if (icsr2 & ICSR2_NACKF)
++			return -EIO;
++		if (icsr2 & bit)
++			return 0;
++
++		rcar_micro_delay(100);
++		start += 100;
++	} while (start < timeout);
++
++	debug("%s: timeout!(bit = %x icsr2 = %x, iccr2 = %x)\n", __func__,
++		bit, riic_read(priv, RIIC_ICSR2), riic_read(priv, RIIC_ICCR2));
++
++	return -ETIMEDOUT;
++}
++
++static int riic_check_nack_receive(struct riic_priv *priv)
++{
++	if (riic_read(priv, RIIC_ICSR2) & ICSR2_NACKF) {
++		/* received NACK */
++		riic_clear_bit(priv, ICSR2_NACKF, RIIC_ICSR2);
++		riic_set_bit(priv, ICCR2_SP, RIIC_ICCR2);
++		riic_read(priv, RIIC_ICDRR);	/* dummy read */
++		return -1;
++	}
++	return 0;
++}
++
++static void riic_set_receive_ack(struct riic_priv *priv, int ack)
++{
++
++	if (ack)
++		riic_clear_bit(priv, ICMR3_ACKBT, RIIC_ICMR3);
++	else
++		riic_set_bit(priv, ICMR3_ACKBT, RIIC_ICMR3);
++}
++
++static int riic_i2c_raw_write_addr(struct riic_priv *priv, uint8_t *buf, int len)
++{
++	int ret = 0;
++	int index = 0;
++
++	do {
++		ret = riic_check_nack_receive(priv);
++		if (ret < 0)
++			return -1;
++
++		ret = riic_wait_for_icsr2(priv, ICSR2_TDRE);
++		if (ret < 0)
++			return -1;
++
++		riic_write(priv, buf[index++], RIIC_ICDRT);
++	} while (len > index);
++
++	return ret;
++}
++
++static int riic_i2c_raw_write(struct riic_priv *priv, uint8_t *msg, unsigned int len)
++{
++	int ret = 0;
++	int index = 0;
++
++	for (index = 0; index < len; index++) {
++		ret = riic_check_nack_receive(priv);
++		if (ret < 0)
++			return -1;
++
++		ret = riic_wait_for_icsr2(priv, ICSR2_TDRE);
++		if (ret < 0)
++			return -1;
++
++		riic_write(priv, msg[index], RIIC_ICDRT);
++	}
++
++	return ret;
++}
++
++static int riic_i2c_raw_read(struct riic_priv *priv, uint8_t *buf, unsigned int len)
++{
++	int dummy_read = 1;
++	int ret = 0;
++	int index = 0;
++
++	do {
++		ret = riic_wait_for_icsr2(priv, ICSR2_RDRF);
++		if (ret < 0)
++			return ret;
++
++		buf[index] = riic_read(priv, RIIC_ICDRR);
++		if (dummy_read)
++			dummy_read = 0;
++		else
++			index++;
++		riic_set_receive_ack(priv, 1);
++	} while (index < (len - 1));
++
++	ret = riic_wait_for_icsr2(priv, ICSR2_RDRF);
++	if (ret < 0)
++		return ret;
++
++	riic_clear_bit(priv, ICSR2_STOP, RIIC_ICSR2);
++	riic_set_bit(priv, ICCR2_SP, RIIC_ICCR2);
++
++	buf[index++] = riic_read(priv, RIIC_ICDRR);
++	riic_set_receive_ack(priv, 0);
++
++	return ret;
++}
++
++static int riic_send_mem_addr(struct riic_priv *priv, uint32_t addr, int alen)
++{
++	int i, j;
++	uint8_t b[4] = {0};
++
++	if (alen > 4 || alen <= 0)
++		return -1;
++
++	/* change byte order */
++	for (i = 0, j = alen - 1; i < alen; i++, j--)
++		b[i] = ((uint8_t *)&addr)[j];
++
++	return riic_i2c_raw_write_addr(priv, b, alen);
++}
++
++static int riic_send_start_cond(struct riic_priv *priv, int restart)
++{
++	int ret;
++
++	if (restart)
++		riic_set_bit(priv, ICCR2_RS, RIIC_ICCR2);
++	else
++		riic_set_bit(priv, ICCR2_ST, RIIC_ICCR2);
++
++	ret = riic_wait_for_icsr2(priv, ICSR2_START);
++	if (ret < 0)
++		return ret;
++	riic_clear_bit(priv, ICSR2_START, RIIC_ICSR2);
++
++	return ret;
++}
++
++static int riic_send_stop_cond(struct riic_priv *priv)
++{
++	int ret;
++
++	riic_clear_bit(priv, ICSR2_STOP | ICSR2_NACKF, RIIC_ICSR2);
++	riic_set_bit(priv, ICCR2_SP, RIIC_ICCR2);
++
++	ret = riic_wait_for_icsr2(priv, ICSR2_STOP);
++	if (ret < 0)
++		return ret;
++
++	riic_clear_bit(priv, ICSR2_STOP | ICSR2_NACKF, RIIC_ICSR2);
++	return ret;
++}
++
++static int riic_send_dev_addr(struct riic_priv *priv, uint8_t addr, int read)
++{
++	uint8_t buf = ((addr << 1) | read);
++
++	return riic_i2c_raw_write_addr(priv, &buf, 1);
++}
++
++
++static int riic_set_addr(struct riic_priv *priv, uint8_t chip, uint32_t addr, int alen)
++{
++	int ret;
++
++	ret = riic_check_busy(priv);
++
++	if (ret < 0)
++		return ret;
++
++	ret = riic_send_start_cond(priv, 0);
++
++	if (ret < 0)
++		goto force_exit;
++
++
++	if (alen > 0) {
++		ret = riic_send_dev_addr(priv, chip, 0);
++		if (ret < 0)
++			goto force_exit;
++
++		ret = riic_send_mem_addr(priv, addr, alen);
++		if (ret < 0)
++			goto force_exit;
++
++		ret = riic_wait_for_icsr2(priv, ICSR2_TEND);
++		if (ret < 0)
++			goto force_exit;
++	}
++
++force_exit:
++	riic_send_stop_cond(priv);
++
++	return ret;
++
++}
++
++
++static int riic_read_common(struct riic_priv *priv, uint8_t *buf, unsigned int len, uint8_t chip, uint32_t addr, int alen)
++{
++	int ret;
++
++	ret = riic_check_busy(priv);
++
++	if (ret < 0)
++		return ret;
++
++	ret = riic_send_start_cond(priv, 0);
++
++	if (ret < 0)
++		goto force_exit;
++
++	/* send addr */
++	if (alen > 0) {
++		ret = riic_send_dev_addr(priv, chip, 0);
++		if (ret < 0)
++			goto force_exit;
++
++		ret = riic_send_mem_addr(priv, addr, alen);
++		if (ret < 0)
++			goto force_exit;
++
++		ret = riic_wait_for_icsr2(priv, ICSR2_TEND);
++		if (ret < 0)
++			goto force_exit;
++
++		/* restart */
++		ret = riic_send_start_cond(priv, 1);
++		if (ret < 0)
++			goto force_exit;
++	}
++
++	ret = riic_send_dev_addr(priv, chip, 1);
++	if (ret < 0)
++		goto force_exit;
++	ret = riic_wait_for_icsr2(priv, ICSR2_RDRF);
++	if (ret < 0)
++		goto force_exit;
++
++	ret = riic_check_nack_receive(priv);
++	if (ret < 0)
++		goto force_exit;
++
++	/* receive data */
++	ret = riic_i2c_raw_read(priv, buf, len);
++
++force_exit:
++	riic_send_stop_cond(priv);
++
++	return ret;
++}
++
++static int riic_write_common(struct riic_priv *priv, uint8_t *msg, unsigned int len, uint8_t chip)
++{
++	int ret;
++
++	ret = riic_check_busy(priv);
++	if (ret < 0)
++		return ret;
++
++	ret = riic_send_start_cond(priv, 0);
++	if (ret < 0)
++		goto force_exit;
++
++	/* send addr */
++	ret = riic_send_dev_addr(priv, chip, 0);
++	if (ret < 0)
++		goto force_exit;
++
++	priv->offset = msg[0];
++
++	/* transmit data */
++	ret = riic_i2c_raw_write(priv, msg, len);
++	if (ret < 0)
++		goto force_exit;
++
++	ret = riic_wait_for_icsr2(priv, ICSR2_TEND);
++
++force_exit:
++	riic_send_stop_cond(priv);
++
++	return ret;
++
++}
++
++
++static int riic_probe_chip(struct riic_priv *priv, unsigned int addr, unsigned int flags)
++{
++	return riic_set_addr(priv, addr, 0x00, 1);
++}
++
++
++static int riic_probe(struct riic_priv *priv)
++{
++	mmio_write_32(0x11010880, 0x000F000F);
++	mmio_write_32(0x11031870, 0x01010101);
++
++	// TODO: enable clock
++
++	riic_init_setting(priv, I2C_CLOCK_100K);
++
++	return 0;
++}
++
++/*
++ * Expose simplified api by wrapping driver functions:
++ */
++
++#include <lib/utils.h>
++
++static struct riic_priv _dev;
++
++int i2c_init(uintptr_t rz_i2c_addr)
++{
++	_dev.base = rz_i2c_addr;
++
++	return riic_probe(&_dev);
++}
++
++int i2c_read(uint8_t chip, uint32_t addr, int alen,
++	     uint8_t *buf, int len)
++{
++	return riic_read_common(&_dev, buf, len, chip, addr, alen);
++
++#if 0
++	uint8_t offset_buf[sizeof(addr)];
++	int ret;
++	int i, j;
++	if (alen >= 1) {
++		for (i = 0, j = alen - 1; i < alen; i++, j--)
++			offset_buf[i] = ((uint8_t *)&addr)[j];
++
++		ret = riic_write_common(&_dev, offset_buf, alen, chip);
++		if (ret)
++			return ret;
++
++		ret = riic_read_common(&_dev, buf, len, chip, 0);
++	} else
++		ret = riic_read_common(&_dev, buf, len, chip, 0);
++
++	return ret;
++#endif
++}
++
++int i2c_write(uint8_t chip, uint32_t addr, int alen,
++	      const uint8_t *buf, int len)
++{
++	uint8_t stack_buf[sizeof(addr) + 32];
++	int i, j;
++
++	if (len > 32)
++		return -ENOBUFS;
++
++	for (i = 0, j = alen - 1; i < alen; i++, j--)
++		stack_buf[i] = ((uint8_t *)&addr)[j];
++	memcpy(stack_buf + alen, buf, len);
++
++	return riic_write_common(&_dev, stack_buf, alen + len, chip);
++}
++
++int i2c_probe_chip(uint8_t chip)
++{
++	return riic_probe_chip(&_dev, chip, 0);
++}
++
++static inline char _digit2hex(const uint8_t digit)
++{
++	if (digit < 0xa)
++		return '0' + digit;
++	else
++		return 'a' - 0xa + digit;
++}
++
++int i2c_dump(uint8_t chip, uint32_t addr, int alen, uint8_t *buf, int len)
++{
++	int ret;
++	int i, j, k;
++	uint8_t row[16];
++
++	ret = i2c_read(chip, addr, alen, buf, len);
++	if (ret)
++		return ret;
++
++	for (i = 0; i < len; i++) {
++		j = i % 16;
++		row[j] = buf[i];
++
++		if (j == 15) {
++			for (k = 0; k < sizeof(row); k++) {
++				putchar(_digit2hex((row[k] & 0xF0) >> 8));
++				putchar(_digit2hex((row[k] & 0x0F) >> 0));
++				putchar(' ');
++			}
++			for (k = 0; k < sizeof(row); k++)
++				if (row[k] >= 32 && row[k] < 127)
++					putchar(row[k]);
++				else
++					putchar('.');
++			putchar('\n');
++		}
++	}
++
++	if ((j = len % 16)) {
++		for (k = 0; k < j; k++) {
++			putchar(_digit2hex((row[k] & 0xF0) >> 8));
++			putchar(_digit2hex((row[k] & 0x0F) >> 0));
++			putchar(' ');
++		}
++		for (k = j; k < 16; k++) {
++			putchar(' ');
++			putchar(' ');
++			putchar(' ');
++		}
++		for (k = 0; k < j; k++) {
++			if (row[k] >= 32 && row[k] < 127)
++				putchar(row[k]);
++			else
++				putchar('.');
++		}
++		for (k = j; k < 16; k++)
++			putchar(' ');
++	}
++
++	return ret;
++}
+diff --git a/include/drivers/renesas/common/i2c/rzg2l_riic.h b/include/drivers/renesas/common/i2c/rzg2l_riic.h
+new file mode 100644
+index 00000000..260b3a9a
+--- /dev/null
++++ b/include/drivers/renesas/common/i2c/rzg2l_riic.h
+@@ -0,0 +1,19 @@
++/*
++ * RZ-G2L I2C Driver
++ *
++ * Copyright 2024 Josua Mayer <josua@solid-run.com>
++ */
++
++#include <lib/mmio.h>
++
++int i2c_init(uintptr_t rz_i2c_addr);
++
++int i2c_read(uint8_t chip, uint32_t, int alen,
++	     uint8_t *buf, int len);
++
++int i2c_write(uint8_t chip, unsigned int addr, int alen,
++	      const uint8_t *buf, int len);
++
++int i2c_probe_chip(uint8_t chip);
++
++int i2c_dump(uint8_t chip, unsigned int addr, int alen, uint8_t *buf, int len);
+-- 
+2.35.3
+
