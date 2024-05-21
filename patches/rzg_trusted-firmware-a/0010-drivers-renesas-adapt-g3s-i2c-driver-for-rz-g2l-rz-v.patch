@@ -1,0 +1,300 @@
+From 6fcca0b7397c11fa56467ae08f8d0da9b128a936 Mon Sep 17 00:00:00 2001
+From: Josua Mayer <josua@solid-run.com>
+Date: Tue, 21 May 2024 12:10:14 +0200
+Subject: [PATCH 10/10] drivers: renesas: adapt g3s i2c driver for
+ rz-g2l/rz-v2l
+
+Signed-off-by: Josua Mayer <josua@solid-run.com>
+---
+ plat/renesas/rz/common/drivers/cpg.c          | 19 +++++
+ plat/renesas/rz/common/drivers/pfc.c          | 15 ++++
+ .../rz/{soc/g3s => common}/drivers/riic.c     | 72 ++++++++++++++++++-
+ plat/renesas/rz/common/include/cpg.h          |  1 +
+ plat/renesas/rz/common/include/pfc.h          |  1 +
+ plat/renesas/rz/common/include/pfc_regs.h     |  1 +
+ .../rz/{soc/g3s => common}/include/riic.h     |  3 +-
+ .../{soc/g3s => common}/include/riic_regs.h   | 35 +++++----
+ plat/renesas/rz/common/include/rzg2l_def.h    |  7 ++
+ 9 files changed, 133 insertions(+), 21 deletions(-)
+ rename plat/renesas/rz/{soc/g3s => common}/drivers/riic.c (84%)
+ rename plat/renesas/rz/{soc/g3s => common}/include/riic.h (73%)
+ rename plat/renesas/rz/{soc/g3s => common}/include/riic_regs.h (76%)
+
+diff --git a/plat/renesas/rz/common/drivers/cpg.c b/plat/renesas/rz/common/drivers/cpg.c
+index 610ed1966..f381cdbb5 100644
+--- a/plat/renesas/rz/common/drivers/cpg.c
++++ b/plat/renesas/rz/common/drivers/cpg.c
+@@ -916,3 +916,22 @@ void cpg_setup(void)
+ 	cpg_div_sel_dynamic_setup();
+ 	cpg_wdtrst_sel_setup();
+ }
++
++void cpg_i2c_setup(uint8_t mask)
++{
++	CPG_SETUP_DATA clkon = {
++		.reg = (uintptr_t)CPG_CLKON_I2C,
++		.mon = (uintptr_t)CPG_CLKMON_I2C,
++		.val = 0x000f0000 | (mask & 0xF),
++		.type = CPG_T_CLK,
++	};
++	CPG_SETUP_DATA clkrst = {
++		(uintptr_t)CPG_RST_I2C,
++		(uintptr_t)CPG_RSTMON_I2C,
++		.val = 0x000f0000 | (mask & 0xF),
++		CPG_T_RST,
++	};
++
++	cpg_ctrl_clkrst(&clkon, 1);
++	cpg_ctrl_clkrst(&clkrst, 1);
++}
+diff --git a/plat/renesas/rz/common/drivers/pfc.c b/plat/renesas/rz/common/drivers/pfc.c
+index efe75c837..cb6978a1b 100644
+--- a/plat/renesas/rz/common/drivers/pfc.c
++++ b/plat/renesas/rz/common/drivers/pfc.c
+@@ -262,3 +262,18 @@ void pfc_setup(void)
+ 	pfc_qspi_setup();
+ 	pfc_sd_setup();
+ }
++
++void pfc_i2c01_setup(uint8_t i2c0, uint8_t i2c1)
++{
++	/* i2c0/1 only need IEN */
++	uint32_t val = mmio_read_32(PFC_IEN0E);
++	if (i2c0)
++		val |= (1 << 0) | (1 << 8);
++	else
++		val &= ~((1 << 0) | (1 << 8));
++	if (i2c1)
++		val |= (1 << 16) | (1 << 24);
++	else
++		val &= ~((1 << 16) | (1 << 24));
++	mmio_write_32(PFC_IEN0E, val);
++}
+diff --git a/plat/renesas/rz/soc/g3s/drivers/riic.c b/plat/renesas/rz/common/drivers/riic.c
+similarity index 84%
+rename from plat/renesas/rz/soc/g3s/drivers/riic.c
+rename to plat/renesas/rz/common/drivers/riic.c
+index ac5e53f9e..52cfdf71d 100644
+--- a/plat/renesas/rz/soc/g3s/drivers/riic.c
++++ b/plat/renesas/rz/common/drivers/riic.c
+@@ -8,13 +8,14 @@
+ #include <stddef.h>
+ #include <assert.h>
+ #include <lib/mmio.h>
+-#include <rz_soc_def.h>
+ #include <riic.h>
+ #include <riic_regs.h>
+ 
+ #define RIIC_SPEED_RATE			(100000)
+ #define RIIC_WAIT_COUNT_MAX		(40000000U)
+ 
++uintptr_t RIIC_BASE;
++
+ static void riic_clear_bit(uint8_t val, uintptr_t offset)
+ {
+ 	mmio_write_8(offset, mmio_read_8(offset) & ~val);
+@@ -262,10 +263,12 @@ static int riic_send_dev_addr(uint8_t addr, int read)
+ 	return riic_i2c_raw_write(&buf, 1);
+ }
+ 
+-void riic_setup(void)
++void riic_setup(uintptr_t i2c_base)
+ {
+ 	int ret;
+ 
++	RIIC_BASE = i2c_base;
++
+ 	ret = riic_init_setting(RIIC_SPEED_RATE);
+ 	if (ret)
+ 		panic();
+@@ -355,3 +358,68 @@ force_exit:
+ 
+ 	return ret;
+ }
++
++static inline char _digit2hex(const uint8_t digit)
++{
++	if (digit < 0xa)
++		return '0' + digit;
++	else
++		return 'a' - 0xa + digit;
++}
++
++int riic_dump(uint8_t slave, uint8_t addr, uint8_t *data, int length)
++{
++	int ret;
++	int i, j, k;
++	uint8_t row[16];
++
++	for (i = 0; i < length; i++) {
++		ret = riic_read(slave, addr + i, &data[i]);
++		if (ret)
++			return ret;
++	}
++
++	for (i = 0; i < length; i++) {
++		j = i % 16;
++		row[j] = data[i];
++
++		if (j == 15) {
++			for (k = 0; k < sizeof(row); k++) {
++				putchar(_digit2hex((row[k] & 0xF0) >> 8));
++				putchar(_digit2hex((row[k] & 0x0F) >> 0));
++				putchar(' ');
++			}
++			for (k = 0; k < sizeof(row); k++)
++				if (row[k] >= 32 && row[k] < 127)
++					putchar(row[k]);
++				else
++					putchar('.');
++			putchar('\n');
++		}
++	}
++
++	if (length % 16) {
++		j = length % 16;
++
++		for (k = 0; k < j; k++) {
++			putchar(_digit2hex((row[k] & 0xF0) >> 8));
++			putchar(_digit2hex((row[k] & 0x0F) >> 0));
++			putchar(' ');
++		}
++		for (k = k; k < 16; k++) {
++			putchar(' ');
++			putchar(' ');
++			putchar(' ');
++		}
++		for (k = 0; k < j; k++) {
++			if (row[k] >= 32 && row[k] < 127)
++				putchar(row[k]);
++			else
++				putchar('.');
++		}
++		for (k = k; k < 16; k++)
++			putchar(' ');
++	}
++
++	return ret;
++}
+diff --git a/plat/renesas/rz/common/include/cpg.h b/plat/renesas/rz/common/include/cpg.h
+index 9b9678969..05997a159 100644
+--- a/plat/renesas/rz/common/include/cpg.h
++++ b/plat/renesas/rz/common/include/cpg.h
+@@ -9,6 +9,7 @@
+ 
+ void cpg_early_setup(void);
+ void cpg_setup(void);
++void cpg_i2c_setup(uint8_t mask);
+ void cpg_active_ddr(void (*disable_phy)(void));
+ void cpg_reset_ddr_mc(void);
+ 
+diff --git a/plat/renesas/rz/common/include/pfc.h b/plat/renesas/rz/common/include/pfc.h
+index 499e347ed..7907773b2 100644
+--- a/plat/renesas/rz/common/include/pfc.h
++++ b/plat/renesas/rz/common/include/pfc.h
+@@ -8,6 +8,7 @@
+ #define __PFC_H__
+ 
+ void pfc_setup(void);
++void pfc_i2c01_setup(uint8_t i2c0, uint8_t i2c1);
+ 
+ 
+ #endif	/* __PFC_H__ */
+diff --git a/plat/renesas/rz/common/include/pfc_regs.h b/plat/renesas/rz/common/include/pfc_regs.h
+index b0a9a11da..3bb33301e 100644
+--- a/plat/renesas/rz/common/include/pfc_regs.h
++++ b/plat/renesas/rz/common/include/pfc_regs.h
+@@ -280,6 +280,7 @@
+ #define PFC_IEN07						(PFC_BASE + 0x1838)	/* IEN switch register */
+ #define PFC_IEN08						(PFC_BASE + 0x1840)	/* IEN switch register */
+ #define PFC_IEN09						(PFC_BASE + 0x1848)	/* IEN switch register */
++#define PFC_IEN0E						(PFC_BASE + 0x1870)	/* IEN switch register */
+ #define PFC_PUPD06						(PFC_BASE + 0x1C30)	/* PU/PD switch register */
+ #define PFC_PUPD07						(PFC_BASE + 0x1C38)	/* PU/PD switch register */
+ #define PFC_PUPD08						(PFC_BASE + 0x1C40)	/* PU/PD switch register */
+diff --git a/plat/renesas/rz/soc/g3s/include/riic.h b/plat/renesas/rz/common/include/riic.h
+similarity index 73%
+rename from plat/renesas/rz/soc/g3s/include/riic.h
+rename to plat/renesas/rz/common/include/riic.h
+index 5cb26b37c..1c47c1c91 100644
+--- a/plat/renesas/rz/soc/g3s/include/riic.h
++++ b/plat/renesas/rz/common/include/riic.h
+@@ -7,8 +7,9 @@
+ #ifndef RIIC_H
+ #define RIIC_H
+ 
+-void riic_setup(void);
++void riic_setup(uintptr_t i2c_base);
+ int32_t riic_write(uint8_t slave, uint8_t addr, uint8_t data);
+ int32_t riic_read(uint8_t slave, uint8_t addr, uint8_t *data);
++int riic_dump(uint8_t slave, uint8_t addr, uint8_t *data, int length);
+ 
+ #endif /* RIIC_H */
+diff --git a/plat/renesas/rz/soc/g3s/include/riic_regs.h b/plat/renesas/rz/common/include/riic_regs.h
+similarity index 76%
+rename from plat/renesas/rz/soc/g3s/include/riic_regs.h
+rename to plat/renesas/rz/common/include/riic_regs.h
+index 60a7eb657..23427b007 100644
+--- a/plat/renesas/rz/soc/g3s/include/riic_regs.h
++++ b/plat/renesas/rz/common/include/riic_regs.h
+@@ -7,24 +7,23 @@
+ #ifndef RIIC_REGS_H
+ #define RIIC_REGS_H
+ 
+-#define RIIC_BASE		(RZ_SOC_I2C_BASE)
+-
+-#define RIIC_ICCR1		((uintptr_t)RIIC_BASE + 0x00)
+-#define RIIC_ICCR2		((uintptr_t)RIIC_BASE + 0x01)
+-#define RIIC_ICMR1		((uintptr_t)RIIC_BASE + 0x02)
+-#define RIIC_ICMR2		((uintptr_t)RIIC_BASE + 0x03)
+-#define RIIC_ICMR3		((uintptr_t)RIIC_BASE + 0x04)
+-#define RIIC_ICFER		((uintptr_t)RIIC_BASE + 0x05)
+-#define RIIC_ICSER		((uintptr_t)RIIC_BASE + 0x06)
+-#define RIIC_ICIER		((uintptr_t)RIIC_BASE + 0x07)
+-#define RIIC_ICSR1		((uintptr_t)RIIC_BASE + 0x08)
+-#define RIIC_ICSR2		((uintptr_t)RIIC_BASE + 0x09)
+-#define RIIC_ICSAR0		((uintptr_t)RIIC_BASE + 0x0A)
+-#define RIIC_ICBRL		((uintptr_t)RIIC_BASE + 0x10)
+-#define RIIC_ICBRH		((uintptr_t)RIIC_BASE + 0x11)
+-#define RIIC_ICDRT		((uintptr_t)RIIC_BASE + 0x12)
+-#define RIIC_ICDRR		((uintptr_t)RIIC_BASE + 0x13)
+-
++extern uintptr_t RIIC_BASE;
++
++#define RIIC_ICCR1		(RIIC_BASE + 0x00)
++#define RIIC_ICCR2		(RIIC_BASE + 0x04)
++#define RIIC_ICMR1		(RIIC_BASE + 0x08)
++#define RIIC_ICMR2		(RIIC_BASE + 0x0C)
++#define RIIC_ICMR3		(RIIC_BASE + 0x10)
++#define RIIC_ICFER		(RIIC_BASE + 0x14)
++#define RIIC_ICSER		(RIIC_BASE + 0x18)
++#define RIIC_ICIER		(RIIC_BASE + 0x1C)
++#define RIIC_ICSR1		(RIIC_BASE + 0x20)
++#define RIIC_ICSR2		(RIIC_BASE + 0x24)
++#define RIIC_ICSAR0		(RIIC_BASE + 0x28)
++#define RIIC_ICBRL		(RIIC_BASE + 0x34)
++#define RIIC_ICBRH		(RIIC_BASE + 0x38)
++#define RIIC_ICDRT		(RIIC_BASE + 0x3C)
++#define RIIC_ICDRR		(RIIC_BASE + 0x40)
+ 
+ /* ICCR1 */
+ #define ICCR1_ICE		(0x80)
+diff --git a/plat/renesas/rz/common/include/rzg2l_def.h b/plat/renesas/rz/common/include/rzg2l_def.h
+index 248302889..10fdae2e6 100755
+--- a/plat/renesas/rz/common/include/rzg2l_def.h
++++ b/plat/renesas/rz/common/include/rzg2l_def.h
+@@ -66,4 +66,11 @@
+ #define PARAMS_BASE                 (RZG2L_SRAM_BASE + 0x0001F000)
+ #define PARAMS_SIZE                 (0x1000)
+ 
++/* I2C controller addresses */
++
++#define RZG2L_RIIC0_BASE            (0x10058000)
++#define RZG2L_RIIC1_BASE            (0x10058400)
++#define RZG2L_RIIC2_BASE            (0x10058800)
++#define RZG2L_RIIC3_BASE            (0x10058C00)
++
+ #endif /* __RZG2L_DEF_H__ */
+-- 
+2.35.3
+
