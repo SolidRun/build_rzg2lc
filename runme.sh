@@ -197,8 +197,8 @@ else
 			;;
 		"rzg2l-hummingboard" | "rzg2l-solidrun")
 			UBOOT_DEFCONFIG=rzg2l-solidrun_defconfig
-            PLATFORM=g2l
-            BOARD=sr_rzg2l_1g
+			PLATFORM=g2l
+			BOARD=sr_rzg2l
 			;;
 		"rzv2l-hummingboard" | "rzv2l-solidrun")
 			UBOOT_DEFCONFIG=rzv2l-solidrun_defconfig

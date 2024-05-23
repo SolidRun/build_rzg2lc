@@ -1,0 +1,56 @@
+From 0d29dd7397d2b43fd4170f971715f3e6b2116d22 Mon Sep 17 00:00:00 2001
+From: Josua Mayer <josua@solid-run.com>
+Date: Wed, 22 May 2024 17:39:44 +0200
+Subject: [PATCH 13/14] plat: renesas: rz: ddr: call new function
+ ddr_param_setup before setup
+
+Some boards can come with different memory configurations supported in
+the same software build. Add and call a new function that can contain
+custom logic for preparing the memory parameters.
+
+Signed-off-by: Josua Mayer <josua@solid-run.com>
+---
+ plat/renesas/rz/common/drivers/ddr/ddr.c      | 8 ++++++++
+ plat/renesas/rz/common/include/ddr_internal.h | 1 +
+ 2 files changed, 9 insertions(+)
+
+diff --git a/plat/renesas/rz/common/drivers/ddr/ddr.c b/plat/renesas/rz/common/drivers/ddr/ddr.c
+index 092c15fed..75c55c299 100755
+--- a/plat/renesas/rz/common/drivers/ddr/ddr.c
++++ b/plat/renesas/rz/common/drivers/ddr/ddr.c
+@@ -67,6 +67,12 @@ char data_synd[] = {
+ #endif
+ #endif
+ 
++#if defined(DDR_PARAM_SETUP) && DDR_PARAM_SETUP
++void __attribute__((weak)) ddr_param_setup(void) {}
++#else
++static inline void ddr_param_setup(void) {}
++#endif
++
+ // main
+ void ddr_setup(void)
+ {
+@@ -76,6 +82,8 @@ void ddr_setup(void)
+ 	uint32_t	tmp;
+ 	int i;
+ 
++	ddr_param_setup();
++
+ 	INFO("BL2: setup DDR (Rev. %s)\n", ddr_an_version);
+ 	// Step2 - Step11
+ 	cpg_active_ddr(disable_phy_clk);
+diff --git a/plat/renesas/rz/common/include/ddr_internal.h b/plat/renesas/rz/common/include/ddr_internal.h
+index 923ff4a8e..5bf99af35 100644
+--- a/plat/renesas/rz/common/include/ddr_internal.h
++++ b/plat/renesas/rz/common/include/ddr_internal.h
+@@ -47,5 +47,6 @@ static inline void rmw_phy_reg(uint32_t offset, uint32_t mask, uint32_t val)
+ 
+ void ddr_ctrl_reten_en_n(uint8_t val);
+ 
++void ddr_param_setup(void);
+ 
+ #endif	/* __DDR_INTERNAL_H__ */
+-- 
+2.35.3
+
