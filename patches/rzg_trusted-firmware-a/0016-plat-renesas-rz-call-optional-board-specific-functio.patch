@@ -1,0 +1,47 @@
+From 68452272b583add0576e030ac08d134bc395d322 Mon Sep 17 00:00:00 2001
+From: Josua Mayer <josua@solid-run.com>
+Date: Sat, 25 May 2024 14:22:25 +0200
+Subject: [PATCH 16/17] plat: renesas: rz: call optional board-specific
+ function bl3_params_setup
+
+Boards might wish to customise boot params sent to BL3.
+Add and call a new function "bl3_params_setup" which can be implemented
+in board-specific code.
+
+Signed-off-by: Josua Mayer <josua@solid-run.com>
+---
+ plat/renesas/rz/common/bl2_plat_setup.c | 11 +++++++++++
+ 1 file changed, 11 insertions(+)
+
+diff --git a/plat/renesas/rz/common/bl2_plat_setup.c b/plat/renesas/rz/common/bl2_plat_setup.c
+index 7da7e4f67..64ad5ee9a 100755
+--- a/plat/renesas/rz/common/bl2_plat_setup.c
++++ b/plat/renesas/rz/common/bl2_plat_setup.c
+@@ -59,6 +59,15 @@ int bl2_plat_handle_pre_image_load(unsigned int image_id)
+ 	return 0;
+ }
+ 
++#if defined(BL33_ARG23_DRAM_INFO) && BL33_ARG23_DRAM_INFO
++int bl3_params_setup(unsigned int image_id, bl2_to_bl31_params_mem_t *params);
++#else
++static inline int bl3_params_setup(unsigned int image_id, bl2_to_bl31_params_mem_t *params)
++{
++	return 0;
++}
++#endif
++
+ int bl2_plat_handle_post_image_load(unsigned int image_id)
+ {
+ 	static bl2_to_bl31_params_mem_t *params;
+@@ -85,6 +94,8 @@ int bl2_plat_handle_post_image_load(unsigned int image_id)
+ 		break;
+ 	}
+ 
++	bl3_params_setup(image_id, params);
++
+ 	return 0;
+ }
+ 
+-- 
+2.35.3
+
