@@ -1,0 +1,133 @@
+From 105a857212d3e0f4603288a75463b062496dbf84 Mon Sep 17 00:00:00 2001
+From: Josua Mayer <josua@solid-run.com>
+Date: Fri, 24 May 2024 11:22:11 +0200
+Subject: [PATCH] plat: renesas: rz: return optional dtb blob with dram info in
+ boot params
+
+Return a pointer to a DTB blob to BL33 (u-boot).
+Similar to rcar this can be used to provide dram address and size to
+u-boot to avoid board going through memory identification a second time.
+
+Boards should set BL33_ARG1_FDTBLOB to 1 in their Makefile,
+include lib/libfdt/libfdt.mk and implement bl2_fdtblob_setup_dram
+function.
+
+Because ATF directly jumps to U-Boot without an SPL,
+this blob is not currently usable during u-boot dram_init -
+the memory can only be accessed later in u-boot.
+
+Signed-off-by: Josua Mayer <josua@solid-run.com>
+---
+ .../rz/common/bl2_plat_mem_params_desc.c      | 13 +++++++
+ plat/renesas/rz/common/bl2_plat_setup.c       | 38 +++++++++++++++++++
+ 2 files changed, 51 insertions(+)
+
+diff --git a/plat/renesas/rz/common/bl2_plat_mem_params_desc.c b/plat/renesas/rz/common/bl2_plat_mem_params_desc.c
+index bc008d411..a2c057330 100755
+--- a/plat/renesas/rz/common/bl2_plat_mem_params_desc.c
++++ b/plat/renesas/rz/common/bl2_plat_mem_params_desc.c
+@@ -5,6 +5,7 @@
+  */
+ 
+ #include <common/desc_image_load.h>
++#include <lib/xlat_tables/xlat_tables_defs.h>
+ #include <plat/common/platform.h>
+ #include <rzg2l_def.h>
+ 
+@@ -14,6 +15,10 @@
+ #define BL33_MODE MODE_EL2
+ #endif
+ 
++#if defined(BL33_ARG1_FDTBLOB) && BL33_ARG1_FDTBLOB
++extern uint64_t fdt_blob[PAGE_SIZE_4KB / sizeof(uint64_t)];
++#endif
++
+ static bl_mem_params_node_t bl2_mem_params_descs[] = {
+ 	{
+ 		.image_id = BL31_IMAGE_ID,
+@@ -40,6 +45,10 @@ static bl_mem_params_node_t bl2_mem_params_descs[] = {
+ 	{
+ 		.image_id = BL32_IMAGE_ID,
+ 
++#if defined(BL33_ARG1_FDTBLOB) && BL33_ARG1_FDTBLOB
++		.ep_info.args.arg1 = (uintptr_t)fdt_blob,
++#endif
++
+ 		SET_STATIC_PARAM_HEAD(ep_info, PARAM_EP, VERSION_2,
+ 			entry_point_info_t, SECURE | EXECUTABLE),
+ 		.ep_info.pc = BL32_BASE,
+@@ -56,6 +65,10 @@ static bl_mem_params_node_t bl2_mem_params_descs[] = {
+ 	{
+ 		.image_id = BL33_IMAGE_ID,
+ 
++#if defined(BL33_ARG1_FDTBLOB) && BL33_ARG1_FDTBLOB
++		.ep_info.args.arg1 = (uintptr_t)fdt_blob,
++#endif
++
+ 		SET_STATIC_PARAM_HEAD(ep_info, PARAM_EP, VERSION_2,
+ 			entry_point_info_t, NON_SECURE | EXECUTABLE),
+ 		.ep_info.spsr = SPSR_64(BL33_MODE, MODE_SP_ELX,
+diff --git a/plat/renesas/rz/common/bl2_plat_setup.c b/plat/renesas/rz/common/bl2_plat_setup.c
+index ee83e1be8..7da7e4f67 100755
+--- a/plat/renesas/rz/common/bl2_plat_setup.c
++++ b/plat/renesas/rz/common/bl2_plat_setup.c
+@@ -26,6 +26,14 @@
+ #include <rz_private.h>
+ #include <drivers/delay_timer.h>
+ 
++#if defined(BL33_ARG1_FDTBLOB) && BL33_ARG1_FDTBLOB
++#include <libfdt.h>
++
++/* FDT with DRAM configuration */
++uint64_t fdt_blob[PAGE_SIZE_4KB / sizeof(uint64_t)];
++static void *fdt = (void *)fdt_blob;
++#endif
++
+ static const mmap_region_t rzg2l_mmap[] = {
+ #if TRUSTED_BOARD_BOOT
+ 	MAP_REGION_FLAT(RZG2L_BOOT_ROM_BASE, RZG2L_BOOT_ROM_SIZE,
+@@ -149,6 +157,31 @@ void bl2_el3_plat_arch_setup(void)
+ 	enable_mmu_el3(0);
+ }
+ 
++#if defined(BL33_ARG1_FDTBLOB) && BL33_ARG1_FDTBLOB
++int bl2_fdtblob_setup_dram(void *fdt);
++
++static inline int bl2_fdtblob_setup(void)
++{
++	int ret;
++
++	/* Set up FDT */
++	ret = fdt_create_empty_tree(fdt, sizeof(fdt_blob));
++	if (ret)
++		return ret;
++
++	ret = bl2_fdtblob_setup_dram(fdt);
++	if (ret)
++		return ret;
++
++	ret = fdt_pack(fdt);
++	if (ret)
++		return ret;
++
++	NOTICE("BL2: FDT at %p\n", fdt);
++	return 0;
++}
++#endif
++
+ void bl2_platform_setup(void)
+ {
+ 	/* Setup TZC-400, Access Control */
+@@ -160,4 +193,9 @@ void bl2_platform_setup(void)
+ #endif /* DEBUG_FPGA */
+ 
+ 	rz_io_setup();
++
++#if defined(BL33_ARG1_FDTBLOB) && BL33_ARG1_FDTBLOB
++	if (bl2_fdtblob_setup())
++		ERROR("FDT Blob setup failed, u-boot memory reporting will be inaccurate.\n");
++#endif
+ }
+-- 
+2.35.3
+
