@@ -6,6 +6,7 @@ set +x
 # General configurations
 ###############################################################################
 
+ATF_COMMIT_HASH=e81ab852a25034f36e10f93a2efc76aa2e9a3797
 UBOOT_COMMIT_HASH=bac547b491eacd3011d2d15e08b78e36971b2eaf
 KERNEL_COMMIT_HASH=8772d496cb1c6cc15d762fb942fc510dbc4db3d4
 
@@ -83,7 +84,7 @@ cd $ROOTDIR
 #QORIQ_COMPONENTS="${TFA_DIR_DEFAULT} ${UBOOT_DIR_DEFAULT} ${KERNEL_DIR_DEFAULT} buildroot"
 QORIQ_COMPONENTS="u-boot rzg_trusted-firmware-a linux-stable buildroot rzg2_flash_writer"
 UBOOT_REPO='https://github.com/SolidRun/u-boot.git -b v2021.10/rz-sr'
-ATF_REPO='https://github.com/renesas-rz/rzg_trusted-firmware-a -b v2.9/rz'
+ATF_REPO='https://github.com/SolidRun/arm-trusted-firmware -b v2.9/rz-sr rzg_trusted-firmware-a'
 LINUX_REPO='https://github.com/SolidRun/linux-stable.git -b rz-5.10-cip36-sr'
 BUILDROOT_REPO="https://github.com/buildroot/buildroot.git -b $BUILDROOT_VERSION"
 FLASH_WRITER_REPO='https://github.com/renesas-rz/rzg2_flash_writer -b rz_g2l'
@@ -113,7 +114,8 @@ for i in $QORIQ_COMPONENTS; do
 		fi
 		# ================ Clone ATF ============= #
 		if [ "x$i" == "xrzg_trusted-firmware-a" ]; then
-		git clone $SHALLOW_FLAG $ATF_REPO
+			git clone $SHALLOW_FLAG $ATF_REPO
+			cd $ROOTDIR/build/rzg_trusted-firmware-a && git checkout $ATF_COMMIT_HASH
 		fi
 		# ================ Clone Linux =========== #
 		if [ "x$i" == "xlinux-stable" ]; then
