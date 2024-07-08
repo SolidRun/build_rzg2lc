@@ -1,0 +1,92 @@
+From be0eefd25d27a134822124323cd4cecb42713f02 Mon Sep 17 00:00:00 2001
+From: Josua Mayer <josua@solid-run.com>
+Date: Mon, 8 Jul 2024 11:48:08 +0200
+Subject: [PATCH 20/21] drivers: renesas: i2c: implement i2c bus flushing to
+ recover hanging bus
+
+I2C slave devices might be interrupted in the middle of a transaction
+by unexpected system reset, kernel panic, watchdog interrupt etc.
+
+When interrupted slave devices are waiting for extra clock cycles,
+either controlling sda during read commands, or reading data from sda
+during write.
+
+Implement a function for sending 9 clock cycles and a stop condition, to
+allow any slave device to complete one byte of a transaction and then
+accept a stop condition.
+
+Signed-off-by: Josua Mayer <josua@solid-run.com>
+---
+ plat/renesas/rz/common/drivers/riic.c | 36 +++++++++++++++++++++++++++
+ plat/renesas/rz/common/include/riic.h |  1 +
+ 2 files changed, 37 insertions(+)
+
+diff --git a/plat/renesas/rz/common/drivers/riic.c b/plat/renesas/rz/common/drivers/riic.c
+index 55497e17d..7eee85e13 100644
+--- a/plat/renesas/rz/common/drivers/riic.c
++++ b/plat/renesas/rz/common/drivers/riic.c
+@@ -7,6 +7,7 @@
+ #include <stdint.h>
+ #include <stddef.h>
+ #include <assert.h>
++#include <drivers/delay_timer.h>
+ #include <lib/mmio.h>
+ #include <riic.h>
+ #include <riic_regs.h>
+@@ -274,6 +275,41 @@ void riic_setup(uintptr_t i2c_base)
+ 		panic();
+ }
+ 
++/*
++ * Flush the i2c bus to ensure all slave devices release their locks on SDA.
++ * This is a work-around for i2c slave devices locking SDA,
++ * when the system has been reset during a transaction.
++ */
++void riic_flush(uintptr_t i2c_base)
++{
++	uint8_t iccr1;
++
++	RIIC_BASE = i2c_base;
++	iccr1 = mmio_read_8(RIIC_ICCR1);
++
++	/* assert sda */
++	iccr1 &= ~(ICCR1_SOWP | ICCR1_SDAO);
++	mmio_write_8(RIIC_ICCR1, iccr1);
++
++	/* send 9 clock cycles at 50kHz */
++	for(uint8_t i = 0; i < 9; i++) {
++		/* assert clock */
++		iccr1 &= ~(ICCR1_SCLO);
++		mmio_write_8(RIIC_ICCR1, iccr1);
++		udelay(10);
++
++		/* deassert clock */
++		iccr1 |= ICCR1_SCLO;
++		mmio_write_8(RIIC_ICCR1, iccr1);
++		udelay(10);
++	}
++
++	/* deassert sda to create stop condition */
++	iccr1 |= ICCR1_SDAO;
++	mmio_write_8(RIIC_ICCR1, iccr1);
++	udelay(10);
++}
++
+ static inline int32_t riic_write_one(uint8_t slave, uint8_t addr, uint8_t data)
+ {
+ 	int ret;
+diff --git a/plat/renesas/rz/common/include/riic.h b/plat/renesas/rz/common/include/riic.h
+index 6c1e6188c..933311cac 100644
+--- a/plat/renesas/rz/common/include/riic.h
++++ b/plat/renesas/rz/common/include/riic.h
+@@ -8,6 +8,7 @@
+ #define RIIC_H
+ 
+ void riic_setup(uintptr_t i2c_base);
++void riic_flush(uintptr_t i2c_base);
+ int32_t riic_write(uint8_t slave, uint8_t addr, uint8_t *data, int length);
+ int32_t riic_read(uint8_t slave, uint8_t addr, uint8_t *data, int length);
+ int riic_dump(uint8_t slave, uint8_t addr, uint8_t *data, int length);
+-- 
+2.35.3
+
