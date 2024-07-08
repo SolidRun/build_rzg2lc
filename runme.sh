@@ -6,7 +6,7 @@ set +x
 # General configurations
 ###############################################################################
 
-UBOOT_COMMIT_HASH=7bc14383fd71fbaef4dc63892f87964c78d2cd1e
+UBOOT_COMMIT_HASH=bac547b491eacd3011d2d15e08b78e36971b2eaf
 KERNEL_COMMIT_HASH=8772d496cb1c6cc15d762fb942fc510dbc4db3d4
 
 : ${BOOTLOADER_MENU:=false}
