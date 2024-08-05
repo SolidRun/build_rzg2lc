@@ -82,12 +82,13 @@ cd $ROOTDIR
 ###############################################################################
 
 #QORIQ_COMPONENTS="${TFA_DIR_DEFAULT} ${UBOOT_DIR_DEFAULT} ${KERNEL_DIR_DEFAULT} buildroot"
-QORIQ_COMPONENTS="u-boot rzg_trusted-firmware-a linux-stable buildroot rzg2_flash_writer"
+QORIQ_COMPONENTS="u-boot rzg_trusted-firmware-a linux-stable buildroot rzg2_flash_writer rswlan"
 UBOOT_REPO='https://github.com/SolidRun/u-boot.git -b v2021.10/rz-sr'
 ATF_REPO='https://github.com/SolidRun/arm-trusted-firmware -b v2.9/rz-sr rzg_trusted-firmware-a'
 LINUX_REPO='https://github.com/SolidRun/linux-stable.git -b rz-5.10-cip36-sr'
 BUILDROOT_REPO="https://github.com/buildroot/buildroot.git -b $BUILDROOT_VERSION"
 FLASH_WRITER_REPO='https://github.com/renesas-rz/rzg2_flash_writer -b rz_g2l'
+RSWLAN_REPO='https://github.com/SolidRun/rswlan.git'
 
 #├── build_dir
 #│   ├── u-boot/        <<<<<<
@@ -130,6 +131,10 @@ for i in $QORIQ_COMPONENTS; do
 		# Clone Flash writer
 		if [ "x$i" == "xrzg2_flash_writer" ]; then
 		git clone $SHALLOW_FLAG $FLASH_WRITER_REPO
+		fi
+		# Clone rswlan
+		if [ "x$i" == "xrswlan" ]; then
+			git clone $SHALLOW_FLAG $RSWLAN_REPO
 		fi
 
 		# Apply patches...
@@ -294,10 +299,27 @@ cp $ROOTDIR/configs/linux/$LINUX_DEFCONFIG arch/arm64/configs
 make $LINUX_DEFCONFIG
 make -j${PARALLEL} Image dtbs modules
 cp $ROOTDIR/build/linux-stable/arch/arm64/boot/Image $ROOTDIR/images/tmp/
+cp $ROOTDIR/build/linux-stable/arch/arm64/boot/dts/renesas/rzg2l*eu205*.dtb $ROOTDIR/images/tmp/
 cp $ROOTDIR/build/linux-stable/arch/arm64/boot/dts/renesas/rzg2l*hummingboard*.dtb $ROOTDIR/images/tmp/
 cp $ROOTDIR/build/linux-stable/arch/arm64/boot/dts/renesas/rzv2l*hummingboard*.dtb $ROOTDIR/images/tmp/
 rm -rf ${ROOTDIR}/images/tmp/modules # remove old modules
 make -j${PARALLEL} INSTALL_MOD_PATH="${ROOTDIR}/images/tmp/modules" modules_install
+KRELEASE=`make kernelrelease`
+
+###############################################################################
+# Building Kernel Modules
+###############################################################################
+echo "================================="
+echo "*** Building Kernel Modules..."
+echo "================================="
+do_build_rswlan() {
+	cd $ROOTDIR/build/rswlan
+	make KDIR="${ROOTDIR}/build/linux-stable" clean
+	make KDIR="${ROOTDIR}/build/linux-stable" CONFIG_MODULE_TYPE=spi
+	install -v -m644 -D rswlan.ko "${ROOTDIR}/images/tmp/modules/lib/modules/${KRELEASE}/extra/rswlan.ko"
+}
+do_build_rswlan
+depmod -b "${ROOTDIR}/images/tmp/modules" -F "${ROOTDIR}/build/linux-stable/System.map" ${KRELEASE}
 
 ###############################################################################
 # Building FS Builroot/Debian
