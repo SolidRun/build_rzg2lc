@@ -6,8 +6,8 @@ set +x
 # General configurations
 ###############################################################################
 
-ATF_COMMIT_HASH=e81ab852a25034f36e10f93a2efc76aa2e9a3797
-UBOOT_COMMIT_HASH=bac547b491eacd3011d2d15e08b78e36971b2eaf
+ATF_COMMIT_HASH=a356632fb263394bab1d598a4e1b793c9e1637c4
+UBOOT_COMMIT_HASH=cb93dca45a88885af31f0cd23903b0a06f63da41
 KERNEL_COMMIT_HASH=8772d496cb1c6cc15d762fb942fc510dbc4db3d4
 
 : ${BOOTLOADER_MENU:=false}
@@ -200,7 +200,7 @@ else
 		"rzg2lc-hummingboard" | "rzg2lc-solidrun")
 			UBOOT_DEFCONFIG=rzg2lc-solidrun_defconfig
 			PLATFORM=g2l
-			BOARD=sr_rzg2lc_1g
+			BOARD=sr_rzg2lc
 			;;
 		"rzg2l-hummingboard" | "rzg2l-solidrun")
 			UBOOT_DEFCONFIG=rzg2l-solidrun_defconfig
@@ -210,13 +210,13 @@ else
 		"rzv2l-hummingboard" | "rzv2l-solidrun")
 			UBOOT_DEFCONFIG=rzv2l-solidrun_defconfig
 			PLATFORM=v2l
-			BOARD=sr_rzv2l_2g
+			BOARD=sr_rzv2l
 			;;
 		*)
 			echo "Unknown Machine=$MACHINE -> default=rzg2lc-solidrun"
 			UBOOT_DEFCONFIG=rzg2lc-solidrun_defconfig
 			PLATFORM=g2l
-			BOARD=sr_rzg2lc_1g
+			BOARD=sr_rzg2lc
 	    ;;
 	esac
 
