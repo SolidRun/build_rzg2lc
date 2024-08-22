@@ -299,7 +299,6 @@ cp $ROOTDIR/configs/linux/$LINUX_DEFCONFIG arch/arm64/configs
 make $LINUX_DEFCONFIG
 make -j${PARALLEL} Image dtbs modules
 cp $ROOTDIR/build/linux-stable/arch/arm64/boot/Image $ROOTDIR/images/tmp/
-cp $ROOTDIR/build/linux-stable/arch/arm64/boot/dts/renesas/rzg2l*eu205*.dtb $ROOTDIR/images/tmp/
 cp $ROOTDIR/build/linux-stable/arch/arm64/boot/dts/renesas/rzg2l*hummingboard*.dtb $ROOTDIR/images/tmp/
 cp $ROOTDIR/build/linux-stable/arch/arm64/boot/dts/renesas/rzv2l*hummingboard*.dtb $ROOTDIR/images/tmp/
 rm -rf ${ROOTDIR}/images/tmp/modules # remove old modules
