@@ -6,7 +6,8 @@ set +x
 # General configurations
 ###############################################################################
 
-UBOOT_COMMIT_HASH=a230e5df53a34de412a4defed1b3c430b2c4cceb
+ATF_COMMIT_HASH=a356632fb263394bab1d598a4e1b793c9e1637c4
+UBOOT_COMMIT_HASH=cb93dca45a88885af31f0cd23903b0a06f63da41
 KERNEL_COMMIT_HASH=8772d496cb1c6cc15d762fb942fc510dbc4db3d4
 
 : ${BOOTLOADER_MENU:=false}
@@ -81,12 +82,13 @@ cd $ROOTDIR
 ###############################################################################
 
 #QORIQ_COMPONENTS="${TFA_DIR_DEFAULT} ${UBOOT_DIR_DEFAULT} ${KERNEL_DIR_DEFAULT} buildroot"
-QORIQ_COMPONENTS="u-boot rzg_trusted-firmware-a linux-stable buildroot rzg2_flash_writer"
+QORIQ_COMPONENTS="u-boot rzg_trusted-firmware-a linux-stable buildroot rzg2_flash_writer rswlan"
 UBOOT_REPO='https://github.com/SolidRun/u-boot.git -b v2021.10/rz-sr'
-ATF_REPO='https://github.com/renesas-rz/rzg_trusted-firmware-a -b v2.9/rz'
+ATF_REPO='https://github.com/SolidRun/arm-trusted-firmware -b v2.9/rz-sr rzg_trusted-firmware-a'
 LINUX_REPO='https://github.com/SolidRun/linux-stable.git -b rz-5.10-cip36-sr'
 BUILDROOT_REPO="https://github.com/buildroot/buildroot.git -b $BUILDROOT_VERSION"
 FLASH_WRITER_REPO='https://github.com/renesas-rz/rzg2_flash_writer -b rz_g2l'
+RSWLAN_REPO='https://github.com/SolidRun/rswlan.git'
 
 #├── build_dir
 #│   ├── u-boot/        <<<<<<
@@ -113,7 +115,8 @@ for i in $QORIQ_COMPONENTS; do
 		fi
 		# ================ Clone ATF ============= #
 		if [ "x$i" == "xrzg_trusted-firmware-a" ]; then
-		git clone $SHALLOW_FLAG $ATF_REPO
+			git clone $SHALLOW_FLAG $ATF_REPO
+			cd $ROOTDIR/build/rzg_trusted-firmware-a && git checkout $ATF_COMMIT_HASH
 		fi
 		# ================ Clone Linux =========== #
 		if [ "x$i" == "xlinux-stable" ]; then
@@ -128,6 +131,10 @@ for i in $QORIQ_COMPONENTS; do
 		# Clone Flash writer
 		if [ "x$i" == "xrzg2_flash_writer" ]; then
 		git clone $SHALLOW_FLAG $FLASH_WRITER_REPO
+		fi
+		# Clone rswlan
+		if [ "x$i" == "xrswlan" ]; then
+			git clone $SHALLOW_FLAG $RSWLAN_REPO
 		fi
 
 		# Apply patches...
@@ -193,34 +200,30 @@ else
 		"rzg2lc-hummingboard" | "rzg2lc-solidrun")
 			UBOOT_DEFCONFIG=rzg2lc-solidrun_defconfig
 			PLATFORM=g2l
-			BOARD=sr_rzg2lc_1g
-			TFA_OPT="BOARD=${BOARD}"
-			;;
-		"rzg2l-hummingboard" | "rzg2l-solidrun")
-			UBOOT_DEFCONFIG=rzg2l-solidrun_defconfig
-            PLATFORM=g2l
-            BOARD=sr_rzg2l_1g
-			TFA_OPT="BOARD=${BOARD}"
+			BOARD=sr_rzg2lc
 			;;
 		"rzg2ul-hummingboard" | "rzg2ul-solidrun")
 			UBOOT_DEFCONFIG=rzg2ul-solidrun_defconfig
 			PLATFORM=g2ul
-			BOARD=sr_rzg2ul_1g
+			BOARD=sr_rzg2ul
 			SOC_TYPE=2
-			TFA_OPT="BOARD=${BOARD} SOC_TYPE=2"
+			TFA_OPT="SOC_TYPE=${SOC_TYPE}"
+			;;
+		"rzg2l-hummingboard" | "rzg2l-solidrun")
+			UBOOT_DEFCONFIG=rzg2l-solidrun_defconfig
+			PLATFORM=g2l
+			BOARD=sr_rzg2l
 			;;
 		"rzv2l-hummingboard" | "rzv2l-solidrun")
 			UBOOT_DEFCONFIG=rzv2l-solidrun_defconfig
 			PLATFORM=v2l
-			BOARD=sr_rzv2l_2g
-			TFA_OPT="BOARD=${BOARD}"
+			BOARD=sr_rzv2l
 			;;
 		*)
 			echo "Unknown Machine=$MACHINE -> default=rzg2lc-solidrun"
 			UBOOT_DEFCONFIG=rzg2lc-solidrun_defconfig
 			PLATFORM=g2l
-			BOARD=sr_rzg2lc_1g
-			TFA_OPT="BOARD=${BOARD}"
+			BOARD=sr_rzg2lc
 	    ;;
 	esac
 
@@ -249,7 +252,7 @@ else
 	# cp $ROOTDIR/build/${UBOOT_DIR_DEFAULT}/.out/u-boot.bin $ROOTDIR/build/${TFA_DIR_DEFAULT}
 	U_BOOT_BIN=$(find $ROOTDIR/build/${UBOOT_DIR_DEFAULT} -iname u-boot.bin)
 	cp $U_BOOT_BIN $ROOTDIR/build/${TFA_DIR_DEFAULT}/
-	make -j${PARALLEL} bl2 bl31 PLAT=${PLATFORM} ${TFA_OPT} RZG_DRAM_ECC_FULL=0 LOG_LEVEL=20 MBEDTLS_DIR=../mbedtls
+	make -j${PARALLEL} bl2 bl31 PLAT=${PLATFORM} BOARD=${BOARD} ${TFA_OPT} RZG_DRAM_ECC_FULL=0 LOG_LEVEL=20 MBEDTLS_DIR=../mbedtls
 	# Binaries (bl2.bin and bl31.bin) are located in the build/g2l/release|debug folder.
 	cp create_bl2_with_bootparam.sh build/${PLATFORM}/release/
 	cd build/${PLATFORM}/release
@@ -308,6 +311,22 @@ cp $ROOTDIR/build/linux-stable/arch/arm64/boot/dts/renesas/rzv2l*hummingboard*.d
 cp $ROOTDIR/build/linux-stable/arch/arm64/boot/dts/renesas/rzg2ul*.dtb $ROOTDIR/images/tmp/
 rm -rf ${ROOTDIR}/images/tmp/modules # remove old modules
 make -j${PARALLEL} INSTALL_MOD_PATH="${ROOTDIR}/images/tmp/modules" modules_install
+KRELEASE=`make kernelrelease`
+
+###############################################################################
+# Building Kernel Modules
+###############################################################################
+echo "================================="
+echo "*** Building Kernel Modules..."
+echo "================================="
+do_build_rswlan() {
+	cd $ROOTDIR/build/rswlan
+	make KDIR="${ROOTDIR}/build/linux-stable" clean
+	make KDIR="${ROOTDIR}/build/linux-stable" CONFIG_MODULE_TYPE=spi
+	install -v -m644 -D rswlan.ko "${ROOTDIR}/images/tmp/modules/lib/modules/${KRELEASE}/extra/rswlan.ko"
+}
+do_build_rswlan
+depmod -b "${ROOTDIR}/images/tmp/modules" -F "${ROOTDIR}/build/linux-stable/System.map" ${KRELEASE}
 
 ###############################################################################
 # Building FS Builroot/Debian

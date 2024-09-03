@@ -233,8 +233,8 @@ Therefore in order for the build directory to be owned by current user, `-u 0 -g
 ### Build with host tools (on Host OS)
 
 Simply running `./runme.sh`, it will check for required tools, clone and build images and place results in images/ directory.
-- ```DISTOR=debian ./runme.sh```
-- ```DISTOR=buildroot ./runme.sh```
+- ```MACHINE=rzg2l-solidrun DISTRO=debian ./runme.sh```
+- ```MACHINE=rzg2lc-solidrun DISTRO=buildroot ./runme.sh```
   
 **Note:** This can only work on Debian-based host, and has been tested only on Ubuntu 20.04.
 
