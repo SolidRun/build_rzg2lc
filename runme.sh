@@ -6,8 +6,8 @@ set +x
 # General configurations
 ###############################################################################
 
-ATF_COMMIT_HASH=a356632fb263394bab1d598a4e1b793c9e1637c4
-UBOOT_COMMIT_HASH=6d212fffd11a22aebe18a8fa924541b2513d6f68
+ATF_COMMIT_HASH=6d212fffd11a22aebe18a8fa924541b2513d6f68
+UBOOT_COMMIT_HASH=cb93dca45a88885af31f0cd23903b0a06f63da41
 KERNEL_COMMIT_HASH=8772d496cb1c6cc15d762fb942fc510dbc4db3d4
 
 : ${BOOTLOADER_MENU:=false}
