@@ -1,0 +1,16 @@
+timeout 1
+prompt 1
+default primary
+menu title RZ/G2* boot options
+label primary
+	menu label mmc boot
+	linux /Image.gz
+	fdtdir /dtb
+	APPEND root=PARTUUID=%PARTUUID% rw rootwait
+
+label secondary
+	menu label initrd boot
+	linux /Image.gz
+	fdtdir /dtb
+	initrd /initrd.img
+	APPEND root=/dev/ram0 rw rootwait
