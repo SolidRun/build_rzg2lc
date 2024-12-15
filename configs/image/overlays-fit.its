@@ -1,0 +1,24 @@
+/dts-v1/;
+
+/ {
+    description = "Device Tree Overlays Image";
+    #address-cells = <1>;
+
+    images {
+        sd_overlay {
+            description = "SD Card Overlay";
+            data = /incbin/("sd-overlay.dtbo");
+            type = "flat_dt";
+            arch = "arm";
+            compression = "none";
+        };
+
+        mmc_overlay {
+            description = "MMC Overlay";
+            data = /incbin/("mmc-overlay.dtbo");
+            type = "flat_dt";
+            arch = "arm";
+            compression = "none";
+        };
+    };
+};

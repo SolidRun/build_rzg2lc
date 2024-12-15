@@ -1,0 +1,90 @@
+/dts-v1/;
+
+/ {
+	description = "Bootloader Images";
+	#address-cells = <1>;
+	binman {
+		multiple-images;
+		image-sd {
+			description = "SD boot image";
+			filename = "boot_image_sd.bin";
+			size = <0x400000>; // 4MB total size
+			pad-byte = <0x00>; // Padding byte
+
+			bootparams {
+				description = "Bootbarams";
+				type = "blob";
+				filename = "bootparams.bin";
+				offset = <0x200>;
+			};
+
+			bl2 {
+				description = "BL2 Bootloader";
+				type = "blob";
+				filename = "bl2.bin";
+				offset = <0x1000>;
+			};
+
+			fip {
+				description = "Firmware Image Package (FIP)";
+				type = "blob";
+				filename = "fip.bin";
+				offset = <0x10000>;
+			};
+
+			fit {
+				description = "Flattened Image Tree (FIT)";
+				type = "blob";
+				filename = "overlays.itb";
+				offset = <0x300000>;
+			};
+
+			// ubootenv {
+			//     description = "U-Boot Environment";
+			//     type = "blob";
+			//     filename = "uboot.env";   // U-Boot environment file
+			//     offset = <0x3c0000>;
+			// };
+		};
+		image-mmc {
+			description = "MMC boot image";
+			filename = "boot_image_mmc.bin";
+			size = <0x400000>; // 4MB total size
+			pad-byte = <0x00>; // Padding byte
+
+			bootparams {
+				description = "Bootparams";
+				type = "blob";
+				filename = "bootparams.bin";
+				offset = <0x200>;
+			};
+
+			bl2 {
+				description = "BL2 Bootloader";
+				type = "blob";
+				filename = "bl2.bin";
+			};
+
+			fip {
+				description = "Firmware Image Package (FIP)";
+				type = "blob";
+				filename = "fip.bin";
+				offset = <0x20000>;
+			};
+
+			fit {
+				description = "Flattened Image Tree (FIT)";
+				type = "blob";
+				filename = "overlays.itb";
+				offset = <0x300000>;
+			};
+
+			// ubootenv {
+			//     description = "U-Boot Environment";
+			//     type = "blob";
+			//     filename = "uboot.env";   // U-Boot environment file
+			//     offset = <0x3c0000>;
+			// };
+		};
+	};
+};

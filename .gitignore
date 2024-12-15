@@ -1,5 +1,9 @@
-build/
+build/tmp
+build/output
+build/cache
+build/toolchain
 images/
 *.swp
 .vscode-ctags
+.vscode
 ccache/

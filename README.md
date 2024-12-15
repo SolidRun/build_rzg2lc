@@ -1,5 +1,5 @@
 # build_rz
-# SolidRun's RZ/G2 and RZ/V2 based build scripts
+# SolidRun's RZ/G2LC, RZ/G2 and RZ/V2 based build scripts
 
 ## Introduction
 
@@ -11,11 +11,72 @@ The build script can support two Linux distrebutions **Debian/Buildroot**.
 ## Source code versions
 
 - [U-boot 2021.10](https://github.com/renesas-rz/renesas-u-boot-cip/commits/v2021.10/rz)
-- [Linux kernel 5.10](https://github.com/renesas-rz/rz_linux-cip/commits/rz-5.10-cip36)
-- [Buildroot 2022.02.4](https://github.com/buildroot/buildroot/tree/2022.02.4)
-- [Debian bullseye](https://deb.debian.org/debian)
+- [Linux kernel 5.10](https://github.com/SolidRun/u-boot/tree/v2021.10/rz-sr-cip41)
+- [Buildroot 2024.02.7](https://github.com/buildroot/buildroot/tree/2024.02.7)
+- [Debian bookworm](https://deb.debian.org/debian)
 
 ## Get Started
+
+### Install developement dependencies
+For Debian/Ubuntu
+```
+apt install git bc bison build-essential coccinelle ccache \
+  device-tree-compiler dfu-util efitools flex gdisk graphviz imagemagick \
+  liblz4-tool libgnutls28-dev libguestfs-tools libncurses-dev \
+  libpython3-dev libsdl2-dev libssl-dev lz4 lzma lzma-alone openssl \
+  pkg-config python3 python3-asteval python3-coverage python3-filelock \
+  python3-pkg-resources python3-pycryptodome python3-pyelftools \
+  python3-pytest python3-pytest-xdist python3-sphinxcontrib.apidoc \
+  python3-sphinx-rtd-theme python3-subunit python3-testtools python3-tqdm \
+  python3-virtualenv python3-libfdt swig uuid-dev u-boot-tools dosfstools \
+  qemu-system-arm e2tools bmap-tools patch fakeroot debootstrap unzip rsync
+```
+For Fedora
+```
+dnf install git bc bison gcc gcc-c++ coccinelle ccache \
+  dtc dfu-util flex gdisk graphviz ImageMagick  \
+  lz4 lzma xz openssl-devel openssl-devel-engine \
+  pkgconfig python3 python3-asteval patch fakeroot debootstrap \
+  python3-coverage python3-filelock python3-pkg-resources python3-pyelftools \
+  python3-pytest python3-pytest-xdist python3-sphinxcontrib-apidoc \
+  python3-sphinx_rtd_theme python3-subunit python3-testtools \
+  python3-virtualenv swig uuid-devel uboot-tools e2fsprogs dosfstools \
+  qemu-system-aarch64 e2tools bmap-tools python3-libfdt python3-tqdm \
+  perl-open perl-English perl-ExtUtils-MakeMaker perl-Thread-Queue \
+  perl-FindBin perl-IPC-Cmd unzip rsync
+```
+
+### Clone repo and it's submodules
+```
+git clone --recurse-submodules https://github.com/SolidRun/build_rzg2lc.git
+cd build_rzg2lc
+```
+
+### Build image
+```
+MACHINE=rzg2lc-solidrun ./runme.sh
+```
+Available options:
+```
+Usage: MACHINE=[machine] DISTRO=[distro] ./runme.sh [build|clean] [target]
+Targets: uboot atf kernel bootimage rswlan buildroot flashwriter image
+Examples:
+  ./runme.sh               # Build all targets
+  ./runme.sh build uboot   # Build uboot only
+  ./runme.sh clean kernel  # Clean kernel only
+  ./runme.sh --help        # Show this help message
+Available machines:
+rzg2lc-solidrun (default), rzg2l-solidrun, rzv2l-solidrun
+Available distros:
+buildroot (default), debian
+Available env vars:
+MACHINE=rzg2l-solidrun - Machine name (default: rzg2lc-solidrun)
+DISTRO=debian - Distro to build (default: buildroot)
+CROSS_TOOLCHAIN=aarch64-linux-gnu- - Toolchain to use (default: download arm-gnu-toolchain-13.3)
+ROOTFS_FREE_SIZE=1G - Extra rootfs free size (default: 100M)
+COMPRESSION_FORMAT=zstd - if specified, image will be commpressed (zstd, xz, gzip)
+```
+Resulted images will be located in images/ directory
 
 ### Deploy to microSD
 
@@ -24,12 +85,30 @@ Plug in a micro SD into your machine and run the following, where sdX is the loc
 
 ```
 umount /media/<relevant directory>
-sudo dd if=images/rzg2l*-<hash>.img of=/dev/sdX
+sudo bmaptool copy images/rzg2lc*-solidrun-sd-<distro>-<hash>.img /dev/sdX
 ```
 
 ### Login
 - **username:** root
 - **password:** root
+
+
+### Build with Docker
+A docker image providing a consistent build environment can be used as below:
+
+1. build container image (first time only)
+   ```
+   docker build -t rzg2lc_build docker
+   # optional with an apt proxy, e.g. apt-cacher-ng
+   # docker build --build-arg APTPROXY=http://127.0.0.1:3142 -t rzg2lc_build docker
+   ```
+
+2. invoke build script in working directory
+   ```
+   docker run --rm -i -t -v "$PWD":/work rzg2lc_build -u $(id -u):$(id -g)
+   ./runme.sh
+   ```
+
 
 ---
 ### Boot from SD and flash eMMC
@@ -38,23 +117,19 @@ If you use **HummingBoard** Carrier board:
 - install same above image on USB-DISK (for mounting the Root-FS)
 - connect the USB-DISK
 ```
-sudo dd if=images/rzxxxx_solidrun_buildroot-sd-xxxxxxx.img of=/dev/sdX bs=1M
+sudo bmaptool copy images/rzxxxx_solidrun_buildroot-sd-xxxxxxx.img /dev/sdX
 ```
 - stop it in U-Boot and run the commands below:
 ```
 setenv bootargs 'rw rootwait earlycon root=/dev/sda2'
-usb start
-load usb 0:1 $kernel_addr_r boot/Image
-load usb 0:1 $fdt_addr_r boot/rzxxx-hummingboard.dtb
 ```
-**Note:** make sure to choose the correct dtb file according to your device.
 - enable/select eMMC to have access in Linux
 ```
 setenv sdio_select emmc
 ```
 - run the U-Boot command below to boot
 ```
-booti $kernel_addr_r - $fdt_addr_r
+run usb_boot
 ```
 **Note:** After that step, the board will boot using the rootfs placed on the second USB drive partition.
 - follow the instructions in [here](https://solidrun.atlassian.net/wiki/spaces/developer/pages/476741633/HummingBoard+RZ+family+Boot+options#Flashing-bootloaders-and-rootfs-from-Linux) to flash the eMMC.
@@ -165,81 +240,23 @@ tftpboot rzg2lc-hummingboard.dtb
 boot
 ```
 
-## Compiling Image from Source
+## Image layout
+SD card layout:
+| Offset  | Content          |
+|---------|------------------|
+| 0x200   | bootparams.bin   |
+| 0x1000  | bl2.bin          |
+| 0x10000 | fip.bin          |
+| 0x30000 | DTS overlays     |
+| 0x3c000 | u-boot env       |
+| 8MB     | fat32 boot part  |
+| ...     | ext4 rootfs part |
 
-### Configuration Options
-
-The build script supports several customisation options that can be applied through environment variables:
-
-- INCLUDE_KERNEL_MODULES: include kernel modules in rootfs
-   - true (default)
-   - false
-- DISTRO: Choose Linux distribution for rootfs
-  - buildroot (default)
-  - debian
-- BUILDROOT_VERSION
-  - 2020.02.4 (default)
-- MACHINE: Choose specific cmachine name
-  - rzg2lc-solidrun (default)
-  - rzg2l-solidrun
-- BUILDROOT_DEFCONFIG: Choose specific config file name from `config/` folder
-  - rzg2lc-solidrun_defconfig (default)
-  - rzg2l-solidrun_defconfig
-- BR2_PRIMARY_SITE: Use specific (local) buildroot mirror
-- DEBIAN_VERSION
-  - bullseye (default)
-- DEBIAN_ROOTFS_SIZE
-  - 936M (default)
-- RAMFS: Choose RAMFS or normal FS
-   - true
-   - false (default)
-#### Example
-   generating buildroot image for RZ/G2L Based platform 
-   ```
-   MACHINE=rzg2l-solidrun ./runme.sh
-   ```
-   generating debian image for RZ/G2L Based platform 
-   ```
-   MACHINE=rzg2l-solidrun DISTRO=debian ./runme.sh
-   ```
-   generating buildroot image for RZ/G2LC Based platform with RAMFS
-   ```
-   MACHINE=rzg2lc-solidrun RAMFS=true ./runme.sh
-   ```
-
-### Build with Docker
-A docker image providing a consistent build environment can be used as below:
-
-1. build container image (first time only)
-   ```
-   docker build -t rzg2lc_build docker
-   # optional with an apt proxy, e.g. apt-cacher-ng
-   # docker build --build-arg APTPROXY=http://127.0.0.1:3142 -t rzg2lc_build docker
-   ```
-
-2. invoke build script in working directory
-   ```
-   docker run --rm -i -t -v "$PWD":/work rzg2lc_build -u $(id -u) -g $(id -g)
-   # optional with local buildroot mirror
-   # docker run --rm -i -t -v "$PWD":/work -e BR2_PRIMARY_SITE=http://127.0.0.1/buildroot rzg2lc_build -u $(id -u) -g $(id -g)
-   ```
-
-#### rootless Podman
-
-Due to the way podman performs user-id mapping, the root user inside the container (uid=0, gid=0) will be mapped to the user running podman (e.g. 1000:100).
-Therefore in order for the build directory to be owned by current user, `-u 0 -g 0` have to be passed to *docker run*.
-
-### Build with host tools (on Host OS)
-
-Simply running `./runme.sh`, it will check for required tools, clone and build images and place results in images/ directory.
-- ```MACHINE=rzg2l-solidrun DISTRO=debian ./runme.sh```
-- ```MACHINE=rzg2lc-solidrun DISTRO=buildroot ./runme.sh```
-  
-**Note:** This can only work on Debian-based host, and has been tested only on Ubuntu 20.04.
-
-## Build-Time Configuration Options
-
-several options influencing the build are supported by the runme script, and can be specified as environment variables for a native build, or by using the `-e` option with docker:
-
-- BUILDROOT_VERSION: Download and compile a specific release of buildroot
-- BR2_PRIMARY_SITE: Use specific (local) buildroot mirror
+eMMC boot partition layout:
+| Offset  | Content        |
+|---------|----------------|
+| 0x200   | bootparams.bin |
+| ...     | bl2.bin        |
+| 0x20000 | fip.bin        |
+| 0x30000 | DTS overlays   |
+| 0x3c000 | u-boot env     |

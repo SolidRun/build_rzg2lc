@@ -1,5 +1,5 @@
 # use ubuntu base
-FROM ubuntu:focal
+FROM ubuntu:24.04
 
 # retry at least 3 times to succeed on sketchy connections
 RUN printf 'Acquire::http { Proxy "%s"; };\n' $APTPROXY | tee -a /etc/apt/apt.conf.d/proxy
@@ -11,21 +11,17 @@ RUN printf 'Acquire::Retries 3;\n' | tee -a /etc/apt/apt.conf.d/retry || true
 # prevent dpkg interactive dialogues
 ENV DEBIAN_FRONTEND=noninteractive
 
-# update
-RUN set -e; \
-	apt-get update; \
-	apt-get -y upgrade; \
-	:
-
-RUN set -e; \
-	apt-get update; \
-	apt-get --no-install-recommends -y install bash bc binutils bison build-essential chrpath coreutils cpio \
-		device-tree-compiler diffstat dosfstools e2fsprogs e2tools file flex g++ gawk gcc git kmod \
-		libncurses5-dev libncursesw5-dev libssl-dev make meson mtools ninja-build p7zip p7zip-full \
-		parted patch python python2 python3 python3-pip python3-pyelftools rsync sed sudo tar texinfo \
-		u-boot-tools udev unzip util-linux wget genext2fs debootstrap fakeroot qemu-system-aarch64 \
-		ccache; \
-	:
+RUN apt-get update && apt-get --no-install-recommends -y install bash git \
+	bc bison build-essential coccinelle ccache \
+	device-tree-compiler dfu-util efitools flex gdisk graphviz imagemagick \
+	liblz4-tool libgnutls28-dev libguestfs-tools libncurses-dev \
+	libpython3-dev libsdl2-dev libssl-dev lz4 lzma lzma-alone openssl \
+	pkg-config python3 python3-asteval python3-coverage python3-filelock \
+	python3-pkg-resources python3-pycryptodome python3-pyelftools \
+	python3-pytest python3-pytest-xdist python3-sphinxcontrib.apidoc \
+	python3-sphinx-rtd-theme python3-subunit python3-testtools \
+	python3-virtualenv swig uuid-dev u-boot-tools dosfstools python3-libfdt \
+	qemu-system-arm e2tools bmap-tools patch fakeroot debootstrap unzip rsync
 
 # build environment
 WORKDIR /work

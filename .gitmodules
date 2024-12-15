@@ -1,0 +1,16 @@
+[submodule "build/buildroot"]
+	path = build/buildroot
+	url = https://github.com/buildroot/buildroot.git
+[submodule "build/linux-stable"]
+	path = build/linux-stable
+	url = https://github.com/SolidRun/linux-stable.git
+	shallow = true
+[submodule "build/rswlan"]
+	path = build/rswlan
+	url = https://github.com/SolidRun/rswlan.git
+[submodule "build/rzg_trusted-firmware-a"]
+	path = build/rzg_trusted-firmware-a
+	url = https://github.com/SolidRun/arm-trusted-firmware
+[submodule "build/u-boot"]
+	path = build/u-boot
+	url = https://github.com/SolidRun/u-boot.git

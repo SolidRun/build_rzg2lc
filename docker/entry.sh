@@ -13,27 +13,29 @@
 
 # declare flags
 DEFINE_integer 'uid' 1000 'User ID to run as' 'u'
-DEFINE_integer 'gid' 100 'Group ID to run as' 'g'
+DEFINE_integer 'gid' 1000 'Group ID to run as' 'g'
 
 # parse flags
 FLAGS "$@" || exit 1
 eval set -- "${FLAGS_ARGV}"
 
 # create build-user and group if not root
-user=root
-HOME=/root
-if [ "x${FLAGS_uid}" != "x0" ]; then
-	user=build
-	HOME=/home/build
-	groupadd -g ${FLAGS_gid} build 2>/dev/null || true
-	useradd -s /bin/bash -u ${FLAGS_uid} -g ${FLAGS_gid} -m -d ${HOME} -G sudo build
-	echo '%sudo ALL=(ALL) NOPASSWD:ALL' >> /etc/sudoers
-fi
+# user=root
+# HOME=/root
+# if [ "x${FLAGS_uid}" != "x0" ]; then
+# 	user=build
+# 	HOME=/home/build
+# 	groupadd -g ${FLAGS_gid} build 2>/dev/null || true
+# 	useradd -s /bin/bash -u ${FLAGS_uid} -g ${FLAGS_gid} -m -d ${HOME} -G sudo build
+# 	echo '%sudo ALL=(ALL) NOPASSWD:ALL' >> /etc/sudoers
+# fi
 
 # preconfigure git identity
-GIT_DIR=/dev/null git config --system user.name "RZG2L Toolchain Container"
-GIT_DIR=/dev/null git config --system user.email "support@solid-run.com"
+# GIT_DIR=/dev/null git config --system user.name "RZG2L Toolchain Container"
+# GIT_DIR=/dev/null git config --system user.email "support@solid-run.com"
 
 cd /work
 # now run the build script as the build user
-sudo -u $user -E ./runme.sh
+# sudo -u $user -E ./runme.sh
+# ./runme.sh
+bash
