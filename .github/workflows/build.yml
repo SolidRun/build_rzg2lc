@@ -195,12 +195,12 @@ jobs:
           source_dir: debian
           destination_dir: RZ/Debian/${{ needs.build_images.outputs.build_tag }}
       
-      - name: Upload Debian to S3
+      - name: Upload Buildroot to S3
         uses: shallwefootball/upload-s3-action@v1.3.3
         with:
           aws_key_id: ${{ secrets.IMAGES_S3_ACCESS }}
           aws_secret_access_key: ${{ secrets.IMAGES_S3_SECRET }}
           aws_bucket: ${{ secrets.IMAGES_S3_BUCKET }}
           endpoint: ${{ secrets.IMAGES_S3_HOST }}
-          source_dir: debian
+          source_dir: buildroot
           destination_dir: RZ/Buildroot/${{ needs.build_images.outputs.build_tag }}
