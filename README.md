@@ -54,7 +54,7 @@ cd build_rzg2lc
 
 ### Build image
 ```
-MACHINE=rzg2lc-solidrun ./runme.sh
+MACHINE=rzg2lc-solidrun DISTRO=buildroot ./runme.sh build
 ```
 Available options:
 ```
@@ -105,8 +105,8 @@ A docker image providing a consistent build environment can be used as below:
 
 2. invoke build script in working directory
    ```
-   docker run --rm -i -t -v "$PWD":/work rzg2lc_build -u $(id -u):$(id -g)
-   ./runme.sh
+    docker run --rm -it -v "$PWD":/work --user $(id -u):$(id -g) rzg2lc_build
+    MACHINE=rzg2lc-solidrun DISTRO=buildroot ./runme.sh
    ```
 
 
