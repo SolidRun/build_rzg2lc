@@ -134,6 +134,25 @@ run usb_boot
 **Note:** After that step, the board will boot using the rootfs placed on the second USB drive partition.
 - follow the instructions in [here](https://solidrun.atlassian.net/wiki/spaces/developer/pages/476741633/HummingBoard+RZ+family+Boot+options#Flashing-bootloaders-and-rootfs-from-Linux) to flash the eMMC.
 - set the dip switch to boot from eMMC (In order to configure the boot media, please refer to [HummingBoard RZ/G2L Boot Select]( https://solidrun.atlassian.net/wiki/spaces/developer/pages/411861143).)
+
+#### Flashing Bootloader from uSD to eMMC Boot0
+
+Below is the **U-Boot command sequence** to **read** the bootloader from a **generated image on external media** and **write** it to **eMMC boot0**.  
+
+This example reads from a **boot uSDHC card**, but it can be easily adapted to **read from a USB stick** by modifying the first `mmc read` command accordingly.
+
+### **U-Boot Command Sequence**
+```sh
+mmc read 0x4c200000 0 0x2000 # Read bootloader image from uSD (adjust source address)
+run sdio_toggle # SDIO Toggle to switch between uSD and eMMC
+mmc dev 0 1  # Select eMMC device
+mmc erase 0 0x2000 # Erase the bootloader region in eMMC boot0 (optional)
+mmc write 0x4c200200 0x1 0x1 # Write bootloader to eMMC boot0 ->
+mmc write 0x4c201000 0x2 0x78
+mmc write 0x4c210000 0x100 0x1f00
+```
+**📌 Note:** Modify the mmc read command if sourcing the bootloader from USB instead of uSD ```usb read 0x4c200000 0 0x2000```.
+
 ---
 
 ### Booting from Network
