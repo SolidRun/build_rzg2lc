@@ -1,0 +1,3 @@
+# convince ModemManager that there is an AT modem on a platform UART on EU205 Boards
+ACTION=="add|change|move|bind", DEVPATH=="/devices/platform/soc/1004c000.serial/tty/ttySC2", PROGRAM="/bin/cat /proc/device-tree/model", RESULT=="Solidrun RZ/G2L HummingBoard EU205", ENV{ID_MM_DEVICE_PROCESS}="1", ENV{ID_MM_TTY_BAUDRATE}="921600", ENV{ID_MM_TTY_FLOW_CONTROL}="rts-cts", ENV{ID_MM_PORT_TYPE_AT_PRIMARY}="1"
+ACTION=="add|change|move|bind", DEVPATH=="/devices/platform/soc/1004c000.serial/tty/ttySC2", PROGRAM="/bin/cat /proc/device-tree/model", RESULT=="Solidrun RZ/G2LC HummingBoard EU205", ENV{ID_MM_DEVICE_PROCESS}="1", ENV{ID_MM_TTY_BAUDRATE}="921600", ENV{ID_MM_TTY_FLOW_CONTROL}="rts-cts", ENV{ID_MM_PORT_TYPE_AT_PRIMARY}="1"
