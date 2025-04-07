@@ -6,6 +6,7 @@ BUILDROOT_DEFCONFIG="rz-solidrun_defconfig"
 BUILDROOT_DEFCONFIG_PATH="${ROOTDIR}/configs/buildroot"
 BUILDROOT_CACHE_FILE="${BUILDDIR_TMP_BUILDROOT}/buildroot.hash"
 BUILDROOT_DL_DIR="${CACHE_DIR}/buildroot_dl"
+BUILDROOT_EXTERNAL="BR2_EXTERNAL=\"${ROOTDIR}/build/buildroot-external\""
 
 buildroot_do_configure() {
     set_ccache buildroot
@@ -42,8 +43,8 @@ buildroot_store_cache() {
 buildroot_do_compile() {
     cd "${SRC_DIR_BUILDROOT}"
     export BR2_DL_DIR=${BUILDROOT_DL_DIR}
-    make O="${BUILDDIR_TMP_BUILDROOT}" "${BUILDROOT_DEFCONFIG}" --silent
-    make O="${BUILDDIR_TMP_BUILDROOT}" -j "${MAKE_JOBS}" --silent
+    make O="${BUILDDIR_TMP_BUILDROOT}" "${BUILDROOT_EXTERNAL}" "${BUILDROOT_DEFCONFIG}" --silent
+    make O="${BUILDDIR_TMP_BUILDROOT}" "${BUILDROOT_EXTERNAL}" -j "${MAKE_JOBS}" --silent
 }
 
 buildroot_make_initramfs() {

@@ -1,0 +1,19 @@
+Description: support custom baudrate on architectures with c_ispeed/c_ospeed
+Author: Martin <debacle@debian.org>
+Author: Josua Mayer <josua@solid-run.com>
+Origin: vendor
+Last-Update: 2025-04-07
+---
+This patch header follows DEP-3: http://dep.debian.net/deps/dep3/
+--- a/custbaud.h
++++ b/custbaud.h
+@@ -33,7 +33,7 @@
+ /* Some libc implementations (e.g. musl) do not define the cispeed and
+    cospeed struct termios fields. We do not support custom baudrates
+    on them. */
+-#if ( (defined (__i386__) || defined (__x86_64__))  \
++#if ( 1 \
+       && defined (_HAVE_STRUCT_TERMIOS_C_ISPEED)    \
+       && defined (_HAVE_STRUCT_TERMIOS_C_OSPEED) )  \
+     || defined (USE_CUSTOM_BAUD)
+
