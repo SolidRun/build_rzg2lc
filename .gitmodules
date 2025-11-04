@@ -5,7 +5,7 @@
 [submodule "build/linux-stable"]
 	path = build/linux-stable
 	url = https://github.com/SolidRun/linux-stable.git
-	branch = rz-5.10-cip41-sr
+	branch = rz-6.1-vlp-4.0.0-sr
 	shallow = true
 [submodule "build/rswlan"]
 	path = build/rswlan

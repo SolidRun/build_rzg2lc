@@ -19,7 +19,7 @@ This branch is based on Renesas RZ MPU Verified Linux Package (VLP) v4.0.0:
 SolidRun adaptations:
 
 - [U-Boot v2021.10 (v2021.10/rz-sr-cip41)](https://github.com/SolidRun/u-boot/commits/v2021.10/rz-sr-cip41/)
-- [Linux v5.10 (rz-5.10-cip41-sr)](https://github.com/SolidRun/linux-stable/commits/rz-5.10-cip41-sr/)
+- [Linux v6.1 (rz-6.1-vlp-4.0.0-sr)](https://github.com/SolidRun/linux-stable/commits/rz-6.1-vlp-4.0.0-sr/)
 - [RZ/G2 Flash Writer (solidrun)](https://github.com/SolidRun/rzg2_flash_writer/commits/solidrun/)
 
 Other sources:

@@ -2,25 +2,26 @@
 
 source "${ROOTDIR}/build_scripts/build_common.sh"
 
-KERNEL_DEFCONFIG="rz-solidrun_defconfig"
-KERNEL_DEFCONFIG_PATH="${ROOTDIR}/configs/linux"
+KERNEL_EXTRACONFIG="${ROOTDIR}/configs/linux/kernel.extra"
+KERNEL_DEFCONFIG="arch/arm64/configs/defconfig"
 
 kernel_do_configure() {
   set_ccache kernel
   mkdir -p "${BUILDDIR_TMP_KERNEL}"
   mkdir -p "${OUTPUT_DIR_KERNEL}"
-  cp "${KERNEL_DEFCONFIG_PATH}/${KERNEL_DEFCONFIG}" "${SRC_DIR_KERNEL}/arch/arm64/configs"
 }
 
 kernel_do_compile() {
   cd "${SRC_DIR_KERNEL}"
-  CROSS_COMPILE=${CROSS_TOOLCHAIN} ARCH=arm64 make O="${BUILDDIR_TMP_KERNEL}" "${KERNEL_DEFCONFIG}"
+  ./scripts/kconfig/merge_config.sh -m -O "${BUILDDIR_TMP_KERNEL}" "${KERNEL_DEFCONFIG}" "${KERNEL_EXTRACONFIG}"
+  CROSS_COMPILE=${CROSS_TOOLCHAIN} ARCH=arm64 make O="${BUILDDIR_TMP_KERNEL}" olddefconfig
+  # CROSS_COMPILE=${CROSS_TOOLCHAIN} ARCH=arm64 make O="${BUILDDIR_TMP_KERNEL}" menuconfig
   local CHECK_DTBS=(
     renesas/rzg2lc-hummingboard-ripple.dtb
   )
   : $(CROSS_COMPILE=${CROSS_TOOLCHAIN} ARCH=arm64 make O="${BUILDDIR_TMP_KERNEL}" -j "${MAKE_JOBS}" dt_binding_check || true)
   CROSS_COMPILE=${CROSS_TOOLCHAIN} ARCH=arm64 make O="${BUILDDIR_TMP_KERNEL}" -j "${MAKE_JOBS}" CHECK_DTBS=y ${CHECK_DTBS[@]}
-  CROSS_COMPILE=${CROSS_TOOLCHAIN} ARCH=arm64 DTC_FLAGS="-@" make O="${BUILDDIR_TMP_KERNEL}" -j "${MAKE_JOBS}" Image Image.gz dtbs modules
+  CROSS_COMPILE=${CROSS_TOOLCHAIN} ARCH=arm64 make O="${BUILDDIR_TMP_KERNEL}" -j "${MAKE_JOBS}" Image Image.gz dtbs modules
 }
 
 kernel_do_install() {
