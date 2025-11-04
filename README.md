@@ -1,4 +1,3 @@
-# build_rz
 # SolidRun's RZ/G2LC, RZ/G2 and RZ/V2 based build scripts
 
 ## Introduction
@@ -10,8 +9,21 @@ The build script can support two Linux distrebutions **Debian/Buildroot**.
 
 ## Source code versions
 
+This branch is based on Renesas RZ MPU Verified Linux Package (VLP) v4.0.0:
+
+- [Linux v6.1 (rz-6.1-cip28)](https://github.com/renesas-rz/rz_linux-cip/commits/rz-6.1-cip28/) pinned at [b225337e5](https://github.com/renesas-rz/rz_linux-cip/commit/b225337e5493e30aa39abc8c0705e8eecdba3b91)
+- [U-Boot v2021.10 (v2021.10/rz)](https://github.com/renesas-rz/renesas-u-boot-cip/commits/v2021.10/rz/) pinned at [b105c304d](https://github.com/renesas-rz/renesas-u-boot-cip/commit/b105c304da659417de099e50af1a0fce7aa85164)
+- [Trusted Firmware-A v2.9 (v2.9/rz)](https://github.com/renesas-rz/rzg_trusted-firmware-a/tree/v2.9/rz) pinned at [cc1869562](https://github.com/renesas-rz/rzg_trusted-firmware-a/commit/cc18695622e5637ec70ee3ae8eb5e83b09d13804)
+- [RZ/G2 Flash Writer (rz_g2l)](https://github.com/renesas-rz/rzg2_flash_writer/commits/rz_g2l/) pinned at [ff167b676](https://github.com/renesas-rz/rzg2_flash_writer/commit/ff167b676547f3997906c82c9be504eb5cff8ef0)
+
+SolidRun adaptations:
+
 - [U-Boot v2021.10 (v2021.10/rz-sr-cip41)](https://github.com/SolidRun/u-boot/commits/v2021.10/rz-sr-cip41/)
 - [Linux v5.10 (rz-5.10-cip41-sr)](https://github.com/SolidRun/linux-stable/commits/rz-5.10-cip41-sr/)
+- [RZ/G2 Flash Writer (solidrun)](https://github.com/SolidRun/rzg2_flash_writer/commits/solidrun/)
+
+Other sources:
+
 - [Buildroot 2024.02.7](https://github.com/buildroot/buildroot/tree/2024.02.7)
 - [Debian bookworm](https://deb.debian.org/debian)
 
