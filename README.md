@@ -10,8 +10,8 @@ The build script can support two Linux distrebutions **Debian/Buildroot**.
 
 ## Source code versions
 
-- [U-boot 2021.10](https://github.com/renesas-rz/renesas-u-boot-cip/commits/v2021.10/rz)
-- [Linux kernel 5.10](https://github.com/SolidRun/u-boot/tree/v2021.10/rz-sr-cip41)
+- [U-Boot v2021.10 (v2021.10/rz-sr-cip41)](https://github.com/SolidRun/u-boot/commits/v2021.10/rz-sr-cip41/)
+- [Linux v5.10 (rz-5.10-cip41-sr)](https://github.com/SolidRun/linux-stable/commits/rz-5.10-cip41-sr/)
 - [Buildroot 2024.02.7](https://github.com/buildroot/buildroot/tree/2024.02.7)
 - [Debian bookworm](https://deb.debian.org/debian)
 
