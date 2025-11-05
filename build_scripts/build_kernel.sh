@@ -15,6 +15,11 @@ kernel_do_configure() {
 kernel_do_compile() {
   cd "${SRC_DIR_KERNEL}"
   CROSS_COMPILE=${CROSS_TOOLCHAIN} ARCH=arm64 make O="${BUILDDIR_TMP_KERNEL}" "${KERNEL_DEFCONFIG}"
+  local CHECK_DTBS=(
+    renesas/rzg2lc-hummingboard-ripple.dtb
+  )
+  : $(CROSS_COMPILE=${CROSS_TOOLCHAIN} ARCH=arm64 make O="${BUILDDIR_TMP_KERNEL}" -j "${MAKE_JOBS}" dt_binding_check || true)
+  CROSS_COMPILE=${CROSS_TOOLCHAIN} ARCH=arm64 make O="${BUILDDIR_TMP_KERNEL}" -j "${MAKE_JOBS}" CHECK_DTBS=y ${CHECK_DTBS[@]}
   CROSS_COMPILE=${CROSS_TOOLCHAIN} ARCH=arm64 DTC_FLAGS="-@" make O="${BUILDDIR_TMP_KERNEL}" -j "${MAKE_JOBS}" Image Image.gz dtbs modules
 }
 

@@ -21,7 +21,11 @@ RUN apt-get update && apt-get --no-install-recommends -y install bash git \
 	python3-pytest python3-pytest-xdist python3-sphinxcontrib.apidoc \
 	python3-sphinx-rtd-theme python3-subunit python3-testtools \
 	python3-virtualenv swig uuid-dev u-boot-tools dosfstools python3-libfdt \
-	qemu-system-arm e2tools bmap-tools patch fakeroot debootstrap unzip rsync
+	qemu-system-arm e2tools bmap-tools patch fakeroot debootstrap unzip rsync \
+	pipx libyaml-dev
+
+ENV PIPX_HOME=/opt/pipx PIPX_BIN_DIR=/usr/local/bin
+RUN pipx install dtschema
 
 # build environment
 WORKDIR /work
