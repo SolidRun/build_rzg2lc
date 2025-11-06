@@ -22,10 +22,14 @@ RUN apt-get update && apt-get --no-install-recommends -y install bash git \
 	python3-sphinx-rtd-theme python3-subunit python3-testtools \
 	python3-virtualenv swig uuid-dev u-boot-tools dosfstools python3-libfdt \
 	qemu-system-arm e2tools bmap-tools patch fakeroot debootstrap unzip rsync \
-	pipx libyaml-dev
+	pipx libyaml-dev libncursesw6
 
 ENV PIPX_HOME=/opt/pipx PIPX_BIN_DIR=/usr/local/bin
 RUN pipx install dtschema
+
+# provide ncurses5 from ncurses6 for toolchain gdb
+RUN ln -sv libncursesw.so.6 /usr/lib/x86_64-linux-gnu/libncursesw.so.5
+RUN ln -sv libtinfo.so.6 /usr/lib/x86_64-linux-gnu/libtinfo.so.5
 
 # build environment
 WORKDIR /work
