@@ -1,7 +1,7 @@
 [submodule "build/buildroot"]
 	path = build/buildroot
 	url = https://github.com/buildroot/buildroot.git
-	branch = master
+	branch = 2025.08.x
 [submodule "build/linux-stable"]
 	path = build/linux-stable
 	url = https://github.com/SolidRun/linux-stable.git
