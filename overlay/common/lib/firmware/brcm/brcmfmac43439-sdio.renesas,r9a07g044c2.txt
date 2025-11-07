@@ -1,1 +1,1 @@
-brcmfmac43439-sdio.txt
+brcmfmac43439-sdio.renesas,rzg2lc-sr-som.txt
