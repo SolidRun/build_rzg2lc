@@ -19,3 +19,7 @@
 	path = build/u-boot
 	url = https://github.com/SolidRun/u-boot.git
 	branch = v2021.10/rz-sr-cip41
+[submodule "build/cyw-fmac"]
+	path = build/cyw-fmac
+	url = https://github.com/SolidRun/cyw-fmac.git
+	branch = imx-kirkstone-jaculus

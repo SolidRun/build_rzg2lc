@@ -28,19 +28,21 @@ COMPRESSION_FORMATS=("gzip" "xz" "zstd")
 source "${BUILDSCRIPT_DIR}/build_uboot.sh"
 source "${BUILDSCRIPT_DIR}/build_atf.sh"
 source "${BUILDSCRIPT_DIR}/build_kernel.sh"
+source "${BUILDSCRIPT_DIR}/build_cywfmac.sh"
 source "${BUILDSCRIPT_DIR}/build_rswlan.sh"
 source "${BUILDSCRIPT_DIR}/assemble_bootloaders.sh"
 source "${BUILDSCRIPT_DIR}/build_${DISTRO}.sh"
 source "${BUILDSCRIPT_DIR}/build_flashwriter.sh"
 source "${BUILDSCRIPT_DIR}/assemble_image.sh"
 
-TARGETS=("uboot" "atf" "kernel" "bootimage" "rswlan" "${DISTRO}" "flashwriter" "image")
+TARGETS=("uboot" "atf" "kernel" "bootimage" "cywfmac" "rswlan" "${DISTRO}" "flashwriter" "image")
 
 declare -A DEPENDENCIES
 DEPENDENCIES["atf"]="uboot"
+DEPENDENCIES["cywfmac"]="kernel"
 DEPENDENCIES["rswlan"]="kernel"
 DEPENDENCIES["bootimage"]="uboot atf kernel"
-DEPENDENCIES["image"]="uboot atf kernel bootimage rswlan distro"
+DEPENDENCIES["image"]="uboot atf kernel bootimage cywfmac rswlan distro"
 
 is_valid_target() {
   for t in "${TARGETS[@]}"; do
