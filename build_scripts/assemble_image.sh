@@ -45,6 +45,7 @@ apply_overlay_to_rootfs() {
     local overlay_path="$1"
     local rootfs="$2"
     find "${overlay_path}" -type f -name "*" -printf "%P\n" | e2cp -G 0 -O 0 -P 644 -s "${overlay_path}" -d "${rootfs}:/" -a
+    find "${overlay_path}" -type l -name "*" -printf "%P\n" | e2cp -G 0 -O 0 -P 644 -s "${overlay_path}" -d "${rootfs}:/" -a
 }
 
 set_host_name() {
