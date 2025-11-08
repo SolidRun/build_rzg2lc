@@ -51,6 +51,7 @@ jobs:
   build_images:
     needs: prepare_container
     runs-on: self-hosted
+    timeout-minutes: 720
     container: 
         image: ciserver.ci:5000/${{ github.repository_id }}/develop-vlp4:latest
         credentials:
