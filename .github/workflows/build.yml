@@ -2,9 +2,9 @@ name: build
 
 on:
   push:
-    branches: [ "main" ]
+    branches: [ "develop-vlp3" ]
   pull_request:
-    branches: [ "main" ]
+    branches: [ "develop-vlp3" ]
   schedule:
     - cron: "0 0 * * 5"
   # Allows you to run this workflow manually from the Actions tab
@@ -43,7 +43,7 @@ jobs:
         with:
           context: docker
           push: true
-          tags: ciserver.ci:5000/${{ github.repository_id }}:latest
+          tags: ciserver.ci:5000/${{ github.repository_id }}/develop-vlp3:latest
           cache-from: type=registry,ref=ciserver.ci:5000/${{ github.repository_id }}:cache
           cache-to: type=registry,ref=ciserver.ci:5000/${{ github.repository_id }}:cache,mode=max
           file: docker/Dockerfile
@@ -52,7 +52,7 @@ jobs:
     needs: prepare_container
     runs-on: self-hosted
     container: 
-        image: ciserver.ci:5000/${{ github.repository_id }}:latest
+        image: ciserver.ci:5000/${{ github.repository_id }}/develop-vlp3:latest
         credentials:
             username: ${{ secrets.CI_CACHE_REGISTRY_LOGIN }}
             password: ${{ secrets.CI_CACHE_REGISTRY_PASSWORD }}
@@ -75,7 +75,7 @@ jobs:
           secretKey: ${{ secrets.CI_CACHE_MINIO_SECRET }}
           bucket: cicache
           use-fallback: false
-          key: ${{ github.repository }}
+          key: ${{ github.repository }}/develop-vlp3
           path: build/cache/cicache
 
       - name: Get build tag
@@ -136,7 +136,7 @@ jobs:
           secretKey: ${{ secrets.CI_CACHE_MINIO_SECRET }}
           bucket: cicache
           use-fallback: false
-          key: ${{ github.repository }}
+          key: ${{ github.repository }}/develop-vlp3
           path: build/cache/cicache
 
       - name: Prepare mirror
@@ -193,7 +193,7 @@ jobs:
           aws_bucket: ${{ secrets.IMAGES_S3_BUCKET }}
           endpoint: ${{ secrets.IMAGES_S3_HOST }}
           source_dir: debian
-          destination_dir: RZ/Debian/${{ needs.build_images.outputs.build_tag }}
+          destination_dir: RZ/Debian/vlp3/${{ needs.build_images.outputs.build_tag }}
       
       - name: Upload Buildroot to S3
         uses: shallwefootball/upload-s3-action@v1.3.3
@@ -203,4 +203,4 @@ jobs:
           aws_bucket: ${{ secrets.IMAGES_S3_BUCKET }}
           endpoint: ${{ secrets.IMAGES_S3_HOST }}
           source_dir: buildroot
-          destination_dir: RZ/Buildroot/${{ needs.build_images.outputs.build_tag }}
+          destination_dir: RZ/Buildroot/vlp3/${{ needs.build_images.outputs.build_tag }}
