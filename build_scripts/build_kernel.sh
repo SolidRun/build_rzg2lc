@@ -2,7 +2,10 @@
 
 source "${ROOTDIR}/build_scripts/build_common.sh"
 
-KERNEL_EXTRACONFIG="${ROOTDIR}/configs/linux/kernel.extra"
+KERNEL_EXTRACONFIG=(
+  "${ROOTDIR}/configs/linux/kernel.extra"
+  "${ROOTDIR}/configs/linux/docker.cfg"
+)
 KERNEL_DEFCONFIG="arch/arm64/configs/defconfig"
 
 kernel_do_configure() {
@@ -13,7 +16,7 @@ kernel_do_configure() {
 
 kernel_do_compile() {
   cd "${SRC_DIR_KERNEL}"
-  ./scripts/kconfig/merge_config.sh -m -O "${BUILDDIR_TMP_KERNEL}" "${KERNEL_DEFCONFIG}" "${KERNEL_EXTRACONFIG}"
+  ./scripts/kconfig/merge_config.sh -m -O "${BUILDDIR_TMP_KERNEL}" "${KERNEL_DEFCONFIG}" "${KERNEL_EXTRACONFIG[@]}"
   CROSS_COMPILE=${CROSS_TOOLCHAIN} ARCH=arm64 make O="${BUILDDIR_TMP_KERNEL}" olddefconfig
   # CROSS_COMPILE=${CROSS_TOOLCHAIN} ARCH=arm64 make O="${BUILDDIR_TMP_KERNEL}" menuconfig
   local CHECK_DTBS=(
