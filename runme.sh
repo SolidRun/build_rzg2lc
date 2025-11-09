@@ -18,6 +18,7 @@ REPO_PREFIX=$(git log -1 --pretty=format:%h)
 
 : "${MACHINE:=rzg2lc-solidrun}"
 : "${DISTRO:=buildroot}"
+: "${DEBIAN_RELEASE:=bookworm}"
 : "${CROSS_TOOLCHAIN:=""}"
 : "${USE_CCACHE:=true}"
 : "${ROOTFS_FREE_SIZE:=100M}"

@@ -84,6 +84,7 @@ buildroot (default), debian
 Available env vars:
 MACHINE=rzg2l-solidrun - Machine name (default: rzg2lc-solidrun)
 DISTRO=debian - Distro to build (default: buildroot)
+DEBIAN_RELEASE=bookworm - debian version to use (default: bookworm)
 CROSS_TOOLCHAIN=aarch64-linux-gnu- - Toolchain to use (default: download arm-gnu-toolchain-13.3)
 ROOTFS_FREE_SIZE=1G - Extra rootfs free size (default: 100M)
 COMPRESSION_FORMAT=zstd - if specified, image will be commpressed (zstd, xz, gzip)

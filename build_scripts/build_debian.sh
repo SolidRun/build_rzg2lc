@@ -48,21 +48,29 @@ debian_do_debootstrap() {
 debian_do_stage2() {
     cd "${BUILDDIR_TMP_DEBIAN}"
     truncate -s 2G "${BUILDDIR_TMP_DEBIAN}/rootfs.img"
-    mkfs.ext2 -F -d "${BUILDDIR_TMP_DEBIAN}/rootfs" "${BUILDDIR_TMP_DEBIAN}/rootfs.img"
+    fakeroot mkfs.ext4 -L rootfs -F -d "${BUILDDIR_TMP_DEBIAN}/rootfs" "${BUILDDIR_TMP_DEBIAN}/rootfs.img"
     qemu-system-aarch64 \
 			-m 1G \
 			-M virt \
-			-cpu cortex-a57 \
+			-cpu max,pauth-impdef=on,sve=on \
 			-smp 4 \
+			-device virtio-rng-device \
 			-netdev user,id=eth0 \
 			-device virtio-net-device,netdev=eth0 \
-			-drive file=rootfs.img,if=none,format=raw,id=hd0 \
+			-drive file=rootfs.img,if=none,format=raw,id=hd0,discard=unmap \
 			-device virtio-blk-device,drive=hd0 \
 			-nographic \
 			-no-reboot \
 			-kernel "${OUTPUT_DIR_KERNEL}/Image" \
-			-append "console=ttyAMA0 root=/dev/vda rootfstype=ext2 ip=dhcp rw init=/stage2.sh"
+			-append "earlycon=pl011,0x09000000 console=ttyAMA0 root=/dev/vda rootfstype=ext4 ip=dhcp rw init=/stage2.sh"
 
+    # fix errors
+    s=0
+    e2fsck -fy rootfs.img || s=$?
+    if [ $s -ge 4 ]; then
+        echo "Error: Couldn't repair generated rootfs."
+        exit 1
+    fi
 }
 
 debian_do_pack() {
