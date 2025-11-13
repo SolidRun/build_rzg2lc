@@ -19,7 +19,7 @@ RUN apt-get update && apt-get --no-install-recommends -y install bash git \
 	pkg-config python3 python3-asteval python3-coverage python3-filelock \
 	python3-pkg-resources python3-pycryptodome python3-pyelftools \
 	python3-pytest python3-pytest-xdist python3-sphinxcontrib.apidoc \
-	python3-sphinx-rtd-theme python3-subunit python3-testtools \
+	python3-sphinx-rtd-theme python3-subunit python3-testtools sudo \
 	python3-virtualenv swig uuid-dev u-boot-tools dosfstools python3-libfdt \
 	qemu-system-arm e2tools bmap-tools patch fakeroot debootstrap unzip rsync \
 	pipx libyaml-dev libncursesw6

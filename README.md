@@ -3,9 +3,9 @@
 ## Introduction
 
 Main intention of this repository is to produce a reference system for RZ/G2 and RZ/V2 based products.
-Automatic binary releases are available on our website [RZ_Images](https://images.solid-run.com/RZG2LC/rzg2lc_build) for download.
+Automatic binary releases are available on our website [RZ_Images](https://images.solid-run.com/RZ) for download.
 
-The build script can support two Linux distrebutions **Debian/Buildroot**.
+The build script provides ready to use **Debian/Buildroot** images that can be deployed on micro SD and eMMC.
 
 ## Source code versions
 
@@ -27,69 +27,149 @@ Other sources:
 - [Buildroot 2024.02.7](https://github.com/buildroot/buildroot/tree/2024.02.7)
 - [Debian bookworm](https://deb.debian.org/debian)
 
-## Get Started
+## Compiling Image from Source
 
-### Install developement dependencies
-For Debian/Ubuntu
-```
-apt install git bc bison build-essential coccinelle ccache \
-  device-tree-compiler dfu-util efitools flex gdisk graphviz imagemagick \
-  liblz4-tool libgnutls28-dev libguestfs-tools libncurses-dev \
-  libpython3-dev libsdl2-dev libssl-dev lz4 lzma lzma-alone openssl \
-  pkg-config python3 python3-asteval python3-coverage python3-filelock \
-  python3-pkg-resources python3-pycryptodome python3-pyelftools \
-  python3-pytest python3-pytest-xdist python3-sphinxcontrib.apidoc \
-  python3-sphinx-rtd-theme python3-subunit python3-testtools python3-tqdm \
-  python3-virtualenv python3-libfdt swig uuid-dev u-boot-tools dosfstools \
-  qemu-system-arm e2tools bmap-tools patch fakeroot debootstrap unzip rsync
-```
-For Fedora
-```
-dnf install git bc bison gcc gcc-c++ coccinelle ccache \
-  dtc dfu-util flex gdisk graphviz ImageMagick  \
-  lz4 lzma xz openssl-devel openssl-devel-engine \
-  pkgconfig python3 python3-asteval patch fakeroot debootstrap \
-  python3-coverage python3-filelock python3-pkg-resources python3-pyelftools \
-  python3-pytest python3-pytest-xdist python3-sphinxcontrib-apidoc \
-  python3-sphinx_rtd_theme python3-subunit python3-testtools \
-  python3-virtualenv swig uuid-devel uboot-tools e2fsprogs dosfstools \
-  qemu-system-aarch64 e2tools bmap-tools python3-libfdt python3-tqdm \
-  perl-open perl-English perl-ExtUtils-MakeMaker perl-Thread-Queue \
-  perl-FindBin perl-IPC-Cmd unzip rsync
-```
+### Download Sources
 
-### Clone repo and it's submodules
-```
-git clone --recurse-submodules https://github.com/SolidRun/build_rzg2lc.git
-cd build_rzg2lc
-```
+Clone this repo at the `develop-vlp41` branch:
 
-### Build image
+    git clone --recurse-submodules https://github.com/SolidRun/build_rzg2lc.git -b develop-vlp4
+    cd build_rzg2lc
+
+### Prepare Build Host
+
+#### Build with Docker
+
+Install docker or a compatible container runtime (e.g. podman).
+
+Then generate the reference build system:
+
+    docker build -t rzg2lc_build docker
+    # optional with an apt proxy, e.g. apt-cacher-ng
+    # docker build --build-arg APTPROXY=http://127.0.0.1:3142 -t rzg2lc_build docker
+
+#### Build with Host Tools
+
+Note: this is not regulary tested due to the wide range of distros and versions.
+
+- Debian based OS
+
+  ```
+  apt install git bc bison build-essential coccinelle ccache \
+  	device-tree-compiler dfu-util efitools flex gdisk graphviz imagemagick \
+  	liblz4-tool libgnutls28-dev libguestfs-tools libncurses-dev \
+  	libpython3-dev libsdl2-dev libssl-dev lz4 lzma lzma-alone openssl \
+  	pkg-config python3 python3-asteval python3-coverage python3-filelock \
+  	python3-pkg-resources python3-pycryptodome python3-pyelftools \
+  	python3-pytest python3-pytest-xdist python3-sphinxcontrib.apidoc \
+  	python3-sphinx-rtd-theme python3-subunit python3-testtools python3-tqdm \
+  	python3-virtualenv python3-libfdt swig uuid-dev u-boot-tools dosfstools \
+  	qemu-system-arm e2tools bmap-tools patch fakeroot debootstrap unzip rsync
+  ```
+
+- Fedora
+
+  ```
+  dnf install git bc bison gcc gcc-c++ coccinelle ccache \
+  	dtc dfu-util flex gdisk graphviz ImageMagick  \
+  	lz4 lzma xz openssl-devel openssl-devel-engine \
+  	pkgconfig python3 python3-asteval patch fakeroot debootstrap \
+  	python3-coverage python3-filelock python3-pkg-resources python3-pyelftools \
+  	python3-pytest python3-pytest-xdist python3-sphinxcontrib-apidoc \
+  	python3-sphinx_rtd_theme python3-subunit python3-testtools \
+  	python3-virtualenv swig uuid-devel uboot-tools e2fsprogs dosfstools \
+  	qemu-system-aarch64 e2tools bmap-tools python3-libfdt python3-tqdm \
+  	perl-open perl-English perl-ExtUtils-MakeMaker perl-Thread-Queue \
+  	perl-FindBin perl-IPC-Cmd unzip rsync
+  ```
+
+### Configuration Options
+
+- `MACHINE`: Select target HW
+  - `rzg2lc-solidrun` (RZ/G2LC SoM based boards, default)
+- `DISTRO`: Choose Linux distribution for rootfs
+  - `buildroot` (default)
+  - `debian`
+- `DEBIAN_RELEASE`
+  - `bookworm` (default)
+- `USE_CCACHE`: Build with ccache enabled
+  - `true` (default)
+  - `false`
+- `ROOTFS_FREE_SIZE`: Extra free space in generated rootfs
+  - `100M` (default)
+- `COMPRESSION_FORMAT`: Compress compression for generated images
+  - no compression if unset (default)
+  - `gzip`: gzip 
+- `CROSS_TOOLCHAIN`: Toolchain to use (default: download arm-gnu-toolchain-13.3)
+  - `aarch64-linux-gnu-` (use build host native aarch64 toolchain)
+  - when unset default is download arm-gnu-toolchain-13.3
+
+These options are passed as environment variables, e.g.:
+
+    MACHINE=rzg2lc-solidrun DISTRO=debian ./runme.sh
+
+In docker options are passed through the `-e` command-line flags, e.g.:
+
+    docker run -i -t -v "$PWD":/work -e MACHINE=rzg2lc-solidrun -e DISTRO=debian rzg2lc_build -u $(id -u) -g $(id -g)
+
+Podman needs the `-u` and `-g` argumetns set to `0` avoiding unexpected file permissions, e.g.:
+
+    docker run -i -t -v "$PWD":/work -e MACHINE=rzg2lc-solidrun -e DISTRO=debian rzg2lc_build -u 0 -g 0
+
+### Start Build
+
+Invoke `runme.sh` script with chosen options (see examples above).
+
+On success results are generated at `images/` directory, e.g.:
+
 ```
-MACHINE=rzg2lc-solidrun DISTRO=buildroot ./runme.sh build
+images
+├── flashwriter
+│   ├── Flash_Writer_SCIF_RZG2LC_HUMMINGBOARD_DDR4_1GB_1PCS.mot
+│   ├── Flash_Writer_SCIF_RZG2LC_HUMMINGBOARD_DDR4_2GB_1PCS.mot
+│   ├── Flash_Writer_SCIF_RZG2LC_HUMMINGBOARD_DDR4_512MB_1PCS.mot
+│   ├── Flash_Writer_SCIF_RZG2L_HUMMINGBOARD_DDR4_1GB_1PCS.mot
+│   ├── Flash_Writer_SCIF_RZG2L_HUMMINGBOARD_DDR4_2GB_1PCS.mot
+│   ├── Flash_Writer_SCIF_RZG2L_HUMMINGBOARD_DDR4_512MB_1PCS.mot
+│   ├── Flash_Writer_SCIF_RZG2UL_HUMMINGBOARD_DDR4_1GB_1PCS.mot
+│   ├── Flash_Writer_SCIF_RZG2UL_HUMMINGBOARD_DDR4_2GB_1PCS.mot
+│   ├── Flash_Writer_SCIF_RZG2UL_HUMMINGBOARD_DDR4_512MB_1PCS.mot
+│   ├── Flash_Writer_SCIF_RZV2L_HUMMINGBOARD_DDR4_1GB_1PCS.mot
+│   ├── Flash_Writer_SCIF_RZV2L_HUMMINGBOARD_DDR4_2GB_1PCS.mot
+│   └── Flash_Writer_SCIF_RZV2L_HUMMINGBOARD_DDR4_512MB_1PCS.mot
+├── rzg2lc-solidrun
+│   ├── bl2.bin
+│   ├── bl2_bp.bin
+│   ├── bootparams.bin
+│   ├── dtbs
+│   │   ├── rzg2lc-hummingboard.dtb
+│   │   ├── rzg2lc-hummingboard-eu205.dtb
+│   │   ├── rzg2lc-hummingboard-iiot.dtb
+│   │   ├── rzg2lc-hummingboard-ripple.dtb
+│   │   ├── rzg2lc-hummingboard-ripple-mmc.dtb
+│   │   ├── rzg2lc-hummingboard-ripple-sd.dtb
+│   │   ├── rzg2lc-solidrun-mmc-overlay.dtbo
+│   │   ├── rzg2lc-solidrun-sd-overlay.dtbo
+│   │   ├── rzg2l-hummingboard-eu205.dtb
+│   │   ├── rzg2l-hummingboard-extended.dtb
+│   │   ├── rzg2l-hummingboard-iiot.dtb
+│   │   ├── rzg2l-hummingboard-pro.dtb
+│   │   ├── rzg2l-hummingboard-ripple.dtb
+│   │   ├── rzg2l-hummingboard-tutus.dtb
+│   │   ├── rzg2l-solidrun-mmc-overlay.dtbo
+│   │   ├── rzg2l-solidrun-sd-overlay.dtbo
+│   │   ├── rzv2l-hummingboard-extended.dtb
+│   │   ├── rzv2l-hummingboard-iiot.dtb
+│   │   ├── rzv2l-hummingboard-pro.dtb
+│   │   └── rzv2l-hummingboard-ripple.dtb
+│   ├── fip.bin
+│   ├── Image.gz
+│   └── overlays.itb
+├── rzg2lc-solidrun-mmc-bootloader-c2939dc.img
+├── rzg2lc-solidrun-sd-bootloader-c2939dc.img
+├── rzg2lc-solidrun-sd-buildroot-c2939dc.img
+└── rzg2lc-solidrun-sd-buildroot-c2939dc.img.bmap
 ```
-Available options:
-```
-Usage: MACHINE=[machine] DISTRO=[distro] ./runme.sh [build|clean] [target]
-Targets: uboot atf kernel bootimage rswlan buildroot flashwriter image
-Examples:
-  ./runme.sh               # Build all targets
-  ./runme.sh build uboot   # Build uboot only
-  ./runme.sh clean kernel  # Clean kernel only
-  ./runme.sh --help        # Show this help message
-Available machines:
-rzg2lc-solidrun (default), rzg2l-solidrun, rzv2l-solidrun
-Available distros:
-buildroot (default), debian
-Available env vars:
-MACHINE=rzg2l-solidrun - Machine name (default: rzg2lc-solidrun)
-DISTRO=debian - Distro to build (default: buildroot)
-DEBIAN_RELEASE=bookworm - debian version to use (default: bookworm)
-CROSS_TOOLCHAIN=aarch64-linux-gnu- - Toolchain to use (default: download arm-gnu-toolchain-13.3)
-ROOTFS_FREE_SIZE=1G - Extra rootfs free size (default: 100M)
-COMPRESSION_FORMAT=zstd - if specified, image will be commpressed (zstd, xz, gzip)
-```
-Resulted images will be located in images/ directory
 
 ### Deploy to microSD
 
@@ -101,29 +181,13 @@ umount /media/<relevant directory>
 sudo bmaptool copy images/rzg2lc*-solidrun-sd-<distro>-<hash>.img /dev/sdX
 ```
 
+## First Steps
+
 ### Login
+
 - **username:** root
 - **password:** root
 
-
-### Build with Docker
-A docker image providing a consistent build environment can be used as below:
-
-1. build container image (first time only)
-   ```
-   docker build -t rzg2lc_build docker
-   # optional with an apt proxy, e.g. apt-cacher-ng
-   # docker build --build-arg APTPROXY=http://127.0.0.1:3142 -t rzg2lc_build docker
-   ```
-
-2. invoke build script in working directory
-   ```
-    docker run --rm -it -v "$PWD":/work --user $(id -u):$(id -g) rzg2lc_build
-    MACHINE=rzg2lc-solidrun DISTRO=buildroot ./runme.sh
-   ```
-
-
----
 ### Boot from SD and flash eMMC
 If you use **HummingBoard** Carrier board:
 - set the dip switch to boot from SD (In order to configure the boot media, please refer to [HummingBoard RZ/G2L Boot Select]( https://solidrun.atlassian.net/wiki/spaces/developer/pages/411861143).)
@@ -144,6 +208,7 @@ setenv sdio_select emmc
 ```
 run usb_boot
 ```
+
 **Note:** After that step, the board will boot using the rootfs placed on the second USB drive partition.
 - follow the instructions in [here](https://solidrun.atlassian.net/wiki/spaces/developer/pages/476741633/HummingBoard+RZ+family+Boot+options#Flashing-bootloaders-and-rootfs-from-Linux) to flash the eMMC.
 - set the dip switch to boot from eMMC (In order to configure the boot media, please refer to [HummingBoard RZ/G2L Boot Select]( https://solidrun.atlassian.net/wiki/spaces/developer/pages/411861143).)
