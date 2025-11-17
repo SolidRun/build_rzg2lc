@@ -3,7 +3,7 @@
 ## Introduction
 
 Main intention of this repository is to produce a reference system for RZ/G2 and RZ/V2 based products.
-Automatic binary releases are available on our website [RZ_Images](https://images.solid-run.com/RZ) for download.
+Automatic binary releases are available on our website [RZ/Buildroot](https://images.solid-run.com/RZ/Buildroot/vlp4) & [RZ/Debian](https://images.solid-run.com/RZ/Debian/vlp4) for download.
 
 The build script provides ready to use **Debian/Buildroot** images that can be deployed on micro SD and eMMC.
 
