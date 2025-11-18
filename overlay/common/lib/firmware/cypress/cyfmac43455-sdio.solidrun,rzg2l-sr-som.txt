@@ -1,4 +1,4 @@
-# Cloned from bcm94345wlpagb.txt
+# Cloned from bcm94345wlpagb.txt 
 NVRAMRev=$Rev: 498373 $
 sromrev=11
 vendid=0x14e4
@@ -15,7 +15,7 @@ xtalfreq=37400
 #xtal_swcapio=0x6644
 boardflags=0x00080201
 boardflags2=0x40000000
-# digit 7=4: use internal lpo
+# bit 27 = 0: use internal lpo
 boardflags3=0x44200100
 rxchain=1
 txchain=1
@@ -36,7 +36,7 @@ extpagain2g=2
 maxp2ga0=74
 cckbw202gpo=0x0000
 ofdmlrbw202gpo=0x0022
-dot11agofdmhrbw202gpo=0x8888
+dot11agofdmhrbw202gpo=0x8882
 mcsbw202gpo=0xaaaaa666
 maxp5ga0=76,76,76,76
 mcsbw205glpo=0x99999955
@@ -103,7 +103,7 @@ temps_period=15
 btc_mode=1
 sbpowoffs5g20mtna0=0,0,0,0
 sbpowoffs5g40mtna0=0,0,0,0
-sbpowoffs5g80mtna0=0,0,0,0
+sbpowoffs5g80mtna0=0,0,0,0 
 powoffs5g20mtna0=0,0,0,0,0,0,0
 powoffs5g40mtna0=0,0,0,0,0
 powoffs5g80mtna0=0,0,0,0,0
@@ -111,5 +111,5 @@ ldo1=5
 cbfilttype=2
 xtal_swcapio=0x8855
 fdss_level_ch13=1,1
-# muxenab defined to enable OOB IRQ. Level sensitive interrupt via WL_HOST_WAKE line.
 muxenab=0x10
+# End of NVRAM - do not remove this line #
