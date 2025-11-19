@@ -86,6 +86,7 @@ Note: this is not regulary tested due to the wide range of distros and versions.
 ### Configuration Options
 
 - `MACHINE`: Select target HW
+  - `rzg2l-solidrun` (RZ/G2L SoM based boards)
   - `rzg2lc-solidrun` (RZ/G2LC SoM based boards, default)
 - `DISTRO`: Choose Linux distribution for rootfs
   - `buildroot` (default)
@@ -110,11 +111,11 @@ These options are passed as environment variables, e.g.:
 
 In docker options are passed through the `-e` command-line flags, e.g.:
 
-    docker run -i -t -v "$PWD":/work -e MACHINE=rzg2lc-solidrun -e DISTRO=debian rzg2lc_build -u $(id -u) -g $(id -g)
+    docker run --rm -i -t -v "$PWD":/work -e MACHINE=rzg2lc-solidrun -e DISTRO=debian rzg2lc_build -u $(id -u) -g $(id -g)
 
 Podman needs the `-u` and `-g` argumetns set to `0` avoiding unexpected file permissions, e.g.:
 
-    docker run -i -t -v "$PWD":/work -e MACHINE=rzg2lc-solidrun -e DISTRO=debian rzg2lc_build -u 0 -g 0
+    docker run --rm k-i -t -v "$PWD":/work -e MACHINE=rzg2lc-solidrun -e DISTRO=debian rzg2lc_build -u 0 -g 0
 
 ### Start Build
 
