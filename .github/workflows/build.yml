@@ -93,11 +93,11 @@ jobs:
           COMPRESSION_FORMAT=xz MACHINE=rzg2lc-solidrun ./runme.sh
           COMPRESSION_FORMAT=xz DISTRO=debian MACHINE=rzg2lc-solidrun ./runme.sh
 
-#      - name: Build for RZ/G2L
-#        shell: bash
-#        run: |
-#          COMPRESSION_FORMAT=xz MACHINE=rzg2l-solidrun ./runme.sh
-#          COMPRESSION_FORMAT=xz DISTRO=debian MACHINE=rzg2l-solidrun ./runme.sh
+      - name: Build for RZ/G2L
+        shell: bash
+        run: |
+          COMPRESSION_FORMAT=xz MACHINE=rzg2l-solidrun ./runme.sh
+          COMPRESSION_FORMAT=xz DISTRO=debian MACHINE=rzg2l-solidrun ./runme.sh
 
 #      - name: Build for RZ/V2L
 #        shell: bash
