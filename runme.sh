@@ -72,7 +72,7 @@ set_machine_settings() {
         UBOOT_DEFCONFIG=rzg2lc-solidrun_defconfig
         TFA_PLATFORM=g2l
         TFA_BOARD=sr_rzg2lc
-        KERNEL_OVERLAYS_PREFIX=rzg2lc
+        KERNEL_OVERLAYS_PREFIX=rzg2l # g2lc som can reuse g2l sd/mmc overlays
         ;;
       "rzg2l-solidrun")
         UBOOT_DEFCONFIG=rzg2l-solidrun_defconfig
@@ -84,7 +84,7 @@ set_machine_settings() {
         UBOOT_DEFCONFIG=rzv2l-solidrun_defconfig
         TFA_PLATFORM=v2l
         TFA_BOARD=sr_rzv2l
-        KERNEL_OVERLAYS_PREFIX=rzg2l
+        KERNEL_OVERLAYS_PREFIX=rzg2l # v2l som can reuse g2l sd/mmc overlays
         ;;
       *)
         echo "Unknown Machine=$MACHINE -> default=rzg2lc-solidrun"
