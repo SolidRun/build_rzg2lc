@@ -48,8 +48,30 @@ jobs:
           cache-to: type=registry,ref=ciserver.ci:5000/${{ github.repository_id }}:cache,mode=max
           file: docker/Dockerfile
 
+  info:
+    runs-on: self-hosted
+    timeout-minutes: 10
+    outputs:
+      build_date: ${{ steps.tag_step.outputs.build_date }}
+      build_rev: ${{ steps.tag_step.outputs.build_rev }}
+      build_ref: ${{ steps.tag_step.outputs.build_ref }}
+      build_tag: ${{ steps.tag_step.outputs.build_date }}_${{ steps.tag_step.outputs.build_rev }}
+    steps:
+      - name: Generate build tags
+        shell: bash {0}
+        id: tag_step
+        run: |
+          build_date="$(date +%Y-%m-%d)"
+          build_rev="$(echo ${GITHUB_SHA} | head -zc 7)"
+          build_ref="${GITHUB_REF}"
+          echo "build_date=$build_date" >> "$GITHUB_OUTPUT"
+          echo "build_rev=$build_rev" >> "$GITHUB_OUTPUT"
+          echo "build_ref=$build_ref" >> "$GITHUB_OUTPUT"
+
   build_images:
-    needs: prepare_container
+    needs:
+      - info
+      - prepare_container
     runs-on: self-hosted
     container: 
         image: ciserver.ci:5000/${{ github.repository_id }}/develop-vlp4:latest
@@ -57,8 +79,8 @@ jobs:
             username: ${{ secrets.CI_CACHE_REGISTRY_LOGIN }}
             password: ${{ secrets.CI_CACHE_REGISTRY_PASSWORD }}
         options: --user "${{ needs.prepare_container.outputs.uid }}:${{ needs.prepare_container.outputs.gid }}"
-    outputs: 
-      build_tag: ${{ steps.tag_step.outputs.build_tag }}
+    outputs:
+      local_artifacts_path: ${{ steps.store_path.outputs.local_artifacts_path }}
     steps:
       - name: Checkout repo 
         uses: actions/checkout@v4
@@ -77,12 +99,6 @@ jobs:
           use-fallback: false
           key: ${{ github.repository }}/develop-vlp4
           path: build/cache/cicache
-
-      - name: Get build tag
-        id: tag_step
-        run: |
-          build_tag=$(date +%Y-%m-%d)_$(git rev-parse --short HEAD)
-          echo "build_tag=$build_tag" >> "$GITHUB_OUTPUT"
 
       - name: Register buildroot mirror
         run: echo 'BR2_PRIMARY_SITE="http://ciserver.ci:8000/cimirror/buildroot_mirror"' >> configs/buildroot/rz-solidrun_defconfig
@@ -113,6 +129,11 @@ jobs:
             cp images/*.img.xz deploy
             cp images/*.img.bmap deploy
 
+      - name: Store local storage path for this build
+        id: store_path
+        run: |
+          echo "local_artifacts_path=${{ github.repository_id }}/${{ needs.info.outputs.build_tag }}" >> "$GITHUB_OUTPUT"
+
       - name: Deploy to the local minio storage
         uses: yakubique/minio-upload@v1.1.3
         with:
@@ -121,8 +142,8 @@ jobs:
           access_key: ${{ secrets.CI_CACHE_MINIO_ACCESS }}
           secret_key: ${{ secrets.CI_CACHE_MINIO_SECRET }}
           bucket: cipublish
-          source: ./deploy
-          target: "/${{ github.repository_id }}/${{ steps.tag_step.outputs.build_tag }}"
+          source: ./deploy/
+          target: "/${{ steps.store_path.outputs.local_artifacts_path }}/"
           recursive: true
 
       - name: Update cache on the server  
@@ -172,7 +193,7 @@ jobs:
           access_key: ${{ secrets.CI_CACHE_MINIO_ACCESS }}
           secret_key: ${{ secrets.CI_CACHE_MINIO_SECRET }}
           bucket: cipublish
-          source: "/${{ github.repository_id }}/${{ needs.build_images.outputs.build_tag }}/"
+          source: "/${{ needs.build_images.outputs.local_artifacts_path }}/"
           target: "."
           recursive: true
 
@@ -180,10 +201,10 @@ jobs:
         run: |
             mkdir -p debian
             mkdir -p buildroot
-            cp deploy/*-bootloader-*.img debian
-            cp deploy/*-bootloader-*.img buildroot
-            cp deploy/*-debian-*.img.* debian
-            cp deploy/*-buildroot-*.img.* buildroot
+            cp *-bootloader-*.img debian
+            cp *-bootloader-*.img buildroot
+            cp *-debian-*.img.* debian
+            cp *-buildroot-*.img.* buildroot
 
       - name: Upload Debian to S3
         uses: shallwefootball/upload-s3-action@v1.3.3
@@ -193,7 +214,7 @@ jobs:
           aws_bucket: ${{ secrets.IMAGES_S3_BUCKET }}
           endpoint: ${{ secrets.IMAGES_S3_HOST }}
           source_dir: debian
-          destination_dir: RZ/Debian/vlp4/${{ needs.build_images.outputs.build_tag }}
+          destination_dir: RZ/Debian/vlp4/${{ needs.info.outputs.build_tag }}
 
       - name: Upload Buildroot to S3
         uses: shallwefootball/upload-s3-action@v1.3.3
@@ -203,4 +224,71 @@ jobs:
           aws_bucket: ${{ secrets.IMAGES_S3_BUCKET }}
           endpoint: ${{ secrets.IMAGES_S3_HOST }}
           source_dir: buildroot
-          destination_dir: RZ/Buildroot/vlp4/${{ needs.build_images.outputs.build_tag }}
+          destination_dir: RZ/Buildroot/vlp4/${{ needs.info.outputs.build_tag }}
+
+  test_images:
+    needs:
+      - info
+      - build_images
+    runs-on: self-hosted
+    timeout-minutes: 90
+
+    steps:
+      - name: Generate Temporary Image Download URLs
+        id: dl_url
+        shell: bash {0}
+        run: |
+          echo "rzg2lc_buildroot_url=http://ciserver.ci:8000/cipublish/${{ needs.build_images.outputs.local_artifacts_path }}/rzg2lc-solidrun-sd-buildroot-${{ needs.info.outputs.build_rev }}.img.xz" >> "$GITHUB_OUTPUT"
+          echo "rzg2lc_debian_url=http://ciserver.ci:8000/cipublish/${{ needs.build_images.outputs.local_artifacts_path }}/rzg2lc-solidrun-sd-buildroot-${{ needs.info.outputs.build_rev }}.img.xz" >> "$GITHUB_OUTPUT"
+          echo "rzg2l_buildroot_url=http://ciserver.ci:8000/cipublish/${{ needs.build_images.outputs.local_artifacts_path }}/rzg2l-solidrun-sd-debian-${{ needs.info.outputs.build_rev }}.img.xz" >> "$GITHUB_OUTPUT"
+          echo "rzg2l_debian_url=http://ciserver.ci:8000/cipublish/${{ needs.build_images.outputs.local_artifacts_path }}/rzg2l-solidrun-sd-debian-${{ needs.info.outputs.build_rev }}.img.xz" >> "$GITHUB_OUTPUT"
+
+      - name: Checkout LAVA action
+        uses: actions/checkout@v4
+        with:
+          repository: SolidRun/lava-test-definitions
+          path: .lava-action
+          ssh-key: ${{ secrets.LAVA_ACTION_SECRET }}
+
+      - name: Test Images on LAVA
+        id: submit
+        uses: ./.lava-action/.github/actions/lava-submit
+        with:
+          server: 192.168.15.184
+          port: 8001
+          timeout: 36000
+          jobs: |
+            [
+              {
+                "device_type": "rz",
+                "tags": ["rz_g2lc"],
+                "image_url": "${{ steps.dl_url.outputs.rzg2lc_buildroot_url }}",
+                "description": "RZ/G2LC Buildroot - build_rzg2lc/${{ needs.info.outputs.build_ref }} (${{ needs.info.outputs.build_rev }})",
+                "compression": "xz",
+                "all_devices": false
+              },
+              {
+                "device_type": "rz",
+                "tags": ["rz_g2lc"],
+                "image_url": "${{ steps.dl_url.outputs.rzg2lc_debian_url }}",
+                "description": "RZ/G2LC Debian - build_rzg2lc/${{ needs.info.outputs.build_ref }} (${{ needs.info.outputs.build_rev }})",
+                "compression": "xz",
+                "all_devices": false
+              },
+              {
+                "device_type": "rz",
+                "tags": ["rz_g2l"],
+                "image_url": "${{ steps.dl_url.outputs.rzg2l_buildroot_url }}",
+                "description": "RZ/G2L Buildroot - build_rzg2lc/${{ needs.info.outputs.build_ref }} (${{ needs.info.outputs.build_rev }})",
+                "compression": "xz",
+                "all_devices": false
+              },
+              {
+                "device_type": "rz",
+                "tags": ["rz_g2l"],
+                "image_url": "${{ steps.dl_url.outputs.rzg2l_debian_url }}",
+                "description": "RZ/G2L Debian - build_rzg2lc/${{ needs.info.outputs.build_ref }} (${{ needs.info.outputs.build_rev }})",
+                "compression": "xz",
+                "all_devices": false
+              }
+            ]
