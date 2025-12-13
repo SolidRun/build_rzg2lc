@@ -20,7 +20,7 @@ kernel_do_compile() {
   CROSS_COMPILE=${CROSS_TOOLCHAIN} ARCH=arm64 make O="${BUILDDIR_TMP_KERNEL}" olddefconfig
   # CROSS_COMPILE=${CROSS_TOOLCHAIN} ARCH=arm64 make O="${BUILDDIR_TMP_KERNEL}" menuconfig
   local CHECK_DTBS=(
-    renesas/rzg2lc-hummingboard-ripple.dtb
+    renesas/r9a07g044c2-hummingboard-ripple.dtb
   )
   : $(CROSS_COMPILE=${CROSS_TOOLCHAIN} ARCH=arm64 make O="${BUILDDIR_TMP_KERNEL}" -j "${MAKE_JOBS}" dt_binding_check || true)
   CROSS_COMPILE=${CROSS_TOOLCHAIN} ARCH=arm64 make O="${BUILDDIR_TMP_KERNEL}" -j "${MAKE_JOBS}" CHECK_DTBS=y ${CHECK_DTBS[@]}
@@ -31,7 +31,8 @@ kernel_do_install() {
   mkdir -p "${OUTPUT_DIR_KERNEL}/dtbs"
   cp "${BUILDDIR_TMP_KERNEL}/arch/arm64/boot/Image" "${OUTPUT_DIR_KERNEL}"
   cp "${BUILDDIR_TMP_KERNEL}/arch/arm64/boot/Image.gz" "${OUTPUT_DIR_KERNEL}"
-  cp ${BUILDDIR_TMP_KERNEL}/arch/arm64/boot/dts/renesas/rz*hummingboard*.dtb* "${OUTPUT_DIR_KERNEL}/dtbs"
+  cp ${BUILDDIR_TMP_KERNEL}/arch/arm64/boot/dts/renesas/r9a07g044*hummingboard*.dtb* "${OUTPUT_DIR_KERNEL}/dtbs"
+  cp ${BUILDDIR_TMP_KERNEL}/arch/arm64/boot/dts/renesas/rz*hummingboard*.dtbo "${OUTPUT_DIR_KERNEL}/dtbs"
   cp ${BUILDDIR_TMP_KERNEL}/arch/arm64/boot/dts/renesas/rz*overlay*.dtbo "${OUTPUT_DIR_KERNEL}/dtbs"
 
   cd ${OUTPUT_DIR_KERNEL}
