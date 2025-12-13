@@ -181,7 +181,9 @@ jobs:
           recursive: true
 
   publish_images:
-    needs: build_images
+    needs:
+      - info
+      - build_images
     runs-on: self-hosted
     if: github.ref == 'refs/heads/develop-vlp4' && github.event_name != 'pull_request'
     steps:
