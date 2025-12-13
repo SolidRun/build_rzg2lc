@@ -18,7 +18,7 @@
 [submodule "build/u-boot"]
 	path = build/u-boot
 	url = https://github.com/SolidRun/u-boot.git
-	branch = v2021.10/rz-sr-cip41
+	branch = v2021.10/rz-vlp-4.0.0-sr
 [submodule "build/cyw-fmac"]
 	path = build/cyw-fmac
 	url = https://github.com/SolidRun/cyw-fmac.git
