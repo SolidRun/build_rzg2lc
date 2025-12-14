@@ -115,11 +115,11 @@ jobs:
           COMPRESSION_FORMAT=xz MACHINE=rzg2l-solidrun ./runme.sh
           COMPRESSION_FORMAT=xz DISTRO=debian MACHINE=rzg2l-solidrun ./runme.sh
 
-#      - name: Build for RZ/V2L
-#        shell: bash
-#        run: |
-#          COMPRESSION_FORMAT=xz MACHINE=rzv2l-solidrun ./runme.sh
-#          COMPRESSION_FORMAT=xz DISTRO=debian MACHINE=rzv2l-solidrun ./runme.sh
+      - name: Build for RZ/V2L
+        shell: bash
+        run: |
+          COMPRESSION_FORMAT=xz MACHINE=rzv2l-solidrun ./runme.sh
+          COMPRESSION_FORMAT=xz DISTRO=debian MACHINE=rzv2l-solidrun ./runme.sh
 
       - name: Copy deploy artifacts
         shell: bash
@@ -241,9 +241,11 @@ jobs:
         shell: bash {0}
         run: |
           echo "rzg2lc_buildroot_url=http://ciserver.ci:8000/cipublish/${{ needs.build_images.outputs.local_artifacts_path }}/rzg2lc-solidrun-sd-buildroot-${{ needs.info.outputs.build_rev }}.img.xz" >> "$GITHUB_OUTPUT"
-          echo "rzg2lc_debian_url=http://ciserver.ci:8000/cipublish/${{ needs.build_images.outputs.local_artifacts_path }}/rzg2lc-solidrun-sd-buildroot-${{ needs.info.outputs.build_rev }}.img.xz" >> "$GITHUB_OUTPUT"
-          echo "rzg2l_buildroot_url=http://ciserver.ci:8000/cipublish/${{ needs.build_images.outputs.local_artifacts_path }}/rzg2l-solidrun-sd-debian-${{ needs.info.outputs.build_rev }}.img.xz" >> "$GITHUB_OUTPUT"
+          echo "rzg2lc_debian_url=http://ciserver.ci:8000/cipublish/${{ needs.build_images.outputs.local_artifacts_path }}/rzg2lc-solidrun-sd-debian-${{ needs.info.outputs.build_rev }}.img.xz" >> "$GITHUB_OUTPUT"
+          echo "rzg2l_buildroot_url=http://ciserver.ci:8000/cipublish/${{ needs.build_images.outputs.local_artifacts_path }}/rzg2l-solidrun-sd-buildroot-${{ needs.info.outputs.build_rev }}.img.xz" >> "$GITHUB_OUTPUT"
           echo "rzg2l_debian_url=http://ciserver.ci:8000/cipublish/${{ needs.build_images.outputs.local_artifacts_path }}/rzg2l-solidrun-sd-debian-${{ needs.info.outputs.build_rev }}.img.xz" >> "$GITHUB_OUTPUT"
+          echo "rzv2l_buildroot_url=http://ciserver.ci:8000/cipublish/${{ needs.build_images.outputs.local_artifacts_path }}/rzv2l-solidrun-sd-buildroot-${{ needs.info.outputs.build_rev }}.img.xz" >> "$GITHUB_OUTPUT"
+          echo "rzv2l_debian_url=http://ciserver.ci:8000/cipublish/${{ needs.build_images.outputs.local_artifacts_path }}/rzv2l-solidrun-sd-debian-${{ needs.info.outputs.build_rev }}.img.xz" >> "$GITHUB_OUTPUT"
 
       - name: Checkout LAVA action
         uses: actions/checkout@v4
@@ -290,6 +292,22 @@ jobs:
                 "tags": ["rz_g2l"],
                 "image_url": "${{ steps.dl_url.outputs.rzg2l_debian_url }}",
                 "description": "RZ/G2L Debian - build_rzg2lc/${{ needs.info.outputs.build_ref }} (${{ needs.info.outputs.build_rev }})",
+                "compression": "xz",
+                "all_devices": false
+              },
+              {
+                "device_type": "rz",
+                "tags": ["rz_v2l"],
+                "image_url": "${{ steps.dl_url.outputs.rzv2l_buildroot_url }}",
+                "description": "RZ/V2L Buildroot - build_rzg2lc/${{ needs.info.outputs.build_ref }} (${{ needs.info.outputs.build_rev }})",
+                "compression": "xz",
+                "all_devices": false
+              },
+              {
+                "device_type": "rz",
+                "tags": ["rz_v2l"],
+                "image_url": "${{ steps.dl_url.outputs.rzv2l_debian_url }}",
+                "description": "RZ/V2L Debian - build_rzg2lc/${{ needs.info.outputs.build_ref }} (${{ needs.info.outputs.build_rev }})",
                 "compression": "xz",
                 "all_devices": false
               }

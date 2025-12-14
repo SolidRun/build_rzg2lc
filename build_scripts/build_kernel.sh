@@ -32,6 +32,7 @@ kernel_do_install() {
   cp "${BUILDDIR_TMP_KERNEL}/arch/arm64/boot/Image" "${OUTPUT_DIR_KERNEL}"
   cp "${BUILDDIR_TMP_KERNEL}/arch/arm64/boot/Image.gz" "${OUTPUT_DIR_KERNEL}"
   cp ${BUILDDIR_TMP_KERNEL}/arch/arm64/boot/dts/renesas/r9a07g044*hummingboard*.dtb* "${OUTPUT_DIR_KERNEL}/dtbs"
+  cp ${BUILDDIR_TMP_KERNEL}/arch/arm64/boot/dts/renesas/r9a07g054*hummingboard*.dtb* "${OUTPUT_DIR_KERNEL}/dtbs"
   cp ${BUILDDIR_TMP_KERNEL}/arch/arm64/boot/dts/renesas/rz*hummingboard*.dtbo "${OUTPUT_DIR_KERNEL}/dtbs"
   cp ${BUILDDIR_TMP_KERNEL}/arch/arm64/boot/dts/renesas/rz*overlay*.dtbo "${OUTPUT_DIR_KERNEL}/dtbs"
 

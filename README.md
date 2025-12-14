@@ -86,8 +86,9 @@ Note: this is not regulary tested due to the wide range of distros and versions.
 ### Configuration Options
 
 - `MACHINE`: Select target HW
-  - `rzg2l-solidrun` (RZ/G2L SoM based boards)
   - `rzg2lc-solidrun` (RZ/G2LC SoM based boards, default)
+  - `rzg2l-solidrun` (RZ/G2L SoM based boards)
+  - `rzv2l-solidrun` (RZ/V2L SoM based boards)
 - `DISTRO`: Choose Linux distribution for rootfs
   - `buildroot` (default)
   - `debian`
