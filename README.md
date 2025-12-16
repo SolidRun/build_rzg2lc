@@ -9,17 +9,17 @@ The build script provides ready to use **Debian/Buildroot** images that can be d
 
 ## Source code versions
 
-This branch is based on Renesas RZ MPU Verified Linux Package (VLP) v4.0.0:
+This branch is based on Renesas RZ MPU Verified Linux Package (VLP) v4.0.1:
 
-- [Linux v6.1 (rz-6.1-cip28)](https://github.com/renesas-rz/rz_linux-cip/commits/rz-6.1-cip28/) pinned at [b225337e5](https://github.com/renesas-rz/rz_linux-cip/commit/b225337e5493e30aa39abc8c0705e8eecdba3b91)
+- [Linux v6.1 (rz-6.1-cip43)](https://github.com/renesas-rz/rz_linux-cip/commits/rz-6.1-cip43/) pinned at [f12a03d8f](https://github.com/renesas-rz/rz_linux-cip/commit/f12a03d8f2cf971734190c35aeaac98dde815b2d)
 - [U-Boot v2021.10 (v2021.10/rz)](https://github.com/renesas-rz/renesas-u-boot-cip/commits/v2021.10/rz/) pinned at [b105c304d](https://github.com/renesas-rz/renesas-u-boot-cip/commit/b105c304da659417de099e50af1a0fce7aa85164)
-- [Trusted Firmware-A v2.9 (v2.9/rz)](https://github.com/renesas-rz/rzg_trusted-firmware-a/tree/v2.9/rz) pinned at [cc1869562](https://github.com/renesas-rz/rzg_trusted-firmware-a/commit/cc18695622e5637ec70ee3ae8eb5e83b09d13804)
-- [RZ/G2 Flash Writer (rz_g2l)](https://github.com/renesas-rz/rzg2_flash_writer/commits/rz_g2l/) pinned at [ff167b676](https://github.com/renesas-rz/rzg2_flash_writer/commit/ff167b676547f3997906c82c9be504eb5cff8ef0)
+- [Trusted Firmware-A v2.10](https://github.com/renesas-rz/rzg_trusted-firmware-a/tree/2.10.5/rz_1.1.0) pinned at [2.10.5/rz_1.1.0](https://github.com/renesas-rz/rzg_trusted-firmware-a/commit/f59ed5a31ef6b28200e9ba35fc78a607fdeda6dd)
+- [RZ/G2 Flash Writer (rz_g2l)](https://github.com/renesas-rz/rzg2_flash_writer/commits/rz_g2l/) pinned at [43509f2b2](https://github.com/renesas-rz/rzg2_flash_writer/commit/43509f2b268b0ce86288cf3c37e668d64c5d5d12)
 
 SolidRun adaptations:
 
 - [U-Boot v2021.10 (v2021.10/rz-vlp-4.0.0-sr)](https://github.com/SolidRun/u-boot/commits/v2021.10/rz-vlp-4.0.0-sr/)
-- [Linux v6.1 (rz-6.1-vlp-4.0.0-sr)](https://github.com/SolidRun/linux-stable/commits/rz-6.1-vlp-4.0.0-sr/)
+- [Linux v6.1 (rz-6.1-vlp-4.0.1-sr)](https://github.com/SolidRun/linux-stable/commits/rz-6.1-vlp-4.0.1-sr/)
 - [RZ/G2 Flash Writer (solidrun)](https://github.com/SolidRun/rzg2_flash_writer/commits/solidrun/)
 
 Other sources:
