@@ -3,6 +3,7 @@ source "${ROOTDIR}/build_scripts/build_common.sh"
 
 TFA_BUILD_TYPE="release"
 # TFA_BUILD_TYPE="debug"
+: ${TFA_EXTRA_ARGS:=}
 
 TFA_UBOOT_BIN="${OUTPUT_DIR_UBOOT}/u-boot.bin"
 
@@ -20,7 +21,7 @@ atf_do_compile() {
   fi
   CROSS_COMPILE=${CROSS_TOOLCHAIN} BUILD_BASE=${BUILDDIR_TMP_TFA} make -j "${MAKE_JOBS}" bl2 bl31 fip \
   PLAT="${TFA_PLATFORM}" BOARD="${TFA_BOARD}" BL33=${TFA_UBOOT_BIN} FIP_ALIGN=16 \
-  RZG_DRAM_ECC_FULL=0 DEBUG=$debug
+  RZG_DRAM_ECC_FULL=0 DEBUG=$debug $TFA_EXTRA_ARGS
 }
 
 atf_create_bootparams() {

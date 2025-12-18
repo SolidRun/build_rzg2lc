@@ -11,6 +11,7 @@ u_boot_do_configure() {
 u_boot_do_compile() {
   cd "${SRC_DIR_UBOOT}"
   CROSS_COMPILE=${CROSS_TOOLCHAIN} ARCH=arm64 make O="${BUILDDIR_TMP_UBOOT}" "${UBOOT_DEFCONFIG}"
+  CROSS_COMPILE=${CROSS_TOOLCHAIN} ARCH=arm64 make O="${BUILDDIR_TMP_UBOOT}" savedefconfig
   CROSS_COMPILE=${CROSS_TOOLCHAIN} ARCH=arm64 make O="${BUILDDIR_TMP_UBOOT}" -j ${MAKE_JOBS}
 }
 

@@ -102,7 +102,13 @@ jobs:
 
       - name: Register buildroot mirror
         run: echo 'BR2_PRIMARY_SITE="http://ciserver.ci:8000/cimirror/buildroot_mirror"' >> configs/buildroot/rz-solidrun_defconfig
-          
+
+      - name: Build for RZ/G2UL
+        shell: bash
+        run: |
+          COMPRESSION_FORMAT=xz MACHINE=rzg2ul-solidrun ./runme.sh
+          COMPRESSION_FORMAT=xz DISTRO=debian MACHINE=rzg2ul-solidrun ./runme.sh
+
       - name: Build for RZ/G2LC
         shell: bash
         run: |
@@ -240,6 +246,8 @@ jobs:
         id: dl_url
         shell: bash {0}
         run: |
+          echo "rzg2ul_buildroot_url=http://ciserver.ci:8000/cipublish/${{ needs.build_images.outputs.local_artifacts_path }}/rzg2ul-solidrun-sd-buildroot-${{ needs.info.outputs.build_rev }}.img.xz" >> "$GITHUB_OUTPUT"
+          echo "rzg2ul_debian_url=http://ciserver.ci:8000/cipublish/${{ needs.build_images.outputs.local_artifacts_path }}/rzg2ul-solidrun-sd-debian-${{ needs.info.outputs.build_rev }}.img.xz" >> "$GITHUB_OUTPUT"
           echo "rzg2lc_buildroot_url=http://ciserver.ci:8000/cipublish/${{ needs.build_images.outputs.local_artifacts_path }}/rzg2lc-solidrun-sd-buildroot-${{ needs.info.outputs.build_rev }}.img.xz" >> "$GITHUB_OUTPUT"
           echo "rzg2lc_debian_url=http://ciserver.ci:8000/cipublish/${{ needs.build_images.outputs.local_artifacts_path }}/rzg2lc-solidrun-sd-debian-${{ needs.info.outputs.build_rev }}.img.xz" >> "$GITHUB_OUTPUT"
           echo "rzg2l_buildroot_url=http://ciserver.ci:8000/cipublish/${{ needs.build_images.outputs.local_artifacts_path }}/rzg2l-solidrun-sd-buildroot-${{ needs.info.outputs.build_rev }}.img.xz" >> "$GITHUB_OUTPUT"
@@ -263,6 +271,22 @@ jobs:
           timeout: 36000
           jobs: |
             [
+              {
+                "device_type": "rz",
+                "tags": ["rz_g2ul"],
+                "image_url": "${{ steps.dl_url.outputs.rzg2ul_buildroot_url }}",
+                "description": "RZ/G2UL Buildroot - build_rzg2lc/${{ needs.info.outputs.build_ref }} (${{ needs.info.outputs.build_rev }})",
+                "compression": "xz",
+                "all_devices": false
+              },
+              {
+                "device_type": "rz",
+                "tags": ["rz_g2ul"],
+                "image_url": "${{ steps.dl_url.outputs.rzg2ul_debian_url }}",
+                "description": "RZ/G2UL Debian - build_rzg2lc/${{ needs.info.outputs.build_ref }} (${{ needs.info.outputs.build_rev }})",
+                "compression": "xz",
+                "all_devices": false
+              },
               {
                 "device_type": "rz",
                 "tags": ["rz_g2lc"],

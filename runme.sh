@@ -68,6 +68,13 @@ resolve_dependencies() {
 
 set_machine_settings() {
   case "$MACHINE" in
+      "rzg2ul-solidrun")
+        UBOOT_DEFCONFIG=rzg2ul-solidrun_defconfig
+        TFA_PLATFORM=g2ul
+        TFA_BOARD=sr_rzg2ul
+        TFA_EXTRA_ARGS="SOC_TYPE=2"
+        KERNEL_OVERLAYS_PREFIX=rzg2l # g2ul som can reuse g2l sd/mmc overlays
+        ;;
       "rzg2lc-solidrun")
         UBOOT_DEFCONFIG=rzg2lc-solidrun_defconfig
         TFA_PLATFORM=g2l
@@ -91,7 +98,7 @@ set_machine_settings() {
         UBOOT_DEFCONFIG=rzg2lc-solidrun_defconfig
         TFA_PLATFORM=g2l
         TFA_BOARD=sr_rzg2lc
-        KERNEL_OVERLAYS_PREFIX=rzg2lc
+        KERNEL_OVERLAYS_PREFIX=rzg2l # g2lc som can reuse g2l sd/mmc overlays
         ;;
   esac
 }
