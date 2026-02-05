@@ -5,7 +5,7 @@
 [submodule "build/linux-stable"]
 	path = build/linux-stable
 	url = https://github.com/SolidRun/linux-stable.git
-	branch = rz-6.1-vlp-4.0.0-sr
+	branch = rz-6.1-cip43
 	shallow = true
 [submodule "build/rswlan"]
 	path = build/rswlan
@@ -14,11 +14,11 @@
 [submodule "build/rzg_trusted-firmware-a"]
 	path = build/rzg_trusted-firmware-a
 	url = https://github.com/SolidRun/arm-trusted-firmware
-	branch = v2.9/rz-sr
+	branch = rzv2n_1.2.0
 [submodule "build/u-boot"]
 	path = build/u-boot
 	url = https://github.com/SolidRun/u-boot.git
-	branch = v2021.10/rz-vlp-4.0.0-sr
+	branch = v2024.07-rzv2n_1.2.0
 [submodule "build/cyw-fmac"]
 	path = build/cyw-fmac
 	url = https://github.com/SolidRun/cyw-fmac.git

@@ -93,6 +93,12 @@ set_machine_settings() {
         TFA_BOARD=sr_rzv2l
         KERNEL_OVERLAYS_PREFIX=rzg2l # v2l som can reuse g2l sd/mmc overlays
         ;;
+      "rzv2n-solidrun")
+        UBOOT_DEFCONFIG=rzv2n-solidrun_defconfig
+        TFA_PLATFORM=v2n
+        TFA_BOARD=sr_som
+        KERNEL_OVERLAYS_PREFIX=rzv2n
+        ;;
       *)
         echo "Unknown Machine=$MACHINE -> default=rzg2lc-solidrun"
         UBOOT_DEFCONFIG=rzg2lc-solidrun_defconfig
@@ -131,7 +137,7 @@ show_help() {
   echo "  $0 clean kernel  # Clean kernel only"
   echo "  $0 --help        # Show this help message"
   echo "Available machines:"
-  echo "rzg2lc-solidrun (default), rzg2l-solidrun, rzv2l-solidrun"
+  echo "rzg2lc-solidrun (default), rzg2ul-solidrun, rzg2l-solidrun, rzv2l-solidrun, rzv2n-solidrun"
   echo "Available distros:"
   echo "buildroot (default), debian"
   echo "Available env vars:"

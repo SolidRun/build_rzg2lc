@@ -31,11 +31,18 @@ kernel_do_install() {
   mkdir -p "${OUTPUT_DIR_KERNEL}/dtbs"
   cp "${BUILDDIR_TMP_KERNEL}/arch/arm64/boot/Image" "${OUTPUT_DIR_KERNEL}"
   cp "${BUILDDIR_TMP_KERNEL}/arch/arm64/boot/Image.gz" "${OUTPUT_DIR_KERNEL}"
-  cp ${BUILDDIR_TMP_KERNEL}/arch/arm64/boot/dts/renesas/r9a07g043*hummingboard*.dtb* "${OUTPUT_DIR_KERNEL}/dtbs"
-  cp ${BUILDDIR_TMP_KERNEL}/arch/arm64/boot/dts/renesas/r9a07g044*hummingboard*.dtb* "${OUTPUT_DIR_KERNEL}/dtbs"
-  cp ${BUILDDIR_TMP_KERNEL}/arch/arm64/boot/dts/renesas/r9a07g054*hummingboard*.dtb* "${OUTPUT_DIR_KERNEL}/dtbs"
-  cp ${BUILDDIR_TMP_KERNEL}/arch/arm64/boot/dts/renesas/rz*hummingboard*.dtbo "${OUTPUT_DIR_KERNEL}/dtbs"
-  cp ${BUILDDIR_TMP_KERNEL}/arch/arm64/boot/dts/renesas/rz*overlay*.dtbo "${OUTPUT_DIR_KERNEL}/dtbs"
+  # RZ/G2UL device trees (r9a07g043)
+  cp ${BUILDDIR_TMP_KERNEL}/arch/arm64/boot/dts/renesas/r9a07g043*hummingboard*.dtb* "${OUTPUT_DIR_KERNEL}/dtbs" 2>/dev/null || true
+  # RZ/G2LC device trees (r9a07g044)
+  cp ${BUILDDIR_TMP_KERNEL}/arch/arm64/boot/dts/renesas/r9a07g044*hummingboard*.dtb* "${OUTPUT_DIR_KERNEL}/dtbs" 2>/dev/null || true
+  # RZ/V2L device trees (r9a07g054)
+  cp ${BUILDDIR_TMP_KERNEL}/arch/arm64/boot/dts/renesas/r9a07g054*hummingboard*.dtb* "${OUTPUT_DIR_KERNEL}/dtbs" 2>/dev/null || true
+  # RZ/V2N device trees (r9a09g056)
+  cp ${BUILDDIR_TMP_KERNEL}/arch/arm64/boot/dts/renesas/r9a09g056*hummingboard*.dtb* "${OUTPUT_DIR_KERNEL}/dtbs" 2>/dev/null || true
+  cp ${BUILDDIR_TMP_KERNEL}/arch/arm64/boot/dts/renesas/r9a09g056*solidsense*.dtb* "${OUTPUT_DIR_KERNEL}/dtbs" 2>/dev/null || true
+  # Device tree overlays
+  cp ${BUILDDIR_TMP_KERNEL}/arch/arm64/boot/dts/renesas/rz*hummingboard*.dtbo "${OUTPUT_DIR_KERNEL}/dtbs" 2>/dev/null || true
+  cp ${BUILDDIR_TMP_KERNEL}/arch/arm64/boot/dts/renesas/rz*overlay*.dtbo "${OUTPUT_DIR_KERNEL}/dtbs" 2>/dev/null || true
 
   cd ${OUTPUT_DIR_KERNEL}
   ln -sf ${OUTPUT_DIR_KERNEL}/dtbs/${KERNEL_OVERLAYS_PREFIX}-solidrun-sd-overlay.dtbo sd-overlay.dtbo

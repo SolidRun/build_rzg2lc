@@ -1,30 +1,27 @@
-# SolidRun's RZ/G2LC, RZ/G2 and RZ/V2 based build scripts
+# SolidRun's RZ/G2LC, RZ/G2, RZ/V2L and RZ/V2N based build scripts
 
 ## Introduction
 
-Main intention of this repository is to produce a reference system for RZ/G2 and RZ/V2 based products.
+Main intention of this repository is to produce a reference system for RZ/G2, RZ/V2L and RZ/V2N based products.
 Automatic binary releases are available on our website [RZ/Buildroot](https://images.solid-run.com/RZ/Buildroot/vlp4) & [RZ/Debian](https://images.solid-run.com/RZ/Debian/vlp4) for download.
 
 The build script provides ready to use **Debian/Buildroot** images that can be deployed on micro SD and eMMC.
 
 ## Source code versions
 
-This branch is based on Renesas RZ MPU Verified Linux Package (VLP) v4.0.1:
+This branch (`rzv2n-dev`) includes RZ/V2N support with the following source versions:
 
-- [Linux v6.1 (rz-6.1-cip43)](https://github.com/renesas-rz/rz_linux-cip/commits/rz-6.1-cip43/) pinned at [f12a03d8f](https://github.com/renesas-rz/rz_linux-cip/commit/f12a03d8f2cf971734190c35aeaac98dde815b2d)
-- [U-Boot v2021.10 (v2021.10/rz)](https://github.com/renesas-rz/renesas-u-boot-cip/commits/v2021.10/rz/) pinned at [b105c304d](https://github.com/renesas-rz/renesas-u-boot-cip/commit/b105c304da659417de099e50af1a0fce7aa85164)
-- [Trusted Firmware-A v2.10](https://github.com/renesas-rz/rzg_trusted-firmware-a/tree/2.10.5/rz_1.1.0) pinned at [2.10.5/rz_1.1.0](https://github.com/renesas-rz/rzg_trusted-firmware-a/commit/f59ed5a31ef6b28200e9ba35fc78a607fdeda6dd)
-- [RZ/G2 Flash Writer (rz_g2l)](https://github.com/renesas-rz/rzg2_flash_writer/commits/rz_g2l/) pinned at [43509f2b2](https://github.com/renesas-rz/rzg2_flash_writer/commit/43509f2b268b0ce86288cf3c37e668d64c5d5d12)
+**RZ/V2N Sources:**
 
-SolidRun adaptations:
+- [Linux v6.1 (rz-6.1-cip43)](https://github.com/SolidRun/linux-stable/tree/rz-6.1-cip43)
+- [U-Boot v2024.07 (v2024.07-rzv2n_1.2.0)](https://github.com/SolidRun/u-boot/tree/v2024.07-rzv2n_1.2.0)
+- [Trusted Firmware-A (rzv2n_1.2.0)](https://github.com/SolidRun/arm-trusted-firmware/tree/rzv2n_1.2.0)
+- [RZ/V2N Flash Writer (rz_v2n)](https://github.com/SolidRun/rzg2_flash_writer/tree/rz_v2n)
+- [Yocto meta layer (scarthgap_rzv2n_dev)](https://github.com/SolidRun/meta-solidrun-arm-rzg2lc/tree/scarthgap_rzv2n_dev)
 
-- [U-Boot v2021.10 (v2021.10/rz-vlp-4.0.0-sr)](https://github.com/SolidRun/u-boot/commits/v2021.10/rz-vlp-4.0.0-sr/)
-- [Linux v6.1 (rz-6.1-vlp-4.0.1-sr)](https://github.com/SolidRun/linux-stable/commits/rz-6.1-vlp-4.0.1-sr/)
-- [RZ/G2 Flash Writer (solidrun)](https://github.com/SolidRun/rzg2_flash_writer/commits/solidrun/)
+**Other sources:**
 
-Other sources:
-
-- [Buildroot 2024.02.7](https://github.com/buildroot/buildroot/tree/2024.02.7)
+- [Buildroot 2025.08.x](https://github.com/buildroot/buildroot/tree/2025.08.x)
 - [Debian bookworm](https://deb.debian.org/debian)
 
 ## Compiling Image from Source
@@ -90,6 +87,7 @@ Note: this is not regulary tested due to the wide range of distros and versions.
   - `rzg2lc-solidrun` (RZ/G2LC SoM based boards, default)
   - `rzg2l-solidrun` (RZ/G2L SoM based boards)
   - `rzv2l-solidrun` (RZ/V2L SoM based boards)
+  - `rzv2n-solidrun` (RZ/V2N SoM based boards)
 - `DISTRO`: Choose Linux distribution for rootfs
   - `buildroot` (default)
   - `debian`
@@ -140,6 +138,7 @@ images
 │   ├── Flash_Writer_SCIF_RZV2L_HUMMINGBOARD_DDR4_1GB_1PCS.mot
 │   ├── Flash_Writer_SCIF_RZV2L_HUMMINGBOARD_DDR4_2GB_1PCS.mot
 │   └── Flash_Writer_SCIF_RZV2L_HUMMINGBOARD_DDR4_512MB_1PCS.mot
+│   └── Flash_Writer_SCIF_RZV2N_SR_SOM_8GB_LPDDR4X.mot
 ├── rzg2lc-solidrun
 │   ├── bl2.bin
 │   ├── bl2_bp.bin
