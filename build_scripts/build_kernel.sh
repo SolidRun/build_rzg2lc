@@ -22,8 +22,8 @@ kernel_do_compile() {
   local CHECK_DTBS=(
     renesas/r9a07g044c2-hummingboard-ripple.dtb
   )
-  : $(CROSS_COMPILE=${CROSS_TOOLCHAIN} ARCH=arm64 make O="${BUILDDIR_TMP_KERNEL}" -j "${MAKE_JOBS}" dt_binding_check || true)
-  CROSS_COMPILE=${CROSS_TOOLCHAIN} ARCH=arm64 make O="${BUILDDIR_TMP_KERNEL}" -j "${MAKE_JOBS}" CHECK_DTBS=y ${CHECK_DTBS[@]}
+  CROSS_COMPILE=${CROSS_TOOLCHAIN} ARCH=arm64 make O="${BUILDDIR_TMP_KERNEL}" -j "${MAKE_JOBS}" dt_binding_check || true
+  CROSS_COMPILE=${CROSS_TOOLCHAIN} ARCH=arm64 make O="${BUILDDIR_TMP_KERNEL}" -j "${MAKE_JOBS}" CHECK_DTBS=y ${CHECK_DTBS[@]} || true
   CROSS_COMPILE=${CROSS_TOOLCHAIN} ARCH=arm64 make O="${BUILDDIR_TMP_KERNEL}" -j "${MAKE_JOBS}" Image Image.gz dtbs modules
 }
 
