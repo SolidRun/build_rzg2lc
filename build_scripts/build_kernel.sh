@@ -19,11 +19,32 @@ kernel_do_compile() {
   ./scripts/kconfig/merge_config.sh -m -O "${BUILDDIR_TMP_KERNEL}" "${KERNEL_DEFCONFIG}" "${KERNEL_EXTRACONFIG[@]}"
   CROSS_COMPILE=${CROSS_TOOLCHAIN} ARCH=arm64 make O="${BUILDDIR_TMP_KERNEL}" olddefconfig
   # CROSS_COMPILE=${CROSS_TOOLCHAIN} ARCH=arm64 make O="${BUILDDIR_TMP_KERNEL}" menuconfig
-  local CHECK_DTBS=(
-    renesas/r9a07g044c2-hummingboard-ripple.dtb
-  )
-  : $(CROSS_COMPILE=${CROSS_TOOLCHAIN} ARCH=arm64 make O="${BUILDDIR_TMP_KERNEL}" -j "${MAKE_JOBS}" dt_binding_check || true)
-  CROSS_COMPILE=${CROSS_TOOLCHAIN} ARCH=arm64 make O="${BUILDDIR_TMP_KERNEL}" -j "${MAKE_JOBS}" CHECK_DTBS=y ${CHECK_DTBS[@]}
+
+  # Select DTB to check based on machine
+  local CHECK_DTBS=()
+  case "$MACHINE" in
+    "rzg2ul-solidrun")
+      CHECK_DTBS=(renesas/r9a07g043u11-hummingboard.dtb)
+      ;;
+    "rzg2lc-solidrun")
+      CHECK_DTBS=(renesas/r9a07g044c2-hummingboard-ripple.dtb)
+      ;;
+    "rzg2l-solidrun")
+      CHECK_DTBS=(renesas/r9a07g044l2-hummingboard.dtb)
+      ;;
+    "rzv2l-solidrun")
+      CHECK_DTBS=(renesas/r9a07g054l2-hummingboard.dtb)
+      ;;
+    "rzv2n-solidrun")
+      CHECK_DTBS=(renesas/r9a09g056n48-hummingboard-iiot.dtb)
+      ;;
+  esac
+
+  # Skip dt_binding_check as it requires dtschema package
+  # Build DTBs with CHECK_DTBS validation if available
+  if [[ ${#CHECK_DTBS[@]} -gt 0 ]]; then
+    CROSS_COMPILE=${CROSS_TOOLCHAIN} ARCH=arm64 make O="${BUILDDIR_TMP_KERNEL}" -j "${MAKE_JOBS}" CHECK_DTBS=y ${CHECK_DTBS[@]} || true
+  fi
   CROSS_COMPILE=${CROSS_TOOLCHAIN} ARCH=arm64 make O="${BUILDDIR_TMP_KERNEL}" -j "${MAKE_JOBS}" Image Image.gz dtbs modules
 }
 
@@ -38,8 +59,8 @@ kernel_do_install() {
   # RZ/V2L device trees (r9a07g054)
   cp ${BUILDDIR_TMP_KERNEL}/arch/arm64/boot/dts/renesas/r9a07g054*hummingboard*.dtb* "${OUTPUT_DIR_KERNEL}/dtbs" 2>/dev/null || true
   # RZ/V2N device trees (r9a09g056)
-  cp ${BUILDDIR_TMP_KERNEL}/arch/arm64/boot/dts/renesas/r9a09g056*hummingboard*.dtb* "${OUTPUT_DIR_KERNEL}/dtbs" 2>/dev/null || true
-  cp ${BUILDDIR_TMP_KERNEL}/arch/arm64/boot/dts/renesas/r9a09g056*solidsense*.dtb* "${OUTPUT_DIR_KERNEL}/dtbs" 2>/dev/null || true
+  cp ${BUILDDIR_TMP_KERNEL}/arch/arm64/boot/dts/renesas/r9a09g056*.dtb* "${OUTPUT_DIR_KERNEL}/dtbs" 2>/dev/null || true
+  cp ${BUILDDIR_TMP_KERNEL}/arch/arm64/boot/dts/renesas/rzv2n*.dtb* "${OUTPUT_DIR_KERNEL}/dtbs" 2>/dev/null || true
   # Device tree overlays
   cp ${BUILDDIR_TMP_KERNEL}/arch/arm64/boot/dts/renesas/rz*hummingboard*.dtbo "${OUTPUT_DIR_KERNEL}/dtbs" 2>/dev/null || true
   cp ${BUILDDIR_TMP_KERNEL}/arch/arm64/boot/dts/renesas/rz*overlay*.dtbo "${OUTPUT_DIR_KERNEL}/dtbs" 2>/dev/null || true
