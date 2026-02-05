@@ -128,6 +128,18 @@ set_toolchain() {
   fi
 }
 
+check_submodules() {
+  cd "${ROOTDIR}"
+  # Check and initialize missing submodules
+  local submodules=("build/u-boot" "build/linux-stable" "build/rzg_trusted-firmware-a" "build/buildroot" "build/cyw-fmac" "build/rswlan")
+  for submodule in "${submodules[@]}"; do
+    if [[ ! -d "${ROOTDIR}/${submodule}/.git" ]] && [[ ! -f "${ROOTDIR}/${submodule}/.git" ]]; then
+      echo "Initializing missing submodule: ${submodule}"
+      git submodule update --init --depth 1 "${submodule}"
+    fi
+  done
+}
+
 show_help() {
   echo "Usage: MACHINE=[machine] DISTRO=[distro] $0 [build|clean] [target]"
   echo "Targets: ${TARGETS[*]}"
@@ -164,6 +176,7 @@ main() {
 
   set_machine_settings
   set_toolchain
+  check_submodules
 
   # Default behavior: if no arguments are provided, build all targets
   if [[ -z "$action" ]]; then

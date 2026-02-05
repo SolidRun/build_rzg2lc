@@ -6,6 +6,9 @@ u_boot_do_configure() {
   set_ccache uboot
   mkdir -p "${BUILDDIR_TMP_UBOOT}"
   mkdir -p "${OUTPUT_DIR_UBOOT}"
+  # Clean source tree to avoid build errors with out-of-tree builds
+  cd "${SRC_DIR_UBOOT}"
+  make mrproper
 }
 
 u_boot_do_compile() {
