@@ -31,6 +31,9 @@ RUN pipx install dtschema
 RUN ln -sv libncursesw.so.6 /usr/lib/x86_64-linux-gnu/libncursesw.so.5
 RUN ln -sv libtinfo.so.6 /usr/lib/x86_64-linux-gnu/libtinfo.so.5
 
+# delete default "ubuntu" user account, uid may conflict with entry script useradd
+RUN userdel -r ubuntu
+
 # build environment
 WORKDIR /work
 COPY shflags /
