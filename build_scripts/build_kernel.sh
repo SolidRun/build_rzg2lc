@@ -66,8 +66,11 @@ kernel_do_install() {
   cp ${BUILDDIR_TMP_KERNEL}/arch/arm64/boot/dts/renesas/rz*overlay*.dtbo "${OUTPUT_DIR_KERNEL}/dtbs" 2>/dev/null || true
 
   cd ${OUTPUT_DIR_KERNEL}
-  ln -sf ${OUTPUT_DIR_KERNEL}/dtbs/${KERNEL_OVERLAYS_PREFIX}-solidrun-sd-overlay.dtbo sd-overlay.dtbo
-  ln -sf ${OUTPUT_DIR_KERNEL}/dtbs/${KERNEL_OVERLAYS_PREFIX}-solidrun-mmc-overlay.dtbo mmc-overlay.dtbo
+  # RZ/V2N doesn't use SD/MMC overlays
+  if [[ "$MACHINE" != "rzv2n-solidrun" ]]; then
+    ln -sf ${OUTPUT_DIR_KERNEL}/dtbs/${KERNEL_OVERLAYS_PREFIX}-solidrun-sd-overlay.dtbo sd-overlay.dtbo
+    ln -sf ${OUTPUT_DIR_KERNEL}/dtbs/${KERNEL_OVERLAYS_PREFIX}-solidrun-mmc-overlay.dtbo mmc-overlay.dtbo
+  fi
   rm -rf ${OUTPUT_DIR_KERNEL}/modules
   mkdir -p ${OUTPUT_DIR_KERNEL}/modules
   cd "${SRC_DIR_KERNEL}"
