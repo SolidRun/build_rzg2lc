@@ -43,6 +43,7 @@ kernel_do_compile() {
   # Skip dt_binding_check as it requires dtschema package
   # Build DTBs with CHECK_DTBS validation if available
   if [[ ${#CHECK_DTBS[@]} -gt 0 ]]; then
+    CROSS_COMPILE=${CROSS_TOOLCHAIN} ARCH=arm64 make O="${BUILDDIR_TMP_KERNEL}" -j "${MAKE_JOBS}" dt_binding_check || true
     CROSS_COMPILE=${CROSS_TOOLCHAIN} ARCH=arm64 make O="${BUILDDIR_TMP_KERNEL}" -j "${MAKE_JOBS}" CHECK_DTBS=y ${CHECK_DTBS[@]} || true
   fi
   CROSS_COMPILE=${CROSS_TOOLCHAIN} ARCH=arm64 make O="${BUILDDIR_TMP_KERNEL}" -j "${MAKE_JOBS}" Image Image.gz dtbs modules
