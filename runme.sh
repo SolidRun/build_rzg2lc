@@ -13,7 +13,7 @@ set -e
 
 ROOTDIR=$(pwd)
 BUILDSCRIPT_DIR="${ROOTDIR}/build_scripts"
-REPO_PREFIX=$(git log -1 --pretty=format:%h)
+REPO_PREFIX=$(git log -1 --pretty=format:%h || echo "unknown")
 
 
 : "${MACHINE:=rzg2lc-solidrun}"
