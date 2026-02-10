@@ -26,11 +26,6 @@ cywfmac_build() {
 	echo "================================="
 	echo "Generating cyw-fmac ...."
 	echo "================================="
-  # Skip cyw-fmac for RZ/V2N - incompatible with kernel 6.1-cip43
-  if [[ "$MACHINE" == "rzv2n-solidrun" ]]; then
-    echo "Skipping cyw-fmac for RZ/V2N (kernel API incompatible)"
-    return
-  fi
   cywfmac_do_compile
   cywfmac_do_install
 }

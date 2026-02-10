@@ -1,1 +1,1 @@
-cyfmac43455-sdio.solidrun,rzv2n-sr-som.txt
+cyfmac43455-sdio.solidrun,rzg2l-sr-som.txt
