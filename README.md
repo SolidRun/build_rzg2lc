@@ -117,7 +117,7 @@ In docker options are passed through the `-e` command-line flags, e.g.:
 
 Podman needs the `-u` and `-g` argumetns set to `0` avoiding unexpected file permissions, e.g.:
 
-    docker run --rm k-i -t -v "$PWD":/work -e MACHINE=rzg2lc-solidrun -e DISTRO=debian rzg2lc_build -u 0 -g 0
+    docker run --rm -i -t -v "$PWD":/work -e MACHINE=rzg2lc-solidrun -e DISTRO=debian rzg2lc_build -u 0 -g 0
 
 ### Start Build
 
