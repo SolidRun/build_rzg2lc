@@ -35,11 +35,11 @@ kernel_do_install() {
   cp ${BUILDDIR_TMP_KERNEL}/arch/arm64/boot/dts/renesas/r9a07g044*hummingboard*.dtb* "${OUTPUT_DIR_KERNEL}/dtbs"
   cp ${BUILDDIR_TMP_KERNEL}/arch/arm64/boot/dts/renesas/r9a07g054*hummingboard*.dtb* "${OUTPUT_DIR_KERNEL}/dtbs"
   cp ${BUILDDIR_TMP_KERNEL}/arch/arm64/boot/dts/renesas/rz*hummingboard*.dtbo "${OUTPUT_DIR_KERNEL}/dtbs"
-  cp ${BUILDDIR_TMP_KERNEL}/arch/arm64/boot/dts/renesas/rz*overlay*.dtbo "${OUTPUT_DIR_KERNEL}/dtbs"
+  cp ${BUILDDIR_TMP_KERNEL}/arch/arm64/boot/dts/renesas/rz*sr-som*.dtbo "${OUTPUT_DIR_KERNEL}/dtbs"
 
   cd ${OUTPUT_DIR_KERNEL}
-  ln -sf ${OUTPUT_DIR_KERNEL}/dtbs/${KERNEL_OVERLAYS_PREFIX}-solidrun-sd-overlay.dtbo sd-overlay.dtbo
-  ln -sf ${OUTPUT_DIR_KERNEL}/dtbs/${KERNEL_OVERLAYS_PREFIX}-solidrun-mmc-overlay.dtbo mmc-overlay.dtbo
+  ln -sfv ${OUTPUT_DIR_KERNEL}/dtbs/${KERNEL_OVERLAYS_PREFIX}-hummingboard-iiot-microsd.dtbo sd-overlay.dtbo
+  ln -sfv ${OUTPUT_DIR_KERNEL}/dtbs/${KERNEL_OVERLAYS_PREFIX}-sr-som-emmc.dtbo mmc-overlay.dtbo
   rm -rf ${OUTPUT_DIR_KERNEL}/modules
   mkdir -p ${OUTPUT_DIR_KERNEL}/modules
   cd "${SRC_DIR_KERNEL}"

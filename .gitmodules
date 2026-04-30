@@ -4,8 +4,8 @@
 	branch = 2025.08.x
 [submodule "build/linux-stable"]
 	path = build/linux-stable
-	url = https://github.com/SolidRun/linux-stable.git
-	branch = rz-6.1-vlp-4.0.0-sr
+	url = https://kernel.googlesource.com/pub/scm/linux/kernel/git/torvalds/linux.git
+	branch = master
 	shallow = true
 [submodule "build/rswlan"]
 	path = build/rswlan

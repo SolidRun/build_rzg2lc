@@ -36,7 +36,7 @@ source "${BUILDSCRIPT_DIR}/build_${DISTRO}.sh"
 source "${BUILDSCRIPT_DIR}/build_flashwriter.sh"
 source "${BUILDSCRIPT_DIR}/assemble_image.sh"
 
-TARGETS=("uboot" "atf" "kernel" "bootimage" "cywfmac" "rswlan" "${DISTRO}" "flashwriter" "image")
+TARGETS=("uboot" "atf" "kernel" "bootimage" "${DISTRO}" "flashwriter" "image")
 
 declare -A DEPENDENCIES
 DEPENDENCIES["atf"]="uboot"
