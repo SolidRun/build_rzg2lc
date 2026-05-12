@@ -29,3 +29,8 @@ This project is organised in branches for different BSP versions:
   - Linux v5.10
   
   This version is considered stable and maintained with bug fixes only.
+
+- [develop-mainline](https://github.com/SolidRun/build_rzg2lc/tree/develop-mainline):
+
+  Mainline Linux Development Branch.
+  Unsupported, untested, not ready for production.
