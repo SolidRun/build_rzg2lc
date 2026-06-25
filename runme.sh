@@ -130,8 +130,15 @@ set_toolchain() {
 
 check_submodules() {
   cd "${ROOTDIR}"
-  # Check and initialize missing submodules
-  local submodules=("build/u-boot" "build/linux-stable" "build/rzg_trusted-firmware-a" "build/buildroot" "build/cyw-fmac" "build/rswlan")
+  # Check and initialize missing submodules.
+  # Bootloader/kernel sources come in two sets: bare (RZ/V2N) and *-vlp4
+  # (g2ul/g2lc/g2l/v2l). Only initialize the set required by the target MACHINE.
+  local submodules=("build/buildroot" "build/cyw-fmac" "build/rswlan")
+  if [[ "${MACHINE}" == "rzv2n-solidrun" ]]; then
+    submodules+=("build/u-boot" "build/linux-stable" "build/rzg_trusted-firmware-a")
+  else
+    submodules+=("build/u-boot-vlp4" "build/linux-stable-vlp4" "build/rzg_trusted-firmware-a-vlp4")
+  fi
   for submodule in "${submodules[@]}"; do
     if [[ ! -d "${ROOTDIR}/${submodule}/.git" ]] && [[ ! -f "${ROOTDIR}/${submodule}/.git" ]]; then
       echo "Initializing missing submodule: ${submodule}"

@@ -23,3 +23,16 @@
 	path = build/cyw-fmac
 	url = https://github.com/SolidRun/cyw-fmac.git
 	branch = imx-kirkstone-jaculus
+[submodule "build/linux-stable-vlp4"]
+	path = build/linux-stable-vlp4
+	url = https://github.com/SolidRun/linux-stable.git
+	branch = rz-6.1-vlp-4.0.0-sr
+	shallow = true
+[submodule "build/u-boot-vlp4"]
+	path = build/u-boot-vlp4
+	url = https://github.com/SolidRun/u-boot.git
+	branch = v2021.10/rz-vlp-4.0.0-sr
+[submodule "build/rzg_trusted-firmware-a-vlp4"]
+	path = build/rzg_trusted-firmware-a-vlp4
+	url = https://github.com/SolidRun/arm-trusted-firmware
+	branch = v2.9/rz-sr

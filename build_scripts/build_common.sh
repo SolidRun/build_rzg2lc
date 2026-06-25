@@ -9,16 +9,31 @@ CACHE_DIR="${BUILDDIR}/cache"
 MAKE_JOBS=$(getconf _NPROCESSORS_ONLN)
 
 
-SRC_DIR_UBOOT="${BUILDDIR}/u-boot"
+# Source trees are pinned to two different firmware/branch sets:
+#   - RZ/V2N        -> bare submodules (linux-stable, u-boot, rzg_trusted-firmware-a)
+#   - other platforms (g2ul/g2lc/g2l/v2l, VLP-4.0.0) -> *-vlp4 submodules
+# Select the matching set based on the target MACHINE.
+if [[ "${MACHINE}" == "rzv2n-solidrun" ]]; then
+  SRC_DIR_UBOOT="${BUILDDIR}/u-boot"
+  SRC_DIR_TFA="${BUILDDIR}/rzg_trusted-firmware-a"
+  SRC_DIR_KERNEL="${BUILDDIR}/linux-stable"
+  KERNEL_SRC_SET="v2n"
+else
+  SRC_DIR_UBOOT="${BUILDDIR}/u-boot-vlp4"
+  SRC_DIR_TFA="${BUILDDIR}/rzg_trusted-firmware-a-vlp4"
+  SRC_DIR_KERNEL="${BUILDDIR}/linux-stable-vlp4"
+  KERNEL_SRC_SET="vlp4"
+fi
+
 BUILDDIR_TMP_UBOOT="${BUILDDIR_TMP}/u-boot/${MACHINE}"
 OUTPUT_DIR_UBOOT="${OUTPUT_DIR}/u-boot"
 
-SRC_DIR_TFA="${BUILDDIR}/rzg_trusted-firmware-a"
 BUILDDIR_TMP_TFA="${BUILDDIR_TMP}/tfa/${MACHINE}"
 OUTPUT_DIR_TFA="${OUTPUT_DIR}/tfa"
 
-SRC_DIR_KERNEL="${BUILDDIR}/linux-stable"
-BUILDDIR_TMP_KERNEL="${BUILDDIR_TMP}/kernel"
+# Kernel uses an out-of-tree O= build dir; keep it per source-set so the two
+# different kernel trees (v2n vs vlp4) never share object files.
+BUILDDIR_TMP_KERNEL="${BUILDDIR_TMP}/kernel-${KERNEL_SRC_SET}"
 OUTPUT_DIR_KERNEL="${OUTPUT_DIR}/kernel"
 
 SRC_DIR_CYWFMAC="${BUILDDIR}/cyw-fmac"

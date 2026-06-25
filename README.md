@@ -1,9 +1,9 @@
-# SolidRun's RZ/G2LC, RZ/G2, RZ/V2L and RZ/V2N based build scripts
+# SolidRun's RZ/V2N based build scripts
 
 ## Introduction
 
-Main intention of this repository is to produce a reference system for RZ/G2, RZ/V2L and RZ/V2N based products.
-Automatic binary releases are available on our website [RZ/Buildroot](https://images.solid-run.com/RZ/Buildroot/vlp4) & [RZ/Debian](https://images.solid-run.com/RZ/Debian/vlp4) for download.
+Main intention of this repository is to produce a reference system for RZ/V2N based products.
+Automatic binary releases are available on our website [RZ/Buildroot](https://images.solid-run.com/RZ/Buildroot/v2.0.1) & [RZ/Debian](https://images.solid-run.com/RZ/Debian/v2.0.1) for download.
 
 The build script provides ready to use **Debian/Buildroot** images that can be deployed on micro SD and eMMC.
 
@@ -28,9 +28,9 @@ This branch (`rzv2n-dev`) includes RZ/V2N support with the following source vers
 
 ### Download Sources
 
-Clone this repo at the `develop-vlp41` branch:
+Clone this repo at the `rzv2n-dev` branch (the `--recurse-submodules` flag pulls in the pinned U-Boot, ATF and Linux sources):
 
-    git clone --recurse-submodules https://github.com/SolidRun/build_rzg2lc.git -b develop-vlp4
+    git clone --recurse-submodules https://github.com/SolidRun/build_rzg2lc.git -b rzv2n-dev
     cd build_rzg2lc
 
 ### Prepare Build Host
@@ -41,9 +41,9 @@ Install docker or a compatible container runtime (e.g. podman).
 
 Then generate the reference build system:
 
-    docker build -t rzg2lc_build docker
+    docker build -t rzv2n_build docker
     # optional with an apt proxy, e.g. apt-cacher-ng
-    # docker build --build-arg APTPROXY=http://127.0.0.1:3142 -t rzg2lc_build docker
+    # docker build --build-arg APTPROXY=http://127.0.0.1:3142 -t rzv2n_build docker
 
 #### Build with Host Tools
 
@@ -83,10 +83,6 @@ Note: this is not regulary tested due to the wide range of distros and versions.
 ### Configuration Options
 
 - `MACHINE`: Select target HW
-  - `rzg2ul-solidrun` (RZ/G2UL SoM based boards)
-  - `rzg2lc-solidrun` (RZ/G2LC SoM based boards, default)
-  - `rzg2l-solidrun` (RZ/G2L SoM based boards)
-  - `rzv2l-solidrun` (RZ/V2L SoM based boards)
   - `rzv2n-solidrun` (RZ/V2N SoM based boards)
 - `DISTRO`: Choose Linux distribution for rootfs
   - `buildroot` (default)
@@ -98,24 +94,24 @@ Note: this is not regulary tested due to the wide range of distros and versions.
   - `false`
 - `ROOTFS_FREE_SIZE`: Extra free space in generated rootfs
   - `100M` (default)
-- `COMPRESSION_FORMAT`: Compress compression for generated images
+- `COMPRESSION_FORMAT`: Compression format for the generated images
   - no compression if unset (default)
-  - `gzip`: gzip 
+  - `gzip`, `xz` or `zstd`
 - `CROSS_TOOLCHAIN`: Toolchain to use (default: download arm-gnu-toolchain-13.3)
   - `aarch64-linux-gnu-` (use build host native aarch64 toolchain)
   - when unset default is download arm-gnu-toolchain-13.3
 
 These options are passed as environment variables, e.g.:
 
-    MACHINE=rzg2lc-solidrun DISTRO=debian ./runme.sh
+    MACHINE=rzv2n-solidrun DISTRO=debian ./runme.sh
 
 In docker options are passed through the `-e` command-line flags, e.g.:
 
-    docker run --rm -i -t -v "$PWD":/work -e MACHINE=rzg2lc-solidrun -e DISTRO=debian rzg2lc_build -u $(id -u) -g $(id -g)
+    docker run --rm -i -t -v "$PWD":/work -e MACHINE=rzv2n-solidrun -e DISTRO=debian rzv2n_build -u $(id -u) -g $(id -g)
 
 Podman needs the `-u` and `-g` argumetns set to `0` avoiding unexpected file permissions, e.g.:
 
-    docker run --rm k-i -t -v "$PWD":/work -e MACHINE=rzg2lc-solidrun -e DISTRO=debian rzg2lc_build -u 0 -g 0
+    docker run --rm k-i -t -v "$PWD":/work -e MACHINE=rzv2n-solidrun -e DISTRO=debian rzv2n_build -u 0 -g 0
 
 ### Start Build
 
@@ -126,51 +122,29 @@ On success results are generated at `images/` directory, e.g.:
 ```
 images
 ├── flashwriter
-│   ├── Flash_Writer_SCIF_RZG2LC_HUMMINGBOARD_DDR4_1GB_1PCS.mot
-│   ├── Flash_Writer_SCIF_RZG2LC_HUMMINGBOARD_DDR4_2GB_1PCS.mot
-│   ├── Flash_Writer_SCIF_RZG2LC_HUMMINGBOARD_DDR4_512MB_1PCS.mot
-│   ├── Flash_Writer_SCIF_RZG2L_HUMMINGBOARD_DDR4_1GB_1PCS.mot
-│   ├── Flash_Writer_SCIF_RZG2L_HUMMINGBOARD_DDR4_2GB_1PCS.mot
-│   ├── Flash_Writer_SCIF_RZG2L_HUMMINGBOARD_DDR4_512MB_1PCS.mot
-│   ├── Flash_Writer_SCIF_RZG2UL_HUMMINGBOARD_DDR4_1GB_1PCS.mot
-│   ├── Flash_Writer_SCIF_RZG2UL_HUMMINGBOARD_DDR4_2GB_1PCS.mot
-│   ├── Flash_Writer_SCIF_RZG2UL_HUMMINGBOARD_DDR4_512MB_1PCS.mot
-│   ├── Flash_Writer_SCIF_RZV2L_HUMMINGBOARD_DDR4_1GB_1PCS.mot
-│   ├── Flash_Writer_SCIF_RZV2L_HUMMINGBOARD_DDR4_2GB_1PCS.mot
-│   └── Flash_Writer_SCIF_RZV2L_HUMMINGBOARD_DDR4_512MB_1PCS.mot
 │   └── Flash_Writer_SCIF_RZV2N_SR_SOM_8GB_LPDDR4X.mot
-├── rzg2lc-solidrun
-│   ├── bl2.bin
-│   ├── bl2_bp.bin
-│   ├── bootparams.bin
-│   ├── dtbs
-│   │   ├── rzg2lc-hummingboard.dtb
-│   │   ├── rzg2lc-hummingboard-eu205.dtb
-│   │   ├── rzg2lc-hummingboard-iiot.dtb
-│   │   ├── rzg2lc-hummingboard-ripple.dtb
-│   │   ├── rzg2lc-hummingboard-ripple-mmc.dtb
-│   │   ├── rzg2lc-hummingboard-ripple-sd.dtb
-│   │   ├── rzg2lc-solidrun-mmc-overlay.dtbo
-│   │   ├── rzg2lc-solidrun-sd-overlay.dtbo
-│   │   ├── rzg2l-hummingboard-eu205.dtb
-│   │   ├── rzg2l-hummingboard-extended.dtb
-│   │   ├── rzg2l-hummingboard-iiot.dtb
-│   │   ├── rzg2l-hummingboard-pro.dtb
-│   │   ├── rzg2l-hummingboard-ripple.dtb
-│   │   ├── rzg2l-hummingboard-tutus.dtb
-│   │   ├── rzg2l-solidrun-mmc-overlay.dtbo
-│   │   ├── rzg2l-solidrun-sd-overlay.dtbo
-│   │   ├── rzv2l-hummingboard-extended.dtb
-│   │   ├── rzv2l-hummingboard-iiot.dtb
-│   │   ├── rzv2l-hummingboard-pro.dtb
-│   │   └── rzv2l-hummingboard-ripple.dtb
-│   ├── fip.bin
-│   ├── Image.gz
-│   └── overlays.itb
-├── rzg2lc-solidrun-mmc-bootloader-c2939dc.img
-├── rzg2lc-solidrun-sd-bootloader-c2939dc.img
-├── rzg2lc-solidrun-sd-buildroot-c2939dc.img
-└── rzg2lc-solidrun-sd-buildroot-c2939dc.img.bmap
+├── rzv2n-solidrun
+│   ├── bl2.bin
+│   ├── bl2_bp.bin
+│   ├── bootparams.bin
+│   ├── dtbs
+│   │   ├── r9a09g056n48-hummingboard-iiot.dtb
+│   │   ├── r9a09g056n48-rzv2n-evk.dtb
+│   │   ├── r9a09g056n48-solidsense-aiot.dtb
+│   │   ├── rzv2n-hummingboard-iiot-rs485-a.dtbo
+│   │   ├── rzv2n-hummingboard-iiot-rs485-b.dtbo
+│   │   ├── rzv2n-hummingboard-iiot-panel-dsi-WJ70N3TYJHMNG0.dtbo
+│   │   ├── rzv2n-hummingboard-iiot-csi-camera-imx678.dtbo
+│   │   ├── rzv2n-solidsense-aiot-csi-camera-imx678-j8.dtbo
+│   │   ├── rzv2n-solidsense-aiot-csi-camera-imx678-j17.dtbo
+│   │   ├── rzv2n-solidsense-aiot-addon-flash-card.dtbo
+│   │   ├── rzv2n-solidsense-aiot-addon-flash-card-cam-j8.dtbo
+│   │   └── rzv2n-solidsense-aiot-addon-flash-card-cam-j17.dtbo
+│   ├── fip.bin
+│   └── Image.gz
+├── rzv2n-solidrun-mmc-bootloader-c2939dc.img
+├── rzv2n-solidrun-sd-buildroot-c2939dc.img
+└── rzv2n-solidrun-sd-buildroot-c2939dc.img.bmap
 ```
 
 ### Deploy to microSD
@@ -180,7 +154,77 @@ Plug in a micro SD into your machine and run the following, where sdX is the loc
 
 ```
 umount /media/<relevant directory>
-sudo bmaptool copy images/rzg2lc*-solidrun-sd-<distro>-<hash>.img /dev/sdX
+sudo bmaptool copy images/rzv2n-solidrun-sd-<distro>-<hash>.img /dev/sdX
+```
+
+## Device Tree Overlays
+
+Each board boots a base device tree, and optional hardware (displays, cameras,
+add-on cards, RS485) is enabled with device tree overlays (`.dtbo`). The kernel
+build copies the base DTBs and all overlays to `/dtb/renesas/` on the FAT boot
+partition.
+
+Overlays are applied at boot time by U-Boot's `extlinux`/`sysboot` loader, which
+is built with overlay support (`CONFIG_OF_LIBFDT_OVERLAY=y`). To enable overlays,
+edit the boot entry in `/extlinux/extlinux.conf` on the boot partition: replace
+the default `fdtdir /dtb` with an explicit `fdt` (the base device tree) plus an
+`fdtoverlays` line listing one or more overlays (paths are absolute within the
+boot partition; multiple overlays are space-separated and applied in order).
+
+### Base device trees
+
+| Board | Base device tree |
+|-------|------------------|
+| HummingBoard IIoT (RZ/V2N) | `r9a09g056n48-hummingboard-iiot.dtb` |
+| SolidSense AIOT (RZ/V2N)   | `r9a09g056n48-solidsense-aiot.dtb`   |
+| Renesas RZ/V2N EVK         | `r9a09g056n48-rzv2n-evk.dtb`         |
+
+### Available overlays
+
+| Overlay | Applies on | Description |
+|---------|-----------|-------------|
+| `rzv2n-hummingboard-iiot-rs485-a.dtbo` | HummingBoard IIoT | RS485 port A |
+| `rzv2n-hummingboard-iiot-rs485-b.dtbo` | HummingBoard IIoT | RS485 port B |
+| `rzv2n-hummingboard-iiot-panel-dsi-WJ70N3TYJHMNG0.dtbo` | HummingBoard IIoT | MIPI-DSI Winstar WJ70N3TYJHMNG0 display panel |
+| `rzv2n-hummingboard-iiot-csi-camera-imx678.dtbo` | HummingBoard IIoT | MIPI-CSI Sony IMX678 camera |
+| `rzv2n-solidsense-aiot-csi-camera-imx678-j8.dtbo` | SolidSense AIOT | IMX678 camera on J8 (no Flash Card) |
+| `rzv2n-solidsense-aiot-csi-camera-imx678-j17.dtbo` | SolidSense AIOT | IMX678 camera on J17 (no Flash Card) |
+| `rzv2n-solidsense-aiot-addon-flash-card.dtbo` | SolidSense AIOT | Flash Card (J6) only, no camera |
+| `rzv2n-solidsense-aiot-addon-flash-card-cam-j8.dtbo` | SolidSense AIOT | Flash Card (J6) + IMX678 camera on J8 |
+| `rzv2n-solidsense-aiot-addon-flash-card-cam-j17.dtbo` | SolidSense AIOT | Flash Card (J6) + IMX678 camera on J17 |
+
+For the SolidSense AIOT, the Flash Card and camera overlays are mutually
+exclusive configurations - pick a single overlay matching your setup. When a
+Flash Card is fitted together with a camera, use the combined
+`...-addon-flash-card-cam-jX.dtbo` overlay (it links the Flash Card IR
+illuminator to that camera); do not stack the standalone Flash Card and camera
+overlays.
+
+### Example 1 - HummingBoard IIoT with DSI display and IMX678 camera
+
+These are independent overlays (display on the DSI connector, camera on the CSI
+connector), so they stack:
+
+```
+label primary
+	menu label mmc boot
+	linux /Image.gz
+	fdt /dtb/renesas/r9a09g056n48-hummingboard-iiot.dtb
+	fdtoverlays /dtb/renesas/rzv2n-hummingboard-iiot-panel-dsi-WJ70N3TYJHMNG0.dtbo /dtb/renesas/rzv2n-hummingboard-iiot-csi-camera-imx678.dtbo
+	APPEND root=PARTUUID=<partuuid> rw rootwait
+```
+
+### Example 2 - SolidSense AIOT with Flash Card and IMX678 camera (J8)
+
+Flash Card + camera is a single combined overlay:
+
+```
+label primary
+	menu label mmc boot
+	linux /Image.gz
+	fdt /dtb/renesas/r9a09g056n48-solidsense-aiot.dtb
+	fdtoverlays /dtb/renesas/rzv2n-solidsense-aiot-addon-flash-card-cam-j8.dtbo
+	APPEND root=PARTUUID=<partuuid> rw rootwait
 ```
 
 ## First Steps
@@ -196,7 +240,7 @@ If you use **HummingBoard** Carrier board:
 - install same above image on USB-DISK (for mounting the Root-FS)
 - connect the USB-DISK
 ```
-sudo bmaptool copy images/rzxxxx_solidrun_buildroot-sd-xxxxxxx.img /dev/sdX
+sudo bmaptool copy images/rzv2n-solidrun-sd-buildroot-<hash>.img /dev/sdX
 ```
 - stop it in U-Boot and run the commands below:
 ```
@@ -283,10 +327,10 @@ sudo service xinetd restart
 
 ```
 # Copy device tree
-cp build/rz_linux-cip/arch/arm64/boot/dts/renesas/rzg2lc-hummingboard.dtb /path/to/boot/dir/
+cp build/linux-stable/arch/arm64/boot/dts/renesas/r9a09g056n48-solidsense-aiot.dtb /path/to/boot/dir/
 
 # Copy Kernel
-cp build/rz_linux-cip/arch/arm64/boot/Image /path/to/boot/dir/
+cp build/linux-stable/arch/arm64/boot/Image /path/to/boot/dir/
 ```
 
 * Allow TFTP in your firewall (ufw for example)
@@ -330,7 +374,7 @@ tftpboot Image
 
 ```
 setenv loadaddr ${dtb_addr}
-tftpboot rzg2lc-hummingboard.dtb
+tftpboot r9a09g056n48-solidsense-aiot.dtb
 ```
 
 * boot
@@ -340,22 +384,24 @@ boot
 ```
 
 ## Image layout
+
+RZ/V2N boot images are assembled with binman (see [configs/image/binman-boot-image-rzv2n.dts](configs/image/binman-boot-image-rzv2n.dts)).
+Unlike the RZ/G2L family, RZ/V2N does not embed DTS overlays in the boot image.
+
 SD card layout:
-| Offset  | Content          |
-|---------|------------------|
-| 0x200   | bootparams.bin   |
-| 0x1000  | bl2.bin          |
-| 0x10000 | fip.bin          |
-| 0x30000 | DTS overlays     |
-| 0x3c000 | u-boot env       |
-| 8MB     | fat32 boot part  |
-| ...     | ext4 rootfs part |
+| Offset    | Content          |
+|-----------|------------------|
+| 0x200     | bootparams.bin   |
+| 0x1000    | bl2.bin          |
+| 0x20000   | fip.bin          |
+| 0x1E0000  | u-boot env       |
+| 8MB       | fat32 boot part  |
+| ...       | ext4 rootfs part |
 
 eMMC boot partition layout:
-| Offset  | Content        |
-|---------|----------------|
-| 0x200   | bootparams.bin |
-| ...     | bl2.bin        |
-| 0x20000 | fip.bin        |
-| 0x30000 | DTS overlays   |
-| 0x3c000 | u-boot env     |
+| Offset    | Content        |
+|-----------|----------------|
+| 0x200     | bootparams.bin |
+| ...       | bl2.bin        |
+| 0x20000   | fip.bin        |
+| 0x1E0000  | u-boot env     |
