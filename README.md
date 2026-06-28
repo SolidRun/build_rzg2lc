@@ -393,7 +393,7 @@ SD card layout:
 |-----------|------------------|
 | 0x200     | bootparams.bin   |
 | 0x1000    | bl2.bin          |
-| 0x20000   | fip.bin          |
+| 0x60000   | fip.bin          |
 | 0x1E0000  | u-boot env       |
 | 8MB       | fat32 boot part  |
 | ...       | ext4 rootfs part |
@@ -403,5 +403,5 @@ eMMC boot partition layout:
 |-----------|----------------|
 | 0x200     | bootparams.bin |
 | ...       | bl2.bin        |
-| 0x20000   | fip.bin        |
+| 0x60000   | fip.bin        |
 | 0x1E0000  | u-boot env     |

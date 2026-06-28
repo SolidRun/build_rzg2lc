@@ -29,7 +29,9 @@
 				description = "Firmware Image Package (FIP)";
 				type = "blob";
 				filename = "fip.bin";
-				offset = <0x20000>;
+				// RZ/V2N FIP base: ATF RZV2N_FIP_OFFSET = RZV2N_BL2_SIZE_MAX
+				// (BOOT_TFA_USING_CM33=0). BL2 reads the FIP from this offset.
+				offset = <0x60000>;
 			};
 		};
 		image-mmc {
@@ -55,7 +57,9 @@
 				description = "Firmware Image Package (FIP)";
 				type = "blob";
 				filename = "fip.bin";
-				offset = <0x20000>;
+				// RZ/V2N FIP base: ATF RZV2N_FIP_OFFSET = RZV2N_BL2_SIZE_MAX
+				// (BOOT_TFA_USING_CM33=0). BL2 reads the FIP from this offset.
+				offset = <0x60000>;
 			};
 		};
 	};

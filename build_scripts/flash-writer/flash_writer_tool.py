@@ -110,7 +110,8 @@ def main():
 
     if args.fip:
         print(f"\nFlashing fip: {args.fip}")
-        flash_binary(args.fip, sector_number=0x100)
+        # RZ/V2N FIP base = ATF RZV2N_FIP_OFFSET (0x60000) => sector 0x60000/0x200 = 0x300
+        flash_binary(args.fip, sector_number=0x300)
         flashed = True
 
     if args.overlays:

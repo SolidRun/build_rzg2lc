@@ -112,10 +112,21 @@ jobs:
       - name: Copy deploy artifacts
         shell: bash
         run: |
-            mkdir deploy
-            cp images/*-bootloader-*.img deploy
+            mkdir -p deploy/bootloader deploy/dtbs
+            # OS images (kept at top level so the test_images URLs resolve)
             cp images/*.img.xz deploy
             cp images/*.img.bmap deploy
+            # Bootloader: packed SD/eMMC images + flash-writer artifacts
+            cp images/*-bootloader-*.img deploy/bootloader
+            cp images/rzv2n-solidrun/fip.bin         deploy/bootloader
+            cp images/rzv2n-solidrun/fip.srec        deploy/bootloader
+            cp images/rzv2n-solidrun/bl2_bp_mmc.bin  deploy/bootloader
+            cp images/rzv2n-solidrun/bl2_bp_mmc.srec deploy/bootloader
+            cp images/rzv2n-solidrun/bl2_bp_spi.bin  deploy/bootloader
+            cp images/rzv2n-solidrun/bl2_bp_spi.srec deploy/bootloader
+            # Device tree blobs and overlays
+            cp images/rzv2n-solidrun/dtbs/*.dtb deploy/dtbs
+            cp images/rzv2n-solidrun/dtbs/*.dtbo deploy/dtbs
 
       - name: Store local storage path for this build
         id: store_path
@@ -187,12 +198,15 @@ jobs:
           target: "."
           recursive: true
 
-      - name: Assign a build tag
+      - name: Organize release artifacts
         run: |
-            mkdir -p debian
-            mkdir -p buildroot
-            cp *-bootloader-*.img debian
-            cp *-bootloader-*.img buildroot
+            # Shared bootloader + dtbs go into both distro folders
+            for distro in debian buildroot; do
+              mkdir -p "$distro/bootloader" "$distro/dtbs"
+              cp bootloader/* "$distro/bootloader"
+              cp dtbs/* "$distro/dtbs"
+            done
+            # Distro-specific OS images at the top level
             cp *-debian-*.img.* debian
             cp *-buildroot-*.img.* buildroot
 
