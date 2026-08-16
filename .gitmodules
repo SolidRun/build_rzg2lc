@@ -23,3 +23,7 @@
 	path = build/cyw-fmac
 	url = https://github.com/SolidRun/cyw-fmac.git
 	branch = imx-kirkstone-jaculus
+[submodule "build/optee-os"]
+	path = build/optee-os
+	url = https://github.com/renesas-rz/rzg_optee-os.git
+	branch = 4.8.0/rz
