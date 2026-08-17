@@ -15,6 +15,7 @@ This branch is based on Renesas RZ MPU Verified Linux Package (VLP) v4.0.1:
 - [U-Boot v2021.10 (v2021.10/rz)](https://github.com/renesas-rz/renesas-u-boot-cip/commits/v2021.10/rz/) pinned at [b105c304d](https://github.com/renesas-rz/renesas-u-boot-cip/commit/b105c304da659417de099e50af1a0fce7aa85164)
 - [Trusted Firmware-A v2.10](https://github.com/renesas-rz/rzg_trusted-firmware-a/tree/2.10.5/rz_1.1.0) pinned at [2.10.5/rz_1.1.0](https://github.com/renesas-rz/rzg_trusted-firmware-a/commit/f59ed5a31ef6b28200e9ba35fc78a607fdeda6dd)
 - [RZ/G2 Flash Writer (rz_g2l)](https://github.com/renesas-rz/rzg2_flash_writer/commits/rz_g2l/) pinned at [43509f2b2](https://github.com/renesas-rz/rzg2_flash_writer/commit/43509f2b268b0ce86288cf3c37e668d64c5d5d12)
+- [OP-TEE OS (4.8.0/rz)](https://github.com/renesas-rz/rzg_optee-os/tree/4.8.0/rz)
 
 SolidRun adaptations:
 
