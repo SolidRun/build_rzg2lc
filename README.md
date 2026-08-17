@@ -17,6 +17,7 @@ This branch (`rzv2n-dev`) includes RZ/V2N support with the following source vers
 - [U-Boot v2024.07 (v2024.07-rzv2n_1.2.0)](https://github.com/SolidRun/u-boot/tree/v2024.07-rzv2n_1.2.0)
 - [Trusted Firmware-A (rzv2n_1.2.0)](https://github.com/SolidRun/arm-trusted-firmware/tree/rzv2n_1.2.0)
 - [RZ/V2N Flash Writer (rz_v2n)](https://github.com/SolidRun/rzg2_flash_writer/tree/rz_v2n)
+- [OP-TEE OS (4.8.0/rz)](https://github.com/renesas-rz/rzg_optee-os/tree/4.8.0/rz)
 - [Yocto meta layer (scarthgap_rzv2n_dev)](https://github.com/SolidRun/meta-solidrun-arm-rzg2lc/tree/scarthgap_rzv2n_dev)
 
 **Other sources:**

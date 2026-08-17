@@ -6,6 +6,7 @@ TFA_BUILD_TYPE="release"
 : ${TFA_EXTRA_ARGS:=}
 
 TFA_UBOOT_BIN="${OUTPUT_DIR_UBOOT}/u-boot.bin"
+OPTEE_BIN="${OUTPUT_DIR_OPTEE}/tee-pager_v2.bin"
 
 atf_do_configure() {
   set_ccache atf
@@ -20,7 +21,7 @@ atf_do_compile() {
     debug=1
   fi
   CROSS_COMPILE=${CROSS_TOOLCHAIN} BUILD_BASE=${BUILDDIR_TMP_TFA} make -j "${MAKE_JOBS}" bl2 bl31 fip \
-  PLAT="${TFA_PLATFORM}" BOARD="${TFA_BOARD}" BL33=${TFA_UBOOT_BIN} FIP_ALIGN=16 \
+  PLAT="${TFA_PLATFORM}" BOARD="${TFA_BOARD}" SPD=opteed BL32=${OPTEE_BIN} BL33=${TFA_UBOOT_BIN} FIP_ALIGN=16 \
   RZG_DRAM_ECC_FULL=0 DEBUG=$debug $TFA_EXTRA_ARGS
 }
 

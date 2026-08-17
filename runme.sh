@@ -30,16 +30,17 @@ source "${BUILDSCRIPT_DIR}/build_uboot.sh"
 source "${BUILDSCRIPT_DIR}/build_atf.sh"
 source "${BUILDSCRIPT_DIR}/build_kernel.sh"
 source "${BUILDSCRIPT_DIR}/build_cywfmac.sh"
+source "${BUILDSCRIPT_DIR}/build_optee.sh"
 source "${BUILDSCRIPT_DIR}/build_rswlan.sh"
 source "${BUILDSCRIPT_DIR}/assemble_bootloaders.sh"
 source "${BUILDSCRIPT_DIR}/build_${DISTRO}.sh"
 source "${BUILDSCRIPT_DIR}/build_flashwriter.sh"
 source "${BUILDSCRIPT_DIR}/assemble_image.sh"
 
-TARGETS=("uboot" "atf" "kernel" "bootimage" "cywfmac" "rswlan" "${DISTRO}" "flashwriter" "image")
+TARGETS=("uboot" "optee" "atf" "kernel" "bootimage" "cywfmac" "rswlan" "${DISTRO}" "flashwriter" "image")
 
 declare -A DEPENDENCIES
-DEPENDENCIES["atf"]="uboot"
+DEPENDENCIES["atf"]="uboot optee"
 DEPENDENCIES["cywfmac"]="kernel"
 DEPENDENCIES["rswlan"]="kernel"
 DEPENDENCIES["bootimage"]="uboot atf kernel"
@@ -73,30 +74,35 @@ set_machine_settings() {
         TFA_PLATFORM=g2ul
         TFA_BOARD=sr_rzg2ul
         TFA_EXTRA_ARGS="SOC_TYPE=2"
+        OPTEE_PLATFORM=g2ul_smarc
         KERNEL_OVERLAYS_PREFIX=rzg2l # g2ul som can reuse g2l sd/mmc overlays
         ;;
       "rzg2lc-solidrun")
         UBOOT_DEFCONFIG=rzg2lc-solidrun_defconfig
         TFA_PLATFORM=g2l
         TFA_BOARD=sr_rzg2lc
+        OPTEE_PLATFORM=g2lc_smarc_1
         KERNEL_OVERLAYS_PREFIX=rzg2l # g2lc som can reuse g2l sd/mmc overlays
         ;;
       "rzg2l-solidrun")
         UBOOT_DEFCONFIG=rzg2l-solidrun_defconfig
         TFA_PLATFORM=g2l
         TFA_BOARD=sr_rzg2l
+        OPTEE_PLATFORM=g2l_smarc_2
         KERNEL_OVERLAYS_PREFIX=rzg2l
         ;;
       "rzv2l-solidrun")
         UBOOT_DEFCONFIG=rzv2l-solidrun_defconfig
         TFA_PLATFORM=v2l
         TFA_BOARD=sr_rzv2l
+        OPTEE_PLATFORM=g2l_smarc_2
         KERNEL_OVERLAYS_PREFIX=rzg2l # v2l som can reuse g2l sd/mmc overlays
         ;;
       "rzv2n-solidrun")
         UBOOT_DEFCONFIG=rzv2n-solidrun_defconfig
         TFA_PLATFORM=v2n
         TFA_BOARD=sr_som
+        OPTEE_PLATFORM=v2n_evk
         KERNEL_OVERLAYS_PREFIX=rzv2n
         ;;
       *)
@@ -104,6 +110,7 @@ set_machine_settings() {
         UBOOT_DEFCONFIG=rzg2lc-solidrun_defconfig
         TFA_PLATFORM=g2l
         TFA_BOARD=sr_rzg2lc
+        OPTEE_PLATFORM=g2lc_smarc_1
         KERNEL_OVERLAYS_PREFIX=rzg2l # g2lc som can reuse g2l sd/mmc overlays
         ;;
   esac
@@ -125,6 +132,22 @@ set_toolchain() {
       export PATH="$ROOTDIR/build/toolchain/ccache_symlinks:$PATH"
     fi
     CROSS_TOOLCHAIN=aarch64-none-linux-gnu-
+  fi
+  if [ -z "${CROSS_TOOLCHAIN_32}" ]; then
+    if [[ ! -d ${ROOTDIR}/build/toolchain/arm-gnu-toolchain-13.3.rel1-x86_64-aarch64-none-linux-gnu/bin ]]; then
+      mkdir -p ${ROOTDIR}/build/toolchain
+      cd ${ROOTDIR}/build/toolchain
+      wget https://developer.arm.com/-/media/Files/downloads/gnu/13.3.rel1/binrel/arm-gnu-toolchain-13.3.rel1-x86_64-arm-none-linux-gnueabihf.tar.xz
+      tar -xf arm-gnu-toolchain-13.3.rel1-x86_64-arm-none-linux-gnueabihf.tar.xz
+    fi
+    export PATH=${ROOTDIR}/build/toolchain/arm-gnu-toolchain-13.3.rel1-x86_64-arm-none-linux-gnueabihf/bin:$PATH
+    if [ "$USE_CCACHE" == "true" ]; then
+      mkdir -p $ROOTDIR/build/toolchain/ccache_symlinks
+      ln -sf $(which ccache) $ROOTDIR/build/toolchain/ccache_symlinks/arm-none-linux-gnueabihf-gcc
+      ln -sf $(which ccache) $ROOTDIR/build/toolchain/ccache_symlinks/arm-none-linux-gnueabihf-g++
+      export PATH="$ROOTDIR/build/toolchain/ccache_symlinks:$PATH"
+    fi
+    CROSS_TOOLCHAIN_32=arm-none-linux-gnueabihf-
   fi
 }
 
@@ -163,6 +186,7 @@ show_help() {
   echo "MACHINE=rzg2l-solidrun - Machine name (default: rzg2lc-solidrun)"
   echo "DISTRO=debian - Distro to build (default: buildroot)"
   echo "CROSS_TOOLCHAIN=aarch64-linux-gnu- - Toolchain to use (default: download arm-gnu-toolchain-13.3)"
+  echo "CROSS_TOOLCHAIN_32=arm-none-linux-gnueabihf- - 32-Bit Toolchain to use (default: download arm-gnu-toolchain-13.3)"
   echo "ROOTFS_FREE_SIZE=1G - Extra rootfs free size (default: 100M)"
   echo "COMPRESSION_FORMAT=zstd - if specified, image will be commpressed (zstd, xz, gzip)"
 }

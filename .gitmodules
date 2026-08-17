@@ -36,3 +36,7 @@
 	path = build/rzg_trusted-firmware-a-vlp4
 	url = https://github.com/SolidRun/arm-trusted-firmware
 	branch = v2.9/rz-sr
+[submodule "build/optee-os"]
+	path = build/optee-os
+	url = https://github.com/renesas-rz/rzg_optee-os.git
+	branch = 4.8.0/rz
