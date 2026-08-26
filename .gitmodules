@@ -40,3 +40,7 @@
 	path = build/optee-os
 	url = https://github.com/renesas-rz/rzg_optee-os.git
 	branch = 4.8.0/rz
+[submodule "build/kernel-module-ss-aiot-mcu"]
+	path = build/kernel-module-ss-aiot-mcu
+	url = https://github.com/SolidRun/ss-aiot-mcu.git
+	branch = linux
