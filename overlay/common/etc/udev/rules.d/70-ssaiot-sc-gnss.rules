@@ -1,0 +1,2 @@
+# mark aiot system controller gnss device for gpsd service and add to dialout group
+ACTION=="add", SUBSYSTEM=="gnss", KERNELS=="ssaiot-sc-gnss.*", GROUP="dialout", MODE="0660", TAG+="systemd", ENV{SYSTEMD_WANTS}+="gpsdctl@%k.service"
