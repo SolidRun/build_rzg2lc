@@ -32,17 +32,19 @@ source "${BUILDSCRIPT_DIR}/build_kernel.sh"
 source "${BUILDSCRIPT_DIR}/build_cywfmac.sh"
 source "${BUILDSCRIPT_DIR}/build_optee.sh"
 source "${BUILDSCRIPT_DIR}/build_rswlan.sh"
+source "${BUILDSCRIPT_DIR}/build_kmod_ssaiot_mcu.sh"
 source "${BUILDSCRIPT_DIR}/assemble_bootloaders.sh"
 source "${BUILDSCRIPT_DIR}/build_${DISTRO}.sh"
 source "${BUILDSCRIPT_DIR}/build_flashwriter.sh"
 source "${BUILDSCRIPT_DIR}/assemble_image.sh"
 
-TARGETS=("uboot" "optee" "atf" "kernel" "bootimage" "cywfmac" "rswlan" "${DISTRO}" "flashwriter" "image")
+TARGETS=("uboot" "optee" "atf" "kernel" "bootimage" "cywfmac" "rswlan" "kmod_ssaiot_mcu" "${DISTRO}" "flashwriter" "image")
 
 declare -A DEPENDENCIES
 DEPENDENCIES["atf"]="uboot optee"
 DEPENDENCIES["cywfmac"]="kernel"
 DEPENDENCIES["rswlan"]="kernel"
+DEPENDENCIES["kmod_ssaiot_mcu"]="kernel"
 DEPENDENCIES["bootimage"]="uboot atf kernel"
 DEPENDENCIES["image"]="uboot atf kernel bootimage cywfmac rswlan distro"
 
